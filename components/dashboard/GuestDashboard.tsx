@@ -1,0 +1,1160 @@
+import React, { useState, useEffect, useCallback } from "react";
+import { Vehicle, Message, ManagedSaleRequest, Notification, PublicUser, VehicleTransfer } from "@/api/entities";
+import { Card, CardContent, CardHeader, CardTitle }
+  from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import {
+  Heart,
+  MessageCircle,
+  Calendar,
+  Eye,
+  Car,
+  TrendingUp,
+  Handshake,
+  Check,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  Edit,
+  Trash2,
+  Info,
+  Plus, // Added Plus icon
+  FileText,
+  X
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { format } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+import ManagedSalesRequestForm from "../managedsales/RequestForm";
+import ManagedSaleDetailsModal from "./ManagedSaleDetailsModal";
+import GuestTestDriveDetailsModal from "./GuestTestDriveDetailsModal";
+import ManagedSalesActions from "./ManagedSalesActions";
+import TransferProgressTracker from "./TransferProgressTracker";
+import { useToast } from "@/components/ui/UseToast";
+
+export default function GuestDashboard({ user }) {
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [managedSaleRequests, setManagedSaleRequests] = useState([]);
+  const [sentTestDrives, setSentTestDrives] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [sellers, setSellers] = useState([]); // State to store user data for seller lookups
+  const [vehiclePerformance, setVehiclePerformance] = useState({});
+  const [vehicleTransfers, setVehicleTransfers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // State for Modals
+  const [showNewRequestModal, setShowNewRequestModal] = useState(false); // Renamed from showRequestForm
+  const [editingRequest, setEditingRequest] = useState(null);
+  const [showRequestDetailsModal, setShowRequestDetailsModal] = useState(false); // Renamed from showDetailsModal
+  const [selectedRequest, setSelectedRequest] = useState(null); // Renamed from viewingRequest
+  const [viewingTestDrive, setViewingTestDrive] = useState(null);
+  const [selectedTransfer, setSelectedTransfer] = useState(null);
+
+  const { toast } = useToast();
+
+  const loadDashboardData = useCallback(async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const [allVehicles, allUsers, userMessages, userRequests, userSentTestDrives, userTransfers] = await Promise.all([
+        Vehicle.list("-created_date", 100),
+        PublicUser.list(),
+        Message.filter({ recipient_id: user.id }, "-created_date", 10),
+        user.id ? ManagedSaleRequest.filter({ submitted_by_user_id: user.id }, "-created_date") : [],
+        user.id ? Message.filter({ sender_id: user.id, message_type: 'test_drive_request' }, "-created_date") : [],
+        user.id ? VehicleTransfer.filter({ buyer_id: user.id }, "-created_date") : []
+      ]);
+
+      setVehicles(allVehicles);
+      setSellers(allUsers);
+      setRecentlyViewed(allVehicles.slice(0,5));
+      setMessages(userMessages);
+      setManagedSaleRequests(userRequests || []);
+      setSentTestDrives(userSentTestDrives);
+      setVehicleTransfers(userTransfers || []);
+
+      // Get performance data from the already-fetched vehicles list to prevent errors
+      const performanceData = {};
+      if (Array.isArray(userRequests)) {
+        userRequests
+          .filter(req => req.status === 'listed' && req.created_vehicle_id)
+          .forEach(req => {
+            const vehicle = allVehicles.find(v => v.id === req.created_vehicle_id);
+            if (vehicle) {
+              performanceData[req.id] = { views: vehicle.views || 0 };
+            } else {
+              console.warn(`Could not find vehicle ${req.created_vehicle_id} for request ${req.id} in the loaded list.`);
+            }
+          });
+      }
+      setVehiclePerformance(performanceData);
+
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
+    }
+    setIsLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  const getVehicleById = (vehicleId) => {
+    return vehicles.find(v => v.id === vehicleId);
+  };
+  
+  const getSellerByEmail = (email) => {
+    return sellers.find(s => s.email === email);
+  };
+
+  const handleEditRequest = (request) => {
+    setEditingRequest(request);
+    setShowNewRequestModal(true); // Renamed from setShowRequestForm
+    setShowRequestDetailsModal(false); // Close details modal when opening edit form
+  };
+
+  const handleViewDetails = (request) => {
+    setSelectedRequest(request); // Renamed from setViewingRequest
+    setShowRequestDetailsModal(true); // Renamed from setShowDetailsModal
+  };
+
+  const getChanges = (original, updated) => {
+      const changes = {};
+      // Collect all unique keys from both original and updated objects
+      const allKeys = new Set([...Object.keys(original || {}), ...Object.keys(updated || {})]);
+      for (const key of allKeys) {
+        // Compare stringified versions to handle nested objects/arrays correctly
+        if (JSON.stringify(original?.[key]) !== JSON.stringify(updated?.[key])) {
+          changes[key] = updated?.[key];
+        }
+      }
+      return changes;
+  };
+
+  const handleUserUpdateRequest = async (updatedFormData, originalRequest) => {
+    if (!originalRequest || !originalRequest.id) return;
+
+    const vehicleChanges = getChanges(originalRequest.vehicle_details, updatedFormData.vehicle_details);
+    const accessChanges = getChanges(originalRequest.access_arrangements, updatedFormData.access_arrangements);
+    
+    const requested_changes = { vehicle_details: vehicleChanges, access_arrangements: accessChanges };
+
+    // Clean up empty change objects
+    if (Object.keys(requested_changes.vehicle_details).length === 0) delete requested_changes.vehicle_details;
+    if (Object.keys(requested_changes.access_arrangements).length === 0) delete requested_changes.access_arrangements;
+
+    if (Object.keys(requested_changes).length === 0) {
+      toast({
+        title: "No Changes Detected",
+        description: "You haven't made any changes to the request.",
+        variant: "info",
+      });
+      setShowNewRequestModal(false);
+      setEditingRequest(null);
+      return;
+    }
+    
+    // Recalculate buyer price if seller asking price changed, to show in the request
+    if (requested_changes.vehicle_details && requested_changes.vehicle_details.seller_asking_price !== undefined) {
+        const newSellerPrice = requested_changes.vehicle_details.seller_asking_price;
+        const serviceFee = Math.round(newSellerPrice * 0.06);
+        // Add these calculated values to the requested_changes if they differ from original
+        if (originalRequest.calculated_buyer_price !== (newSellerPrice + serviceFee)) {
+          requested_changes.calculated_buyer_price = newSellerPrice + serviceFee;
+        }
+        if (originalRequest.service_fee_amount !== serviceFee) {
+          requested_changes.service_fee_amount = serviceFee;
+        }
+    }
+
+    try {
+      const existingEdits = originalRequest.edit_requests || [];
+      const newEditRequestPayload = {
+        requested_at: new Date().toISOString(),
+        requested_changes: requested_changes, // Use the cleaned up requested_changes
+        status: 'pending' // Status of this specific edit request (within the array)
+      };
+
+      await ManagedSaleRequest.update(originalRequest.id, {
+        status: 'edit_requested', // Overall status of the request
+        edit_requests: [...existingEdits, newEditRequestPayload]
+      });
+
+      // ADMIN NOTIFICATION: Notify all admins about the edit request
+      const admins = await PublicUser.filter({ role: 'admin' });
+      
+      if (admins && admins.length > 0) {
+        const notificationPromises = admins.map(admin =>
+          Notification.create({
+            recipient_id: admin.user_id, // Use user_id from PublicUser
+            sender_id: user.id,
+            type: "managed_sale_edit_request",
+            content: `${user.full_name} submitted an edit request for managed sale: "${originalRequest.vehicle_details.title}" (${originalRequest.vehicle_details.year} ${originalRequest.vehicle_details.make} ${originalRequest.vehicle_details.model}).`,
+            related_entity_type: "ManagedSaleRequest",
+            related_entity_id: originalRequest.id,
+            url: createPageUrl("AdminPanel"),
+            icon: "Edit"
+          })
+        );
+        await Promise.all(notificationPromises);
+      }
+
+      toast({
+        title: "Edit Request Submitted",
+        description: "Your changes have been sent to our team for review. You'll be notified upon approval.",
+        variant: "success",
+      });
+
+      setShowNewRequestModal(false);
+      setEditingRequest(null);
+      await loadDashboardData(); // Refresh data to reflect changes
+    } catch (error) {
+      console.error("Failed to submit edit request:", error);
+      toast({
+        title: "Submission Failed",
+        description: "Could not submit your edit request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelRequest = async (requestToCancel) => {
+    if (!requestToCancel || !requestToCancel.id) {
+      toast({
+        title: "Invalid Request",
+        description: "Invalid request data. Please refresh and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (window.confirm("Are you sure you want to cancel this request? This action cannot be undone.")) {
+      try {
+        // Update the ManagedSaleRequest status
+        await ManagedSaleRequest.update(requestToCancel.id, { 
+          status: 'cancelled',
+          cancellation_reason: 'Cancelled by user'
+        });
+
+        // If the request was listed, also cancel the corresponding vehicle listing
+        if (requestToCancel.status === 'listed' && requestToCancel.created_vehicle_id) {
+          await Vehicle.update(requestToCancel.created_vehicle_id, { status: 'cancelled' });
+        }
+
+        // Notify admins about the cancellation, only if admins exist
+        const admins = await PublicUser.filter({ role: 'admin' });
+        
+        if (admins && admins.length > 0) {
+          const notificationPromises = admins.map(admin => 
+            Notification.create({
+              recipient_id: admin.user_id, // Use user_id from PublicUser
+              sender_id: user.id,
+              type: "managed_sale_cancellation",
+              content: `${user.full_name} cancelled their managed sale request for "${requestToCancel.vehicle_details.title}" (${requestToCancel.vehicle_details.year} ${requestToCancel.vehicle_details.make} ${requestToCancel.vehicle_details.model})`,
+              related_entity_type: "ManagedSaleRequest",
+              related_entity_id: requestToCancel.id,
+              url: createPageUrl("AdminPanel"),
+              icon: "AlertCircle"
+            })
+          );
+          await Promise.all(notificationPromises);
+        }
+        
+        // Refresh UI
+        await loadDashboardData(); // Using the main data loader to refresh everything
+        if(selectedRequest && selectedRequest.id === requestToCancel.id) {
+          setShowRequestDetailsModal(false);
+          setSelectedRequest(null);
+        }
+        
+        toast({
+          title: "Request Cancelled",
+          description: "Your managed sale request has been successfully cancelled.",
+          variant: "success",
+        });
+
+      } catch (error) {
+        console.error("Failed to cancel request:", error);
+        toast({
+          title: "Cancellation Failed",
+          description: "There was an error cancelling the request. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleCancelTestDriveRequest = async (messageId) => {
+    if (window.confirm("Are you sure you want to cancel this test drive request?")) {
+        try {
+            const messageToUpdate = sentTestDrives.find(msg => msg.id === messageId);
+            if (messageToUpdate && messageToUpdate.test_drive_details) {
+                const updatedDetails = { ...messageToUpdate.test_drive_details, status: 'cancelled' };
+                await Message.update(messageId, { test_drive_details: updatedDetails });
+                
+                await Message.create({
+                    recipient_id: messageToUpdate.recipient_id,
+                    sender_id: user.id,
+                    content: `The test drive request for ${format(new Date(updatedDetails.preferred_date), 'MMM d, yyyy')} has been cancelled by the buyer.`,
+                    message_type: 'confirmation_test_drive', // Use 'confirmation_test_drive' to prevent creating a new request
+                    vehicle_id: messageToUpdate.vehicle_id,
+                    conversation_id: messageToUpdate.conversation_id // Keep it in the same conversation
+                });
+
+                // ADMIN NOTIFICATION: Notify all admins about test drive cancellation
+                const admins = await PublicUser.filter({ role: 'admin' });
+                
+                if (admins && admins.length > 0) {
+                  const vehicle = getVehicleById(messageToUpdate.vehicle_id);
+                  const notificationPromises = admins.map(admin => 
+                    Notification.create({
+                      recipient_id: admin.user_id, // Use user_id from PublicUser
+                      sender_id: user.id,
+                      type: "test_drive_cancellation",
+                      content: `${user.full_name} cancelled their test drive request for "${vehicle?.title}" scheduled for ${format(new Date(updatedDetails.preferred_date), 'MMM d, yyyy')}`,
+                      related_entity_type: "Message",
+                      related_entity_id: messageId,
+                      url: createPageUrl("AdminPanel"),
+                      icon: "CalendarX"
+                    })
+                  );
+                  await Promise.all(notificationPromises);
+                }
+                
+                await loadDashboardData(); // Refresh data
+                setViewingTestDrive(null); // Close modal
+            }
+        } catch (error) {
+            console.error("Failed to cancel test drive", error);
+            alert("Could not cancel the request. Please try again.");
+        }
+    }
+  };
+
+  const handleFormSuccess = () => {
+    setShowNewRequestModal(false);
+    setEditingRequest(null);
+    loadDashboardData(); // Reload data after successful form submission (for NEW requests)
+  };
+
+  const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => (
+    <Card className="bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-xl bg-${color}-100`}>
+            <Icon className={`w-6 h-6 text-${color}-600`} />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-slate-800">{value}</p>
+            <p className="text-sm font-semibold text-slate-600">{title}</p>
+            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const getStatusInfo = (status) => {
+    switch (status) {
+      case 'pending_review':
+        return {
+          icon: <Clock className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-amber-100 text-amber-800",
+          text: "Pending Review",
+          description: "Our team is reviewing your submission. We'll get back to you within 2 business days.",
+          tooltip: "Your request is waiting for review by the Speedio team. No action is needed from you right now."
+        };
+      case 'approved':
+        return {
+          icon: <CheckCircle className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-blue-100 text-blue-800",
+          text: "Approved",
+          description: "Your request is approved! We're preparing your listing to go live.",
+          tooltip: "Your request was approved! We are now creating the vehicle listing. It should be live shortly."
+        };
+      case 'listed':
+        return {
+          icon: <ExternalLink className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-green-100 text-green-800",
+          text: "Listed",
+          description: "Your vehicle is now live on the marketplace and visible to thousands of buyers.",
+          tooltip: "Your vehicle is live on the marketplace! You can view the listing using the button below."
+        };
+      case 'declined':
+        return {
+          icon: <XCircle className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-red-100 text-red-800",
+          text: "Declined",
+          description: "Unfortunately, we couldn't approve this request. See notes for details.",
+          tooltip: "This request was declined. Please check the 'Update from Speedio' note for more information from our team."
+        };
+      case 'sold':
+        return {
+          icon: <CheckCircle className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-emerald-100 text-emerald-800",
+          text: "Sold",
+          description: "Congratulations! Your vehicle has been sold through our managed service.",
+          tooltip: "Congratulations, your vehicle has been sold!"
+        };
+      case 'cancelled':
+        return {
+          icon: <Trash2 className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-slate-100 text-slate-800",
+          text: "Cancelled",
+          description: "You have cancelled this managed sale request.",
+          tooltip: "This request was cancelled and is no longer active."
+        };
+      case 'edit_requested': // New status for edit requests
+        return {
+          icon: <Edit className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-purple-100 text-purple-800",
+          text: "Edit Requested",
+          description: "Your requested changes are under review by our team. We'll update you soon.",
+          tooltip: "We've received your edit request and our team is reviewing the changes."
+        };
+      default:
+        return {
+          icon: null,
+          badgeClass: "bg-slate-100",
+          text: status,
+          description: "",
+          tooltip: `Status: ${status}`
+        };
+    }
+  };
+
+  const getTestDriveStatusInfo = (testDriveDetails) => {
+    // Make sure we're reading the status from the most current data
+    const status = testDriveDetails?.status || 'pending_review';
+    
+    switch (status) {
+      case 'pending_review': 
+        return { 
+          icon: <Clock className="w-4 h-4 mr-2 text-amber-600" />, 
+          text: "Pending Approval" 
+        };
+      case 'approved': 
+        return { 
+          icon: <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" />, 
+          text: "Approved" 
+        };
+      case 'declined': 
+        return { 
+          icon: <XCircle className="w-4 h-4 mr-2 text-red-600" />, 
+          text: "Declined" 
+        };
+      case 'cancelled': 
+        return { 
+          icon: <Info className="w-4 h-4 mr-2 text-slate-600" />, 
+          text: "Cancelled" 
+        };
+      case 'completed': 
+        return { 
+          icon: <CheckCircle className="w-4 h-4 mr-2 text-blue-600" />, 
+          text: "Completed" 
+        };
+      default: 
+        return { 
+          icon: <Clock className="w-4 h-4 mr-2 text-amber-600" />, 
+          text: "Pending" 
+        };
+    }
+  };
+
+  const getVerificationStatusAlert = () => {
+    if (!user || !user.dealership_verification_status || user.dealership_verification_status === 'not_submitted') {
+      return null;
+    }
+
+    if (user.dealership_verification_status === 'pending_review') {
+      return (
+        <Alert className="bg-amber-50 border-amber-200">
+          <AlertDescription className="flex items-center gap-3 text-amber-800">
+            <Clock className="w-5 h-5" />
+            <span>
+              <strong>Application Under Review:</strong> Your dealership registration is being reviewed by our team. We'll notify you of the status within 2-3 business days.
+            </span>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    if (user.dealership_verification_status === 'declined') {
+      return (
+        <Alert variant="destructive">
+          <AlertDescription className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <XCircle className="w-5 h-5" />
+              <span>
+                <strong>Application Declined:</strong> {user.admin_verification_notes || "Please review your information and try again."}
+              </span>
+            </div>
+            <Link to={createPageUrl("DealershipRegistration")}>
+              <Button variant="destructive_outline" size="sm">Resubmit Application</Button>
+            </Link>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return null;
+  };
+
+  const currentPublicUser = sellers.find(s => s.id === user?.id);
+
+  return (
+    <div className="space-y-6">
+      {getVerificationStatusAlert()}
+
+      {/* Content Width Wrapper - Now includes header */}
+      <div className="mx-auto max-w-5xl space-y-6">
+        {/* Dashboard Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800">Guest Dashboard</h1>
+            <p className="text-slate-600 mt-1">
+              Welcome back, {currentPublicUser?.full_name}
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Badge variant="outline" className="capitalize text-lg px-4 py-2">
+              {currentPublicUser?.user_type || 'guest'}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            icon={Heart}
+            title="Saved Vehicles"
+            value="0"
+            subtitle="Coming soon"
+            color="red"
+          />
+          <StatCard
+            icon={MessageCircle}
+            title="Active Conversations"
+            value={messages.length}
+            subtitle="With sellers"
+            color="emerald"
+          />
+          <StatCard
+            icon={Calendar}
+            title="Test Drives"
+            value={sentTestDrives.length}
+            subtitle="Requested"
+            color="purple"
+          />
+          <StatCard
+            icon={Eye}
+            title="Recently Viewed"
+            value={recentlyViewed.length}
+            subtitle="This week"
+            color="blue"
+          />
+        </div>
+
+        {/* Main Dashboard Tabs */}
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="flex w-full flex-grow flex-1 overflow-x-auto scrollbar-hide md:grid md:grid-cols-4 h-auto !justify-between p-0">
+            <TabsTrigger 
+              value="dashboard"
+              className="flex-1 px-4 py-2 text-sm md:w-full md:justify-center rounded-none first:rounded-l-md last:rounded-r-md"
+            >Dashboard</TabsTrigger>
+            <TabsTrigger 
+              value="transfers"
+              className="flex-1 px-4 py-2 text-sm md:w-full md:justify-center rounded-none"
+            >Transfers ({vehicleTransfers.length})</TabsTrigger>
+            <TabsTrigger 
+              value="managed_sales"
+              className="flex-1 px-4 py-2 text-sm md:w-full md:justify-center rounded-none"
+            >Managed Sales</TabsTrigger>
+            <TabsTrigger 
+              value="browse"
+              className="flex-1 px-4 py-2 text-sm md:w-full md:justify-center rounded-none first:rounded-l-md last:rounded-r-md"
+            >Browse</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="mt-6 space-y-6">
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* My Test Drive Requests */}
+              <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-purple-500" />
+                    My Test Drive Requests
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {sentTestDrives.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p>You haven't requested any test drives yet.</p>
+                      <p className="text-sm">Browse the marketplace to find your next car.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {sentTestDrives.slice(0, 4).map((request) => {
+                        const vehicle = getVehicleById(request.vehicle_id);
+                        // FIX: Make sure we're reading the current test drive status
+                        const statusInfo = getTestDriveStatusInfo(request.test_drive_details);
+                        if (!vehicle) return null;
+                        return (
+                          <div 
+                            key={request.id} 
+                            className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer" 
+                            onClick={() => setViewingTestDrive(request)}
+                          >
+                            <div className="w-16 h-12 bg-slate-200 rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
+                              {vehicle.primary_image ? (
+                                <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <Car className="w-6 h-6 text-slate-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-800 truncate">{vehicle.title}</p>
+                              <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                                {statusInfo.icon}
+                                <span>{statusInfo.text}</span>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm">View</Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              {/* Recent Messages */}
+              <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-emerald-500" />
+                    Recent Messages
+                  </CardTitle>
+                  <Link to={createPageUrl("Messages")}>
+                    <Button variant="outline" size="sm">View All</Button>
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                  {messages.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <MessageCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p>No messages yet</p>
+                      <p className="text-sm">Start browsing vehicles to connect with sellers</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {messages.slice(0, 3).map((message) => (
+                        <div key={message.id} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="bg-blue-500 text-white text-sm">S</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-800 truncate">
+                              {message.content}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {format(new Date(message.created_date), 'MMM d')}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="transfers" className="mt-6 space-y-6">
+            <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-500" />
+                  Vehicle Transfer Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {vehicleTransfers.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                    <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                    <p>No active transfers</p>
+                    <p className="text-sm">Vehicle transfer progress will appear here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {vehicleTransfers.map((transfer) => {
+                      const vehicle = vehicles.find(v => v.id === transfer.vehicle_id);
+                      return (
+                        <Card key={transfer.id} className="border border-slate-200 hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-4">
+                              <div className="w-20 h-16 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
+                                {vehicle?.primary_image ? (
+                                  <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="flex items-center justify-center h-full">
+                                    <Car className="w-8 h-8 text-slate-400" />
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-slate-800 mb-1">{vehicle?.title || 'Unknown Vehicle'}</h4>
+                                <p className="text-sm text-slate-500 mb-3">
+                                  {vehicle?.year} {vehicle?.make} {vehicle?.model}
+                                </p>
+                                
+                                <TransferProgressTracker transfer={transfer} vehicle={vehicle} compact={true} />
+                              </div>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedTransfer(transfer)}
+                                className="flex-shrink-0"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="managed_sales" className="mt-6 space-y-6">
+            <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Handshake className="w-5 h-5 text-emerald-500" />
+                  Request a Managed Sale
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600 mb-4">
+                  Let us handle the entire selling process for you. From photos to paperwork, we've got you covered.
+                </p>
+                <div className="flex gap-4">
+                  <Button 
+                    onClick={() => setShowNewRequestModal(true)}
+                    className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Submit Request
+                  </Button>
+                  <Link to={createPageUrl("ManagedSales")}>
+                    <Button variant="outline">
+                      Learn More
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+              {managedSaleRequests.length === 0 && (
+                <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Handshake className="w-5 h-5 text-slate-500" />
+                      My Managed Sales
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8 text-slate-500">
+                      <Handshake className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                      <p className="font-medium">No Managed Sales Yet</p>
+                      <p className="text-sm">Your submitted requests will appear here.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {managedSaleRequests.length > 0 && (
+                <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-blue-500" />
+                      My Existing Requests
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <TooltipProvider>
+                      {managedSaleRequests.map((request) => {
+                        const statusInfo = getStatusInfo(request.status);
+                        const performance = vehiclePerformance[request.id];
+                        return (
+                          <div key={request.id} className="space-y-4">
+                            <Card className="border border-slate-200 hover:shadow-md transition-shadow">
+                              <CardContent className="p-4">
+                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                  <div className="w-full md:w-32 h-32 md:h-24 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">
+                                    {request.vehicle_details.images && request.vehicle_details.images[0] ? (
+                                      <img src={request.vehicle_details.images[0]} alt={request.vehicle_details.title} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="flex items-center justify-center h-full">
+                                        <Car className="w-10 h-10 text-slate-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    {/* Title and Status */}
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <h4 className="font-semibold text-slate-800">
+                                        {request.vehicle_details.title}
+                                      </h4>
+                                      <div className="flex items-center">
+                                        <Badge className={statusInfo.badgeClass}>
+                                          {statusInfo.icon}
+                                          {statusInfo.text}
+                                        </Badge>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <button className="ml-2 text-slate-400 hover:text-slate-600">
+                                              <Info className="w-4 h-4" />
+                                            </button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>{statusInfo.tooltip}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </div>
+                                    </div>
+
+                                    {/* Details and Price */}
+                                    <div className="text-sm text-slate-600 space-y-2">
+                                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                        <span>{request.vehicle_details.year} {request.vehicle_details.make} {request.vehicle_details.model}</span>
+                                        <span className="font-semibold text-emerald-600">
+                                          Your Price: ${request.vehicle_details.seller_asking_price?.toLocaleString()}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                                        <Calendar className="w-3 h-3" />
+                                        Submitted {format(new Date(request.created_date), 'MMM d, yyyy')}
+                                      </div>
+                                    </div>
+
+                                    {/* Status Description and Performance */}
+                                    <div className="mt-3 p-3 bg-slate-50 rounded-lg text-sm text-slate-700">
+                                      <p className="font-medium mb-2">{statusInfo.description}</p>
+                                      {performance && (
+                                        <div className="flex items-center gap-2 text-xs">
+                                          <Eye className="w-4 h-4 text-blue-500" />
+                                          <span className="font-bold">{performance.views}</span> views on listing
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* User Facing Notes from Admin */}
+                                    {request.user_facing_notes && (
+                                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                                        <p className="text-sm text-blue-800">
+                                          <strong>Update from Speedio:</strong> {request.user_facing_notes}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="flex flex-col gap-2 w-full md:w-auto">
+                                    <Button size="sm" variant="default" className="w-full" onClick={() => handleViewDetails(request)}>
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      View Details
+                                    </Button>
+                                    {request.status === 'listed' && request.created_vehicle_id && (
+                                      <Link to={createPageUrl(`Vehicle?id=${request.created_vehicle_id}`)}>
+                                        <Button size="sm" variant="outline" className="w-full">
+                                          <ExternalLink className="w-4 h-4 mr-2" />
+                                          View Listing
+                                        </Button>
+                                      </Link>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            {/* Add Management Actions for Listed Vehicles */}
+                            {(request.status === 'listed' || request.status === 'approved') && (
+                              <ManagedSalesActions
+                                request={request}
+                                onRequestUpdate={loadDashboardData}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                      </TooltipProvider>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+          </TabsContent>
+
+          <TabsContent value="browse" className="mt-6 space-y-6">
+              {/* Recently Viewed */}
+              <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-blue-500" />
+                    Recently Viewed
+                  </CardTitle>
+                  <Link to={createPageUrl("Marketplace")}>
+                    <Button variant="outline" size="sm">Browse More</Button>
+                  </Link>
+                </CardHeader>
+                <CardContent>
+                    {recentlyViewed.length === 0 ? (
+                      <div className="text-center py-8 text-slate-500">
+                        <Car className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                        <p>No vehicles viewed yet</p>
+                        <p className="text-sm">Start exploring the marketplace</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {recentlyViewed.slice(0, 3).map((vehicle) => (
+                          <Link key={vehicle.id} to={createPageUrl(`Vehicle?id=${vehicle.id}`)}>
+                            <div className="flex gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer border">
+                              <div className="w-20 h-16 bg-slate-200 rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {vehicle.primary_image ? (
+                                  <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Car className="w-6 h-6 text-slate-400" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-slate-800 truncate">{vehicle.title}</p>
+                                <p className="text-lg font-bold text-blue-600">${vehicle.price?.toLocaleString()}</p>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                </CardContent>
+              </Card>
+
+              {/* Marketplace Quick Actions */}
+              <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Car className="w-5 h-5 text-blue-500" />
+                    Explore Vehicles
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
+                    <Link to={createPageUrl("Marketplace?condition=excellent")}>
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                        <CardContent className="p-4 text-center h-full flex flex-col justify-between">
+                          <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                            <CheckCircle className="w-6 h-6 text-emerald-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-sm text-slate-800">Excellent Condition</h4>
+                            <p className="text-xs text-slate-500">Premium vehicles</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+
+                    <Link to={createPageUrl("Marketplace?fuel_type=electric")}>
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                        <CardContent className="p-4 text-center h-full flex flex-col justify-between">
+                          <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                            <Handshake className="w-6 h-6 text-green-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-sm text-slate-800">Electric</h4>
+                            <p className="text-xs text-slate-500">Eco-friendly</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+
+                    <Link to={createPageUrl("Marketplace?verified=true")}>
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                        <CardContent className="p-4 text-center h-full flex flex-col justify-between">
+                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                            <CheckCircle className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-sm text-slate-800">Verified</h4>
+                            <p className="text-xs text-slate-500">Trusted listings</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+
+                    <Link to={createPageUrl("Marketplace")}>
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                        <CardContent className="p-4 text-center h-full flex flex-col justify-between">
+                          <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                            <Eye className="w-6 h-6 text-purple-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-sm text-slate-800">Browse All</h4>
+                            <p className="text-xs text-slate-500">See everything</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Upgrade to Seller CTA Card */}
+              <Card className="bg-gradient-to-br from-slate-50/80 to-blue-50/40 border border-slate-200/50 shadow-lg">
+                <CardContent className="p-8">
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
+                        <Car className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                      <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                        Ready to Sell Your Own Cars?
+                      </h3>
+                      <p className="text-slate-600 mb-4">
+                        Upgrade to a Seller account and take control of your listings. Create professional listings,
+                        manage inquiries directly, and reach thousands of potential buyers on your own terms.
+                      </p>
+                      <div className="flex flex-wrap gap-4 text-sm text-blue-700 mb-4">
+                        <div className="flex items-center gap-1">
+                          <Check className="w-4 h-4" />
+                          <span>One-time $50 fee</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Check className="w-4 h-4" />
+                          <span>Up to 3 vehicles per year</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Check className="w-4 h-4" />
+                          <span>Keep full control</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <Link to={createPageUrl("Subscription")}>
+                        <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-lg px-6 py-3">
+                          <TrendingUp className="w-5 h-5 mr-2" />
+                          Become a Seller
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+          </TabsContent>
+        </Tabs>
+      </div> {/* End Content Width Wrapper */}
+
+      {/* Edit/Create Request Form Modal */}
+      <AnimatePresence>
+        {showNewRequestModal && (
+          <ManagedSalesRequestForm
+            requestToEdit={editingRequest}
+            onClose={() => {
+              setShowNewRequestModal(false);
+              setEditingRequest(null);
+            }}
+            onSuccess={handleFormSuccess} // For new requests, closes and refreshes
+            onUpdateRequest={handleUserUpdateRequest} // Use the new handler for user edits
+            isSubmittingEdit={!!editingRequest}
+          />
+        )}
+      </AnimatePresence>
+      
+      {/* Details Modal */}
+      {showRequestDetailsModal && selectedRequest && (
+        <ManagedSaleDetailsModal
+          isOpen={showRequestDetailsModal}
+          request={selectedRequest}
+          onClose={() => {
+            setShowRequestDetailsModal(false);
+            setSelectedRequest(null); // Clear selected request
+          }}
+          onEdit={handleEditRequest}
+          onCancel={handleCancelRequest}
+        />
+      )}
+
+      {/* Test Drive Details Modal for Guests - Added loading check */}
+      {!isLoading && (() => {
+        const vehicleForModal = viewingTestDrive ? getVehicleById(viewingTestDrive.vehicle_id) : null;
+        const sellerForModal = vehicleForModal ? getSellerByEmail(vehicleForModal.created_by) : null;
+        return (
+          <GuestTestDriveDetailsModal
+            isOpen={!!viewingTestDrive}
+            onClose={() => setViewingTestDrive(null)}
+            testDriveMessage={viewingTestDrive}
+            vehicle={vehicleForModal}
+            seller={sellerForModal}
+            onCancelRequest={handleCancelTestDriveRequest}
+          />
+        );
+      })()}
+
+      {/* Transfer Details Modal */}
+      <AnimatePresence>
+        {selectedTransfer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+            onClick={() => setSelectedTransfer(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 50 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="bg-white p-6 rounded-lg shadow-xl max-w-3xl w-full relative max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Button variant="ghost" size="icon" className="absolute top-3 right-3" onClick={() => setSelectedTransfer(null)}>
+                <X className="w-5 h-5" />
+              </Button>
+              
+              <TransferProgressTracker 
+                transfer={selectedTransfer} 
+                vehicle={vehicles.find(v => v.id === selectedTransfer.vehicle_id)} 
+                compact={false} 
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
