@@ -1,11 +1,11 @@
-
+'use client'
 import React, { useState, useEffect } from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
+import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { Car, MessageCircle, Handshake } from "lucide-react";
 import { format } from "date-fns";
-import { PublicUser } from "@/entities/PublicUser";
+import { PublicUser } from "@/api/entities";
 
 export default function ConversationList({
   conversations,

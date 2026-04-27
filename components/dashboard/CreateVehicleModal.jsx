@@ -1,14 +1,16 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/TextArea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Label } from '@/components/ui/Label';
 import { Loader2, Trash2, ChevronLeft, ChevronRight, CheckCircle, Upload } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
-import { User } from "@/entities/User";
-import { base44 } from "@/api/base44Client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/UseToast";
+import { User } from "@/api/entities";
+// import { base44 } from "@/api/base44Client";
+import { Dialog, DialogContent } from "@/components/ui/Dialog";
 
 // Client-side image processor
 const processImageToMultipleSizes = async (file) => {
@@ -197,96 +199,96 @@ export default function CreateVehicleModal({ isOpen, onClose, onVehicleCreated, 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageSelect = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+  // const handleImageSelect = async (e) => {
+  //   const files = Array.from(e.target.files);
+  //   if (files.length === 0) return;
 
-    const maxSize = 30 * 1024 * 1024;
-    const oversizedFiles = files.filter(file => file.size > maxSize);
+  //   const maxSize = 30 * 1024 * 1024;
+  //   const oversizedFiles = files.filter(file => file.size > maxSize);
 
-    if (oversizedFiles.length > 0) {
-      toast({
-        title: "File too large",
-        description: `Some files exceed the 30MB limit: ${oversizedFiles.map(f => f.name).join(', ')}. Please choose smaller files.`,
-        variant: "destructive"
-      });
-      e.target.value = '';
-      return;
-    }
+  //   if (oversizedFiles.length > 0) {
+  //     toast({
+  //       title: "File too large",
+  //       description: `Some files exceed the 30MB limit: ${oversizedFiles.map(f => f.name).join(', ')}. Please choose smaller files.`,
+  //       variant: "destructive"
+  //     });
+  //     e.target.value = '';
+  //     return;
+  //   }
 
-    setIsUploading(true);
+  //   setIsUploading(true);
 
-    try {
-      for (const file of files) {
-        try {
-          console.log(`\n🔄 Processing: ${file.name}`);
+  //   try {
+  //     for (const file of files) {
+  //       try {
+  //         console.log(`\n🔄 Processing: ${file.name}`);
           
-          const { files: processedFiles, stats } = await processImageToMultipleSizes(file);
-          console.log('📊 Processing complete:', stats);
+  //         const { files: processedFiles, stats } = await processImageToMultipleSizes(file);
+  //         console.log('📊 Processing complete:', stats);
           
-          // Upload each size individually using base44.integrations.Core.UploadFile
-          console.log('📤 Uploading to storage...');
+  //         // Upload each size individually using base44.integrations.Core.UploadFile
+  //         console.log('📤 Uploading to storage...');
           
-          const [thumbnailResult, smallResult, mediumResult, largeResult] = await Promise.all([
-            base44.integrations.Core.UploadFile({ file: processedFiles.thumbnail }),
-            base44.integrations.Core.UploadFile({ file: processedFiles.small }),
-            base44.integrations.Core.UploadFile({ file: processedFiles.medium }),
-            base44.integrations.Core.UploadFile({ file: processedFiles.large })
-          ]);
+  //         const [thumbnailResult, smallResult, mediumResult, largeResult] = await Promise.all([
+  //           base44.integrations.Core.UploadFile({ file: processedFiles.thumbnail }),
+  //           base44.integrations.Core.UploadFile({ file: processedFiles.small }),
+  //           base44.integrations.Core.UploadFile({ file: processedFiles.medium }),
+  //           base44.integrations.Core.UploadFile({ file: processedFiles.large })
+  //         ]);
           
-          // Extract URLs from responses
-          const imageUrls = {
-            thumbnail: thumbnailResult.data?.file_url || thumbnailResult.file_url,
-            small: smallResult.data?.file_url || smallResult.file_url,
-            medium: mediumResult.data?.file_url || mediumResult.file_url,
-            large: largeResult.data?.file_url || largeResult.file_url,
-            original: largeResult.data?.file_url || largeResult.file_url
-          };
+  //         // Extract URLs from responses
+  //         const imageUrls = {
+  //           thumbnail: thumbnailResult.data?.file_url || thumbnailResult.file_url,
+  //           small: smallResult.data?.file_url || smallResult.file_url,
+  //           medium: mediumResult.data?.file_url || mediumResult.file_url,
+  //           large: largeResult.data?.file_url || largeResult.file_url,
+  //           original: largeResult.data?.file_url || largeResult.file_url
+  //         };
           
-          // Verify all uploads succeeded
-          if (!imageUrls.thumbnail || !imageUrls.small || !imageUrls.medium || !imageUrls.large) {
-            throw new Error('Failed to upload one or more image sizes to base44 storage.');
-          }
+  //         // Verify all uploads succeeded
+  //         if (!imageUrls.thumbnail || !imageUrls.small || !imageUrls.medium || !imageUrls.large) {
+  //           throw new Error('Failed to upload one or more image sizes to base44 storage.');
+  //         }
           
-          console.log('✅ Upload successful!', imageUrls);
+  //         console.log('✅ Upload successful!', imageUrls);
           
-          setFormData(prev => {
-            const newImages = [...prev.images, imageUrls];
-            const newPrimaryImage = prev.primary_image || imageUrls;
+  //         setFormData(prev => {
+  //           const newImages = [...prev.images, imageUrls];
+  //           const newPrimaryImage = prev.primary_image || imageUrls;
 
-            return {
-              ...prev,
-              images: newImages,
-              primary_image: newPrimaryImage,
-            };
-          });
+  //           return {
+  //             ...prev,
+  //             images: newImages,
+  //             primary_image: newPrimaryImage,
+  //           };
+  //         });
 
-        } catch (error) {
-          console.error(`Failed to process or upload ${file.name}:`, error);
-          toast({
-            title: "Upload Failed",
-            description: `Failed to upload ${file.name}: ${error.message}`,
-            variant: "destructive"
-          });
-        }
-      }
-      toast({
-        title: "Images processed and uploaded!",
-        description: `Successfully uploaded and optimized images.`,
-      });
+  //       } catch (error) {
+  //         console.error(`Failed to process or upload ${file.name}:`, error);
+  //         toast({
+  //           title: "Upload Failed",
+  //           description: `Failed to upload ${file.name}: ${error.message}`,
+  //           variant: "destructive"
+  //         });
+  //       }
+  //     }
+  //     toast({
+  //       title: "Images processed and uploaded!",
+  //       description: `Successfully uploaded and optimized images.`,
+  //     });
 
-    } catch (error) {
-      console.error("Error during image selection/upload process:", error);
-      toast({
-        title: "Error",
-        description: `An error occurred during file selection: ${error.message || "An unknown error occurred."}`,
-        variant: "destructive"
-      });
-    } finally {
-      setIsUploading(false);
-      e.target.value = '';
-    }
-  };
+  //   } catch (error) {
+  //     console.error("Error during image selection/upload process:", error);
+  //     toast({
+  //       title: "Error",
+  //       description: `An error occurred during file selection: ${error.message || "An unknown error occurred."}`,
+  //       variant: "destructive"
+  //     });
+  //   } finally {
+  //     setIsUploading(false);
+  //     e.target.value = '';
+  //   }
+  // };
 
   const removeImage = (indexToRemove) => {
     setFormData((prev) => {
@@ -334,79 +336,79 @@ export default function CreateVehicleModal({ isOpen, onClose, onVehicleCreated, 
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  // const handleSubmit = async (e) => {
+  //   if (e) {
+  //     e.preventDefault();
+  //     e.stopPropagation();
+  //   }
 
-    const submitter = user || currentUser;
-    if (!submitter) {
-      toast({ title: "Error", description: "User information missing. Cannot create listing.", variant: "destructive" });
-      return;
-    }
+  //   const submitter = user || currentUser;
+  //   if (!submitter) {
+  //     toast({ title: "Error", description: "User information missing. Cannot create listing.", variant: "destructive" });
+  //     return;
+  //   }
 
-    if (!validateStep(1) || !validateStep(2)) {
-      toast({ title: "Please complete all required fields in Step 1 and Step 2.", variant: "destructive" });
-      return;
-    }
+  //   if (!validateStep(1) || !validateStep(2)) {
+  //     toast({ title: "Please complete all required fields in Step 1 and Step 2.", variant: "destructive" });
+  //     return;
+  //   }
 
-    setLocalLoading(true);
+  //   setLocalLoading(true);
 
-    try {
-      const validImageUrls = formData.images.map(img => img.original).filter(Boolean);
-      const primaryImgUrl = formData.primary_image ? formData.primary_image.original : (validImageUrls.length > 0 ? validImageUrls[0] : null);
+  //   try {
+  //     const validImageUrls = formData.images.map(img => img.original).filter(Boolean);
+  //     const primaryImgUrl = formData.primary_image ? formData.primary_image.original : (validImageUrls.length > 0 ? validImageUrls[0] : null);
 
-      const vehicleData = {
-        title: `${formData.year} ${formData.make} ${formData.model}`,
-        make: formData.make,
-        model: formData.model,
-        year: parseInt(formData.year),
-        price: parseFloat(formData.price),
-        mileage: parseInt(formData.mileage),
-        condition: formData.condition,
-        description: formData.description,
-        primary_image: primaryImgUrl,
-        images: validImageUrls,
-        location: formData.location,
-        fuel_type: formData.fuel_type,
-        transmission: formData.transmission,
-        status: formData.status, // Include status
-        author_id: submitter.id,
-        author_name: submitter.full_name,
-        author_avatar: submitter.profile_image,
-        author_user_type: submitter.user_type,
-        author_verified: submitter.verified,
-        author_bio: submitter.bio,
-        author_location: submitter.location
-      };
+  //     const vehicleData = {
+  //       title: `${formData.year} ${formData.make} ${formData.model}`,
+  //       make: formData.make,
+  //       model: formData.model,
+  //       year: parseInt(formData.year),
+  //       price: parseFloat(formData.price),
+  //       mileage: parseInt(formData.mileage),
+  //       condition: formData.condition,
+  //       description: formData.description,
+  //       primary_image: primaryImgUrl,
+  //       images: validImageUrls,
+  //       location: formData.location,
+  //       fuel_type: formData.fuel_type,
+  //       transmission: formData.transmission,
+  //       status: formData.status, // Include status
+  //       author_id: submitter.id,
+  //       author_name: submitter.full_name,
+  //       author_avatar: submitter.profile_image,
+  //       author_user_type: submitter.user_type,
+  //       author_verified: submitter.verified,
+  //       author_bio: submitter.bio,
+  //       author_location: submitter.location
+  //     };
 
-      let resultVehicle;
-      if (vehicleToEdit) {
-        resultVehicle = await onVehicleCreated(vehicleToEdit.id, vehicleData);
-        toast({ title: "Success!", description: "Vehicle listing updated successfully." });
-      } else {
-        resultVehicle = await onVehicleCreated(vehicleData);
-        toast({ title: "Success!", description: "Vehicle listing submitted successfully." });
+  //     let resultVehicle;
+  //     if (vehicleToEdit) {
+  //       resultVehicle = await onVehicleCreated(vehicleToEdit.id, vehicleData);
+  //       toast({ title: "Success!", description: "Vehicle listing updated successfully." });
+  //     } else {
+  //       resultVehicle = await onVehicleCreated(vehicleData);
+  //       toast({ title: "Success!", description: "Vehicle listing submitted successfully." });
 
-        if (resultVehicle && resultVehicle.id) {
-          try {
-            await base44.functions.invoke('notifyFollowersOfNewVehicle', { vehicleId: resultVehicle.id });
-            toast({ title: "Notification Sent", description: "Followers have been notified about your new listing." });
-          } catch (notifError) {
-            console.error("Failed to notify followers:", notifError);
-            toast({ title: "Notification Failed", description: "Could not notify followers, but vehicle was created.", variant: "warning" });
-          }
-        }
-      }
-      onClose();
-    } catch (error) {
-      console.error('Failed to submit vehicle:', error);
-      toast({ title: "Submission Failed", description: `Could not save the vehicle listing: ${error.message || "An unknown error occurred."}`, variant: "destructive" });
-    } finally {
-      setLocalLoading(false);
-    }
-  };
+  //       if (resultVehicle && resultVehicle.id) {
+  //         try {
+  //           await base44.functions.invoke('notifyFollowersOfNewVehicle', { vehicleId: resultVehicle.id });
+  //           toast({ title: "Notification Sent", description: "Followers have been notified about your new listing." });
+  //         } catch (notifError) {
+  //           console.error("Failed to notify followers:", notifError);
+  //           toast({ title: "Notification Failed", description: "Could not notify followers, but vehicle was created.", variant: "warning" });
+  //         }
+  //       }
+  //     }
+  //     onClose();
+  //   } catch (error) {
+  //     console.error('Failed to submit vehicle:', error);
+  //     toast({ title: "Submission Failed", description: `Could not save the vehicle listing: ${error.message || "An unknown error occurred."}`, variant: "destructive" });
+  //   } finally {
+  //     setLocalLoading(false);
+  //   }
+  // };
 
   const renderStepContent = () => {
     switch (currentStep) {

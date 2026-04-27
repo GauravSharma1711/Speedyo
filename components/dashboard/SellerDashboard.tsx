@@ -1,9 +1,12 @@
+"use client"
+import { useRouter } from "next/navigation";
+
 import React, { useState, useEffect, useCallback } from "react";
-import { Vehicle, Post, Message, ManagedSaleRequest, PublicUser, Notification, User, VehicleTransfer } from "@/entities/all";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Vehicle, Post, Message, ManagedSaleRequest, PublicUser, Notification, User, VehicleTransfer } from "@/api/entities";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import {
   Car,
   Plus,
@@ -36,13 +39,14 @@ import {
   FileText,
   MapPin,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+
+
+
 import CreateVehicleModal from "./CreateVehicleModal";
 import VehicleAnalytics from "./VehicleAnalytics";
-import ManagedSalesRequestForm from "../managedsales/RequestForm";
+import ManagedSalesRequestForm from "../manageSales/RequestForm";
 import { format } from "date-fns";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { AnimatePresence, motion } from "framer-motion";
 import VehicleEditRequestModal from "./VehicleEditRequestModal";
 import TestDriveAvailabilityManager from "./TestDriveAvailabilityManager";
@@ -53,21 +57,21 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useToast } from "@/components/ui/use-toast";
-import { Toaster } from "@/components/ui/toaster";
+} from "@/components/ui/Tooltip";
+import { useToast } from "@/components/ui/UseToast";
+import { Toaster } from "@/components/ui/Toaster";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { sendEmail } from "@/functions/sendEmail";
+} from "@/components/ui/DropdownMenu";
+// import { sendEmail } from "@/functions/sendEmail";
 import BuyMoreSlotsModal from "./BuyMoreSlotsModal";
 import NotificationSettings from "./NotificationSettings";
 import TransferProgressTracker from "./TransferProgressTracker";
-import { base44 } from "@/api/base44Client";
+// import { base44 } from "@/api/base44Client";
 
 const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel }) => {
   if (!isOpen || !request) return null;
@@ -102,6 +106,7 @@ const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel })
 };
 
 const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline, onComplete, onEdit, getBuyerById, getVehicleById, user }) => {
+  const router = useRouter();
   if (!isOpen || !request) return null;
 
   const vehicle = getVehicleById(request.vehicle_id);
@@ -111,8 +116,7 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
   const isLocationMissing = !testDriveDetails?.location || testDriveDetails.location === "N/A" || !testDriveDetails.location.trim();
 
   const handleMessageBuyer = () => {
-    const chatUrl = createPageUrl(`Messages?recipientId=${requester.user_id}&vehicleId=${vehicle.id}`);
-    window.location.href = chatUrl;
+    router.push(`/Messages?recipientId=${requester.user_id}&vehicleId=${vehicle.id}`);
     onClose();
   };
 
@@ -151,9 +155,12 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
             <p className="text-sm text-slate-600">
               <strong>Price:</strong> ${vehicle?.price?.toLocaleString() || 'N/A'}
             </p>
-            <Link to={`${createPageUrl("Vehicle")}?id=${vehicle?.id}`} target="_blank" className="text-blue-600 hover:underline text-sm flex items-center gap-1 mt-2">
-              View Listing <ExternalLink className="w-4 h-4" />
-            </Link>
+            <button
+  onClick={() =>window.open(`/vehicle?id=${vehicle?.id}`, "_blank")}
+  className="text-blue-600 hover:underline text-sm flex items-center gap-1 mt-2">
+  View Listing
+  <ExternalLink className="w-4 h-4" />
+</button>
           </div>
 
           <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
@@ -169,9 +176,13 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
                 <Phone className="w-4 h-4" /> {requester.phone}
               </p>
             )}
-            <Link to={createPageUrl(`Profile?userId=${requester.user_id}`)} target="_blank" className="text-blue-600 hover:underline text-sm flex items-center gap-1 mt-2">
-              View Profile <ExternalLink className="w-4 h-4" />
-            </Link>
+          <button
+  onClick={() =>
+    window.open(  `/profile?userId=${requester.user_id}`,  "_blank" )}
+  className="text-blue-600 hover:underline text-sm flex items-center gap-1 mt-2"
+>
+  View Profile
+</button>
           </div>
 
           <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
@@ -263,6 +274,7 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
 
 
 export default function SellerDashboard({ user }) {
+  const router = useRouter();
   const [publicUser, setPublicUser] = useState(null);
   const [activeTab, setActiveTab] = useState("listings"); // Added for tabs control
 
@@ -452,44 +464,44 @@ export default function SellerDashboard({ user }) {
     return allUserVehiclesCombined.find(vehicle => vehicle.id === vehicleId) || {};
   }, [allUserVehiclesCombined]);
 
-  const handleCreateVehicle = async (vehicleData) => {
-    setIsSubmitting(true);
-    try {
-      const newVehicleData = {
-        ...vehicleData,
-        author_id: user.id, // Only keep the author_id
-      };
-      const newVehicle = await Vehicle.create(newVehicleData);
+  // const handleCreateVehicle = async (vehicleData) => {
+  //   setIsSubmitting(true);
+  //   try {
+  //     const newVehicleData = {
+  //       ...vehicleData,
+  //       author_id: user.id, // Only keep the author_id
+  //     };
+  //     const newVehicle = await Vehicle.create(newVehicleData);
 
-      // Trigger notification for followers
-      try {
-        await base44.functions.invoke('notifyFollowersOfNewVehicle', { vehicleId: newVehicle.id });
-      } catch (notifError) {
-        console.error("Failed to notify followers:", notifError);
-        // Don't block vehicle creation if notification fails
-      }
+  //     // Trigger notification for followers
+  //     try {
+  //       await base44.functions.invoke('notifyFollowersOfNewVehicle', { vehicleId: newVehicle.id });
+  //     } catch (notifError) {
+  //       console.error("Failed to notify followers:", notifError);
+  //       // Don't block vehicle creation if notification fails
+  //     }
 
-      setShowCreateModal(false);
-      loadSellerData(); // Refresh data
-      toast({
-        title: "Vehicle Created",
-        description: "Your vehicle listing has been successfully created.",
-        variant: "success",
-      });
+  //     setShowCreateModal(false);
+  //     loadSellerData(); // Refresh data
+  //     toast({
+  //       title: "Vehicle Created",
+  //       description: "Your vehicle listing has been successfully created.",
+  //       variant: "success",
+  //     });
 
-      return newVehicle; // Return the created vehicle
-    } catch (error) {
-      console.error("Failed to create vehicle:", error);
-      toast({
-        title: "Creation Failed",
-        description: "Could not create the vehicle listing. Please try again.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  //     return newVehicle; // Return the created vehicle
+  //   } catch (error) {
+  //     console.error("Failed to create vehicle:", error);
+  //     toast({
+  //       title: "Creation Failed",
+  //       description: "Could not create the vehicle listing. Please try again.",
+  //       variant: "destructive",
+  //     });
+  //     throw error;
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   const handleUpdateVehicle = async (vehicleData) => {
     if (!editingVehicle) return;
@@ -636,9 +648,9 @@ export default function SellerDashboard({ user }) {
           recipient_id: admin.id,
           sender_id: user.id,
           type: "vehicle_edit_request",
-          content: `User ${user.full_name} requested an edit for their vehicle "${currentVehicle.title}".`,
+          content: `User ${user.full_name} requested an edit for their vehicle "${currentVehicle.title}`,
           related_entity_id: vehicleId,
-          url: createPageUrl(`AdminPanel?tab=vehicles`),
+         url: "/Admin-Panel?tab=vehicles",
           icon: "Edit"
         })
       );
@@ -692,7 +704,7 @@ export default function SellerDashboard({ user }) {
           type: "managed_sale_status_update",
           content: `Your managed sale request for "${requestToCancel.vehicle_details.title}" has been cancelled.`,
           related_entity_id: requestToCancel.id,
-          url: createPageUrl("Dashboard"),
+          url: "/Dashboard",
           icon: "XCircle"
         });
 
@@ -771,7 +783,7 @@ export default function SellerDashboard({ user }) {
             type: "managed_sale_status_update",
             content: `User ${user.full_name} requested an edit for "${originalRequest.vehicle_details.title}".`,
             related_entity_id: originalRequest.id,
-            url: createPageUrl(`AdminPanel?tab=managed_sales`),
+            url: `/Admin-Panel?tab=managed_sales`,
             icon: "Edit"
           })
         );
@@ -847,7 +859,7 @@ export default function SellerDashboard({ user }) {
           type: "test_drive_update",
           content: `Your test drive for "${getVehicleById(message.vehicle_id)?.title}" has been approved!`,
           related_entity_id: message.id,
-          url: createPageUrl(`Chat?messageId=${message.id}`),
+          url: `/Chat?messageId=${message.id}`,
           icon: "CheckCircle"
         });
 
@@ -909,7 +921,7 @@ export default function SellerDashboard({ user }) {
           type: "test_drive_update",
           content: `Your test drive for "${getVehicleById(message.vehicle_id)?.title}" has been declined.`,
           related_entity_id: message.id,
-          url: createPageUrl(`Chat?messageId=${message.id}`),
+          url: `/Chat?messageId=${message.id}`,
           icon: "XCircle"
         });
 
@@ -960,7 +972,7 @@ export default function SellerDashboard({ user }) {
           type: "test_drive_update",
           content: `Your test drive for "${getVehicleById(message.vehicle_id)?.title}" has been marked as completed.`,
           related_entity_id: message.id,
-          url: createPageUrl(`Chat?messageId=${message.id}`),
+          url: `/Chat?messageId=${message.id}`,
           icon: "ClipboardCheck"
         });
 
@@ -1410,7 +1422,7 @@ export default function SellerDashboard({ user }) {
                 <strong>Dealership Application Declined:</strong> {user.admin_verification_notes || "Please review your information and try again."}
               </span>
             </div>
-            <Link to={createPageUrl("DealershipRegistration")}>
+            <Link to={"/DealershipRegistration"}>
               <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50">Resubmit Application</Button>
             </Link>
           </AlertDescription>
@@ -1428,7 +1440,7 @@ export default function SellerDashboard({ user }) {
                 <strong>Dealership Approved!</strong> Your dealership has been verified and approved. You can now select a subscription plan to start listing vehicles.
               </span>
             </div>
-            <Link to={createPageUrl("Subscription")}>
+            <Link to={("/Subscription")}>
               <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">Select Plan</Button>
             </Link>
           </AlertDescription>
@@ -1663,7 +1675,7 @@ export default function SellerDashboard({ user }) {
                             })()
                             : "You need a seller account to list vehicles."}
                       </span>
-                      <Link to={createPageUrl('Subscription')} className="ml-2 font-semibold underline">
+                      <Link to={('/Subscription')} className="ml-2 font-semibold underline">
                         {user.user_type === 'private_seller' ? 'Buy Slots' : user.user_type === 'dealership' ? 'Manage Subscription' : 'Upgrade Plan'}
                       </Link>
                     </AlertDescription>
@@ -1778,7 +1790,7 @@ export default function SellerDashboard({ user }) {
                           </div>
 
                           <div className="flex flex-shrink-0 flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
-                            <Link to={`${createPageUrl("Vehicle")}?id=${vehicle.id}`} className="w-full sm:w-auto">
+                            <Link to={`${("/Vehicle")}?id=${vehicle.id}`} className="w-full sm:w-auto">
                               <Button variant="outline" size="sm" className="w-full justify-center">
                                 <Eye className="w-4 h-4 mr-2" />
                                 View
@@ -2064,7 +2076,7 @@ export default function SellerDashboard({ user }) {
 
                                   {testDriveRequests.filter(req => req.recipient_id === user.id && !getVehicleById(req.vehicle_id)?.website_managed).length > 5 && (
                                     <div className="text-center py-2">
-                                      <Link to={createPageUrl("Messages")}>
+                                      <Link to={("/Messages")}>
                                         <Button variant="link" size="sm">
                                           View All Test Drive Requests
                                         </Button>
@@ -2132,7 +2144,8 @@ export default function SellerDashboard({ user }) {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => window.open(createPageUrl(`Contact?subject=Test Drive Inquiry for ${vehicle.title} (Vehicle ID: ${vehicle.id})`), '_blank')}
+                                    
+           onClick={() => window.open(`/contact?subject=Test Drive Inquiry for ${vehicle.title} (Vehicle ID: ${vehicle.id})`, '_blank')}
                                     >
                                       <MessageCircle className="w-4 h-4 mr-2" />
                                       Message Speedio
@@ -2276,7 +2289,7 @@ export default function SellerDashboard({ user }) {
                     <Handshake className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                     <p className="font-medium mb-1">No Managed Sale Vehicles</p>
                     <p className="text-sm">Vehicles sold through our managed service will appear here.</p>
-                    <Link to={createPageUrl("ManagedSales")} className="mt-4 inline-block">
+                    <Link to={("/Managed-Sales")} className="mt-4 inline-block">
                       <Button variant="outline">
                         <TrendingUp className="w-4 h-4 mr-2" />
                         Request Managed Sale
@@ -2330,7 +2343,7 @@ export default function SellerDashboard({ user }) {
                           </div>
 
                           <div className="flex gap-2 mt-4">
-                            <Link to={createPageUrl(`Vehicle?id=${vehicle.id}`)}>
+                            <Link to={(`/Vehicle?id=${vehicle.id}`)}>
                               <Button size="sm" variant="outline">
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Listing
@@ -2364,14 +2377,14 @@ export default function SellerDashboard({ user }) {
                     <div className="p-3 border border-slate-200 rounded-lg">
                       <h4 className="font-semibold text-slate-800 mb-1">Profile Settings</h4>
                       <p className="text-sm text-slate-600 mb-2">Manage your seller profile and verification status</p>
-                      <Link to={createPageUrl("Profile")}>
+                      <Link to={("/Profile")}>
                         <Button variant="outline" size="sm">Edit Profile</Button>
                       </Link>
                     </div>
                     <div className="p-3 border border-slate-200 rounded-lg">
                       <h4 className="font-semibold text-slate-800 mb-1">Subscription & Billing</h4>
                       <p className="text-sm text-slate-600 mb-2">View and manage your subscription plan and payment details</p>
-                      <Link to={createPageUrl("ManageSubscription")}>
+                      <Link to={("/ManageSubscription")}>
                         <Button variant="outline" size="sm">Manage Subscription</Button>
                       </Link>
                     </div>
@@ -2400,7 +2413,7 @@ export default function SellerDashboard({ user }) {
 
                 </div>
                 <div className="flex-shrink-0">
-                  <Link to={createPageUrl("Subscription")}>
+                  <Link to={("/Subscription")}>
                     <Button className={`bg-gradient-to-r ${upgradeRec.gradient} hover:from-purple-600 hover:to-blue-600 text-lg px-6 py-3`}>
                       <TrendingUp className="w-5 h-5 mr-2" />
                       {upgradeRec.cta}
@@ -2623,7 +2636,7 @@ export default function SellerDashboard({ user }) {
                     const vehicle = getVehicleById(viewingSentTestDrive.vehicle_id);
                     if (seller && vehicle) {
                       return (
-                        <Link to={createPageUrl(`Messages?recipientId=${seller.user_id}&vehicleId=${vehicle.id}`)}>
+                        <Link to={(`/Messages?recipientId=${seller.user_id}&vehicleId=${vehicle.id}`)}>
                           <Button variant="outline" className="flex items-center gap-1">
                             <MessageSquare className="w-4 h-4" /> Message Seller
                           </Button>

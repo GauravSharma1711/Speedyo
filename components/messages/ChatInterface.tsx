@@ -1,10 +1,10 @@
-
+'use client'
 import React, { useState, useRef, useEffect } from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { 
   Send, 
   Car, 
@@ -17,10 +17,10 @@ import {
   ArrowLeft,
   MoreVertical 
 } from "lucide-react";
-import { InvokeLLM } from "@/integrations/Core";
-import { Notification } from "@/entities/all";
-import { PublicUser } from "@/entities/PublicUser";
-import { createPageUrl } from "@/utils";
+// import { InvokeLLM } from "@/integrations/Core";
+import { Notification ,PublicUser} from "@/api/entities";
+
+
 
 import MessageBubble from "./MessageBubble";
 import QuickActions from "./QuickActions";
@@ -172,7 +172,7 @@ export default function ChatInterface({
             content: `${currentUser.full_name} sent you a message.`,
             related_entity_type: "Message",
             related_entity_id: createdMessage.id,
-            url: createPageUrl("Messages"),
+            url: ("/Messages"),
             icon: "MessageSquare"
           });
         } catch (error) {

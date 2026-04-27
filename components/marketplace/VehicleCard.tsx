@@ -1,45 +1,50 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Car, MapPin, Eye, Shield, Star } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { PublicUser } from "@/entities/PublicUser";
+"use client";
 
-export default function VehicleCard({ vehicle }) {
-  const [seller, setSeller] = useState(null);
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { Car, MapPin, Eye, Shield, Star } from "lucide-react";
+import Link from "next/link";
+import { PublicUser } from "@/api/entities";
+
+interface Vehicle {
+  id: string;
+  created_by_id?: string;
+  primary_image?: string;
+  title?: string;
+  year?: number;
+  mileage?: number;
+  location?: string;
+  price?: number;
+  status?: string;
+  featured?: boolean;
+  verified?: boolean;
+  views?: number;
+}
+
+export default function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+  const [seller, setSeller] = useState<any>(null);
   const [isLoadingSeller, setIsLoadingSeller] = useState(true);
 
   useEffect(() => {
     const fetchSeller = async () => {
-      // Use created_by_id (the user ID) to find seller info
       if (!vehicle.created_by_id) {
         setIsLoadingSeller(false);
         return;
       }
-      
+
       try {
         const profiles = await PublicUser.filter({ user_id: vehicle.created_by_id });
-        if (profiles.length > 0) {
-          setSeller(profiles[0]);
-        } else {
-          setSeller({
-            full_name: "Unknown Seller",
-            user_type: "guest",
-            profile_image: null,
-            verified: false
-          });
-        }
+        setSeller(
+          profiles.length > 0
+            ? profiles[0]
+            : { full_name: "Unknown Seller", user_type: "guest", profile_image: null, verified: false }
+        );
       } catch (error) {
         console.error("Failed to fetch seller:", error);
-        setSeller({
-          full_name: "Unknown Seller", 
-          user_type: "guest",
-          profile_image: null,
-          verified: false
-        });
+        setSeller({ full_name: "Unknown Seller", user_type: "guest", profile_image: null, verified: false });
       } finally {
         setIsLoadingSeller(false);
       }
@@ -52,23 +57,28 @@ export default function VehicleCard({ vehicle }) {
   const sellerAvatar = seller?.profile_image;
   const sellerInitial = sellerName[0] || "S";
 
-  // Use vehicle.id (the actual vehicle entity ID) for navigation
   return (
-    <Link to={createPageUrl(`Vehicle?id=${vehicle.id}`)} className="h-full">
+    // Next.js: <Link href="..."> replaces <Link to="..."> from react-router-dom
+    // Path structure: /vehicle?id=... (adjust to match your Next.js route)
+    <Link href={`/vehicle?id=${vehicle.id}`} className="h-full">
       <Card className="bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group h-full flex flex-col">
         <div className="h-64 bg-gradient-to-br from-slate-200 to-slate-300 rounded-t-lg relative overflow-hidden flex-shrink-0">
           {vehicle.primary_image ? (
+            // Next.js: using <img> here since vehicle images are external/dynamic URLs.
+            // Switch to next/image if you configure remotePatterns in next.config.ts.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={vehicle.primary_image}
               alt={vehicle.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy" />
+              loading="lazy"
+            />
           ) : (
             <div className="flex items-center justify-center h-full">
               <Car className="w-12 h-12 text-slate-400" />
             </div>
           )}
-          
+
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {vehicle.featured && (
               <Badge className="bg-amber-500 hover:bg-amber-600 text-white">
@@ -85,11 +95,14 @@ export default function VehicleCard({ vehicle }) {
           </div>
 
           <div className="absolute top-3 right-3">
-            <Badge 
-              variant={vehicle.status === 'available' ? 'default' : 'secondary'} 
+            <Badge
+              variant={vehicle.status === "available" ? "default" : "secondary"}
               className={`capitalize ${
-                vehicle.status === 'unavailable' ? 'bg-amber-100 text-amber-800 border-amber-300' : 
-                vehicle.status === 'sold' ? 'bg-slate-500 text-white' : ''
+                vehicle.status === "unavailable"
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : vehicle.status === "sold"
+                  ? "bg-slate-500 text-white"
+                  : ""
               }`}
             >
               {vehicle.status}
@@ -138,7 +151,7 @@ export default function VehicleCard({ vehicle }) {
                 )}
               </div>
             </div>
-            
+
             <div className="flex items-center gap-1 text-xs text-slate-500 flex-shrink-0">
               <Eye className="w-3 h-3" />
               {vehicle.views || 0}

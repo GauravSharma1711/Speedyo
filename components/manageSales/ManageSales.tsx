@@ -1,9 +1,15 @@
+"use client"
+
+import { useRouter } from "next/navigation"; // App Router
+
+
+
 import React, { useState, useEffect, useCallback } from "react";
-import { User } from '@/entities/all';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Import Input
-import { Label } from "@/components/ui/label"; // Import Label
+import { User } from '@/api/entities';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input"; // Import Input
+import { Label } from "@/components/ui/Label"; // Import Label
 import {
   Handshake,
   CheckCircle,
@@ -18,16 +24,18 @@ import {
   ArrowLeft, // Add ArrowLeft import
   Info // Import Info icon
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+
+import Link from "next/link";
+
 import { AnimatePresence } from "framer-motion";
 
-import SimpleManagedSaleForm from "../components/managedsales/SimpleManagedSaleForm";
-import SuccessModal from "../components/managedsales/SuccessModal";
-import LocationVerification from "../components/managedsales/LocationVerification";
-import Footer from '../components/layout/Footer';
+import SimpleManagedSaleForm from "../../components/manageSales/SimpleManagedSaleForm";
+import SuccessModal from "../../components/manageSales/SuccessModal";
+import LocationVerification from "../../components/manageSales/LocationVerification";
+import Footer from '../../components/layout/Footer';
 
 export default function ManagedSalesPage() {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -164,8 +172,10 @@ export default function ManagedSalesPage() {
               <div className="max-w-6xl mx-auto">
                 {/* Back button - Better mobile positioning */}
                 <div className="mb-4 text-left md:absolute md:left-0">
-                  <Link to={createPageUrl("Dashboard")}>
-                    <Button variant="outline" size="sm" className="md:size-default">
+             <Link href="/Dashboard">
+                    <Button
+                    
+                    variant="outline" size="sm" className="md:size-default">
                       <ArrowLeft className="w-4 h-4 mr-2" />
                       <span className="hidden sm:inline">Back</span>
                     </Button>
@@ -195,7 +205,7 @@ export default function ManagedSalesPage() {
                       </Button>
                     ) : (
                       <Button
-                        onClick={() => {window.location.href = "https://speedyo.app/login"}}
+                      onClick={() => { window.location.href = "https://speedyo.app/login"; }}
                         size="lg"
                         className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 text-sm sm:text-base md:text-lg px-6 sm:px-8 py-5 md:py-6 shadow-xl hover:shadow-2xl transition-all duration-300"
                       >
@@ -514,7 +524,7 @@ export default function ManagedSalesPage() {
                   </Button>
                 ) : (
                   <Button
-                    onClick={() => {window.location.href = "https://speedyo.app/login"}}
+                 onClick={() => { window.location.href = "https://speedyo.app/login"; }}
                     size="lg"
                     className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4"
                   >

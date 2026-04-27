@@ -1,9 +1,11 @@
 
+"use client"
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { User, PublicUser, Message, Vehicle, ManagedSaleRequest, Notification } from "@/entities/all";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { User, PublicUser, Message, Vehicle, ManagedSaleRequest, Notification } from "@/api/entities";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { format } from "date-fns"; // Import format from date-fns
 import {
   MessageCircle,
@@ -13,12 +15,12 @@ import {
   ArrowLeft
 } from "lucide-react";
 
-import { createPageUrl } from "@/utils";
+// import { createPageUrl } from "@/utils";
 
-import ConversationList from "../components/messages/ConversationList";
-import ChatInterface from "../components/messages/ChatInterface";
-import TestDriveModal from "../components/messages/TestDriveModal";
-import { useToast } from "@/components/ui/use-toast";
+import ConversationList from "../messages/ConversationList";
+import ChatInterface from "../messages/ChatInterface";
+import TestDriveModal from "../messages/TestDriveModal";
+import { useToast } from "@/components/ui/UseToast";
 
 export default function Messages() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -679,7 +681,7 @@ export default function Messages() {
           content: `${currentUser.full_name} requested a test drive for ${testDriveData.vehicleTitle}.`,
           related_entity_type: "Message",
           related_entity_id: messageToRecipient.id,
-          url: createPageUrl("Messages"),
+          url: "/Messages",
           icon: "CalendarCheck"
         });
       }
@@ -715,7 +717,7 @@ export default function Messages() {
           content: `Your test drive request for "${testDriveData.vehicleTitle}" was successfully submitted.`,
           related_entity_type: "Message",
           related_entity_id: confirmationMessage.id,
-          url: createPageUrl("Messages"),
+          url: "/Messages",
           icon: "CalendarCheck"
         });
       }
@@ -777,7 +779,7 @@ Please confirm your attendance. Contact us if you have any questions.`,
           content: `Your test drive request for "${message.test_drive_details.vehicleTitle}" was approved.`,
           related_entity_type: "Message",
           related_entity_id: message.id,
-          url: createPageUrl("Messages"),
+          url: "/Messages",
           icon: "CalendarCheck"
         });
 
@@ -833,7 +835,7 @@ We're unable to accommodate this test drive request at this time. Please feel fr
           content: `Your test drive request for "${message.test_drive_details.vehicleTitle}" was declined.`,
           related_entity_type: "Message",
           related_entity_id: message.id,
-          url: createPageUrl("Messages"),
+          url: "/Messages",
           icon: "CalendarX"
         });
 

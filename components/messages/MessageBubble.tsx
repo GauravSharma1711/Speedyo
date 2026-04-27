@@ -1,8 +1,8 @@
-
+'use client'
 import React, { useState } from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { format, formatDistanceToNow } from "date-fns";
 import TestDriveStatusBadge from "./TestDriveStatusBadge";
 import { Info, Languages } from "lucide-react";

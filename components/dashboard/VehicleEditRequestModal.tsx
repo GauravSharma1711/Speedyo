@@ -1,12 +1,14 @@
 
+"use client"
+
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { VehicleEditRequest, Notification, User } from "@/entities/all"; // Added User
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/TextArea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Label } from "@/components/ui/Label";
+import { VehicleEditRequest, Notification, User } from "@/api/entities"; // Added User
 import { createPageUrl } from "@/utils";
 import { 
   Edit, 
@@ -77,7 +79,7 @@ export default function VehicleEditRequestModal({
           type: "vehicle_edit_request",
           content: `${currentUser.full_name} requested edits for "${vehicle.title}". Changes: ${Object.keys(changes).join(', ')}.`,
           related_entity_id: vehicle.id,
-          url: createPageUrl(`AdminPanel?tab=edit_requests`),
+          url: "/Admin-Panel?tab=edit_requests",
           icon: "Edit"
         })
       );

@@ -1,14 +1,15 @@
-
+"use client"
+import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { X, ShoppingCart, Plus, Minus, ArrowRight, AlertTriangle } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+
 
 export default function BuyMoreSlotsModal({ isOpen, onClose, currentSlots }) {
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   
   const pricePerSlot = 50;
@@ -24,7 +25,7 @@ export default function BuyMoreSlotsModal({ isOpen, onClose, currentSlots }) {
       price: '$50',
       quantity: quantity.toString()
     });
-    return createPageUrl(`Checkout?${params.toString()}`);
+  return `/checkout?${params.toString()}`;
   };
 
   if (!isOpen) return null;
@@ -162,12 +163,13 @@ export default function BuyMoreSlotsModal({ isOpen, onClose, currentSlots }) {
                   Close
                 </Button>
               ) : (
-                <Link to={createCheckoutUrl()} className="w-full">
-                  <Button className="w-full text-lg py-6 bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
-                    Proceed to Payment
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
+             <Button 
+  onClick={() => router.push(createCheckoutUrl())}
+  className="w-full text-lg py-6 bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
+>
+  Proceed to Payment
+  <ArrowRight className="ml-2 h-5 w-5" />
+</Button>
               )}
             </CardFooter>
           </Card>

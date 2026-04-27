@@ -1,12 +1,14 @@
+"use client"
+
 import React, { useState, useEffect } from "react";
-import { User } from "@/entities/all";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { User } from "@/api/entities";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Switch } from "@/components/ui/Switch";
+import { Label } from "@/components/ui/Label";
+import { Separator } from "@/components/ui/Separator";
 import { Bell, Mail, Users, Car, MessageSquare, Save, Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/UseToast";
 
 export default function NotificationSettings({ user, onUpdate }) {
   const [emailSettings, setEmailSettings] = useState({

@@ -1,4 +1,6 @@
-// lib/entities/index.ts  (or lib/api/entities.ts)
+// lib/entities/index.ts
+// Drop-in entity layer — swap each TODO block with your real backend/DB calls.
+// base44 has been fully removed.
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +34,8 @@ export interface PublicUserData {
 export interface NotificationData {
   id: string;
   recipient_id: string;
+  sender_id?: string;
+  type?: string;
   content: string;
   icon?: string;
   url?: string;
@@ -39,56 +43,86 @@ export interface NotificationData {
   created_date: string;
 }
 
+// ─── File Upload ──────────────────────────────────────────────────────────────
+// Replaces base44.integrations.Core.UploadFile
+// TODO: swap the body with your real storage provider (S3, Supabase, Cloudinary…)
+
+export async function UploadFile({ file }: { file: File }): Promise<{ file_url: string }> {
+  console.log("[UploadFile] uploading:", file.name);
+
+  // --- Real implementation example (uncomment & adapt) ---
+  // const formData = new FormData();
+  // formData.append("file", file);
+  // const res = await fetch("/api/upload", { method: "POST", body: formData });
+  // const json = await res.json();
+  // return { file_url: json.url };
+
+  // Temporary: local object URL so the UI shows a preview immediately
+  const objectUrl = URL.createObjectURL(file);
+  return { file_url: objectUrl };
+}
+
 // ─── UserEntity ──────────────────────────────────────────────────────────────
+// Replaces base44.auth.me() / base44.auth.updateMe()
 
 export const UserEntity = {
   async me(): Promise<UserData> {
-    // TODO: Replace with real session fetch e.g. getServerSession() or your auth API
-    // For now returns a hardcoded mock so UI renders without crashing
+    // TODO: replace with your session provider, e.g.:
+    // const session = await getServerSession(authOptions);
+    // return session.user as UserData;
     return {
       id: "mock-user-1",
-      email: "dev@speedyo.app",
+      email: "dev@speedio.app",
       full_name: "Dev User",
       profile_image: "",
       user_type: "guest",
       verified: false,
       role: "user",
-      setup_completed: true,   // set false to test SetupAccountDialog
+      setup_completed: true,
       welcome_email_sent: true,
       created_date: new Date().toISOString(),
     };
   },
 
-  async updateMyUserData(data: Partial<UserData>): Promise<void> {
-    // TODO: PATCH /api/user or call your DB here
-    console.log("[UserEntity.updateMyUserData] called with:", data);
+  async updateMe(data: Partial<UserData>): Promise<void> {
+    // TODO: PATCH /api/user  or your DB update
+    console.log("[UserEntity.updateMe]", data);
   },
 
   async logout(): Promise<void> {
-    // TODO: call your auth signOut e.g. signOut() from next-auth
-    console.log("[UserEntity.logout] called");
-    // window.location.href = "/login";
+    // TODO: e.g. signOut() from next-auth
+    console.log("[UserEntity.logout]");
   },
 };
 
-// ─── PublicUser ──────────────────────────────────────────────────────────────
+// Keep a named export alias that matches the original base44 import shape
+// so callers can do: import { User } from "@/lib/entities"  →  User.me()
+export const User = UserEntity;
+
+// ─── PublicUser ───────────────────────────────────────────────────────────────
 
 export const PublicUser = {
-  async filter(query: Partial<PublicUserData>): Promise<PublicUserData[]> {
-    // TODO: GET /api/public-users?user_id=xxx
-    console.log("[PublicUser.filter] called with:", query);
-    return [];   // return [] so layout falls back gracefully, no crash
+  async list(): Promise<PublicUserData[]> {
+    // TODO: GET /api/public-users
+    console.log("[PublicUser.list]");
+    return [];
   },
 
-  async create(data: Omit<PublicUserData, "id">): Promise<PublicUserData> {
+  async filter(query: Record<string, any>): Promise<PublicUserData[]> {
+    // TODO: GET /api/public-users?user_id=xxx  (or DB query)
+    console.log("[PublicUser.filter]", query);
+    return [];
+  },
+
+  async create(data: Partial<PublicUserData>): Promise<PublicUserData> {
     // TODO: POST /api/public-users
-    console.log("[PublicUser.create] called with:", data);
-    return { id: "mock-pub-1", ...data };
+    console.log("[PublicUser.create]", data);
+    return { id: "mock-public-user-1", user_id: data.user_id ?? "", ...data };
   },
 
   async update(id: string, data: Partial<PublicUserData>): Promise<PublicUserData> {
     // TODO: PATCH /api/public-users/:id
-    console.log("[PublicUser.update] called with:", id, data);
+    console.log("[PublicUser.update]", id, data);
     return { id, user_id: "mock-user-1", ...data };
   },
 };
@@ -96,179 +130,214 @@ export const PublicUser = {
 // ─── Notification ─────────────────────────────────────────────────────────────
 
 export const Notification = {
-  async filter(query: Record<string, any>): Promise<any[]> {
+  async filter(query: Record<string, any>): Promise<NotificationData[]> {
+    // TODO: GET /api/notifications?recipient_id=xxx
     console.log("[Notification.filter]", query);
     return [];
   },
 
-  async create(data: Record<string, any>): Promise<any> {
+  async create(data: Partial<NotificationData>): Promise<NotificationData> {
+    // TODO: POST /api/notifications
     console.log("[Notification.create]", data);
-    return { id: "mock-notification-1", created_date: new Date().toISOString(), ...data };
-  }
-};
-
-// ─── UploadFile ───────────────────────────────────────────────────────────────
-
-export async function UploadFile({ file }: { file: File }): Promise<{ file_url: string }> {
-  // TODO: Replace with your real upload — S3, Supabase Storage, Cloudinary, etc.
-  // Quick local preview using object URL so the UI shows the image immediately
-  console.log("[UploadFile] called with:", file.name);
-  const objectUrl = URL.createObjectURL(file);
-  return { file_url: objectUrl };
-}
-
-// add to lib/entities/index.ts
-
-export const Comment = {
-  async filter(query: Record<string, any>, _orderBy?: string): Promise<any[]> {
-    console.log("[Comment.filter]", query);
-    return [];
+    return {
+      id: "mock-notification-1",
+      read: false,
+      content: "",
+      recipient_id: "",
+      created_date: new Date().toISOString(),
+      ...data,
+    };
   },
-  async create(data: Record<string, any>): Promise<any> {
-    console.log("[Comment.create]", data);
-    return { id: "mock-comment-1", created_date: new Date().toISOString(), ...data };
-  },
-  async update(id: string, data: Record<string, any>): Promise<any> {
-    console.log("[Comment.update]", id, data);
-    return { id, ...data };
+
+  async markRead(id: string): Promise<void> {
+    // TODO: PATCH /api/notifications/:id  { read: true }
+    console.log("[Notification.markRead]", id);
   },
 };
 
-// ─── Post ─────────────────────────────────────────────────────────────
+// ─── Post ─────────────────────────────────────────────────────────────────────
 
 export const Post = {
   async list(_order?: string, _limit?: number, _offset?: number): Promise<any[]> {
+    // TODO: GET /api/posts
     console.log("[Post.list]");
     return [];
   },
 
+  async filter(query: Record<string, any>, _order?: string): Promise<any[]> {
+    // TODO: GET /api/posts?author_id=xxx
+    console.log("[Post.filter]", query);
+    return [];
+  },
+
   async create(data: Record<string, any>): Promise<any> {
+    // TODO: POST /api/posts
     console.log("[Post.create]", data);
-    return { id: "mock-post-1", ...data };
+    return { id: "mock-post-1", created_date: new Date().toISOString(), ...data };
   },
 
   async update(id: string, data: Record<string, any>): Promise<any> {
+    // TODO: PATCH /api/posts/:id
     console.log("[Post.update]", id, data);
     return { id, ...data };
   },
 
   async delete(id: string): Promise<void> {
+    // TODO: DELETE /api/posts/:id
     console.log("[Post.delete]", id);
   },
 };
 
-// ─── Vehicle ───────────────────────────────────────────────────────────
+// ─── Comment ──────────────────────────────────────────────────────────────────
+
+export const Comment = {
+  async filter(query: Record<string, any>, _order?: string): Promise<any[]> {
+    // TODO: GET /api/comments?post_id=xxx
+    console.log("[Comment.filter]", query);
+    return [];
+  },
+
+  async create(data: Record<string, any>): Promise<any> {
+    // TODO: POST /api/comments
+    console.log("[Comment.create]", data);
+    return { id: "mock-comment-1", created_date: new Date().toISOString(), ...data };
+  },
+
+  async update(id: string, data: Record<string, any>): Promise<any> {
+    // TODO: PATCH /api/comments/:id
+    console.log("[Comment.update]", id, data);
+    return { id, ...data };
+  },
+};
+
+// ─── Vehicle ──────────────────────────────────────────────────────────────────
 
 export const Vehicle = {
   async list(_order?: string, _limit?: number): Promise<any[]> {
+    // TODO: GET /api/vehicles
     console.log("[Vehicle.list]");
     return [];
   },
 
+  async filter(query: Record<string, any>, _order?: string): Promise<any[]> {
+    // TODO: GET /api/vehicles?original_owner_id=xxx
+    console.log("[Vehicle.filter]", query);
+    return [];
+  },
+
   async get(id: string): Promise<any> {
+    // TODO: GET /api/vehicles/:id
     console.log("[Vehicle.get]", id);
     return null;
   },
 
   async update(id: string, data: Record<string, any>): Promise<any> {
+    // TODO: PATCH /api/vehicles/:id
     console.log("[Vehicle.update]", id, data);
     return { id, ...data };
-  }
+  },
 };
 
-// ─── Follow ───────────────────────────────────────────────────────────
+// ─── Follow ───────────────────────────────────────────────────────────────────
 
 export const Follow = {
   async filter(query: Record<string, any>): Promise<any[]> {
+    // TODO: GET /api/follows?followed_id=xxx  or  ?follower_id=xxx
     console.log("[Follow.filter]", query);
-
-    // mock data for testing
-    return [
-      {
-        id: "follow-1",
-        follower_id: "mock-user-1",
-        followed_id: "user-2",
-      },
-      {
-        id: "follow-2",
-        follower_id: "mock-user-1",
-        followed_id: "user-3",
-      },
-    ];
+    return [];
   },
 
   async create(data: Record<string, any>): Promise<any> {
+    // TODO: POST /api/follows
     console.log("[Follow.create]", data);
     return { id: "mock-follow-1", ...data };
   },
 
   async delete(id: string): Promise<void> {
+    // TODO: DELETE /api/follows/:id
     console.log("[Follow.delete]", id);
   },
 };
 
+// ─── Message ──────────────────────────────────────────────────────────────────
 
 export const Message = {
   async filter(query: Record<string, any>, _order?: string, _limit?: number): Promise<any[]> {
+    // TODO: GET /api/messages?...
     console.log("[Message.filter]", query);
     return [];
   },
 
   async create(data: Record<string, any>): Promise<any> {
+    // TODO: POST /api/messages
     console.log("[Message.create]", data);
     return { id: "mock-message-1", created_date: new Date().toISOString(), ...data };
   },
 
   async update(id: string, data: Record<string, any>): Promise<any> {
+    // TODO: PATCH /api/messages/:id
     console.log("[Message.update]", id, data);
     return { id, ...data };
-  }
+  },
 };
 
-
+// ─── ManagedSaleRequest ───────────────────────────────────────────────────────
 
 export const ManagedSaleRequest = {
   async filter(query: Record<string, any>, _order?: string): Promise<any[]> {
+    // TODO: GET /api/managed-sale-requests?...
     console.log("[ManagedSaleRequest.filter]", query);
     return [];
   },
 
   async create(data: Record<string, any>): Promise<any> {
+    // TODO: POST /api/managed-sale-requests
     console.log("[ManagedSaleRequest.create]", data);
     return { id: "mock-request-1", created_date: new Date().toISOString(), ...data };
   },
 
   async update(id: string, data: Record<string, any>): Promise<any> {
+    // TODO: PATCH /api/managed-sale-requests/:id
     console.log("[ManagedSaleRequest.update]", id, data);
     return { id, ...data };
-  }
+  },
 };
 
-
+// ─── VehicleTransfer ──────────────────────────────────────────────────────────
 
 export const VehicleTransfer = {
   async filter(query: Record<string, any>, _order?: string): Promise<any[]> {
+    // TODO: GET /api/vehicle-transfers?...
     console.log("[VehicleTransfer.filter]", query);
     return [];
-  }
+  },
 };
 
 
-export const PublicUser = {
-  async list(): Promise<any[]> {
-    console.log("[PublicUser.list]");
-    return [];
-  },
 
-  async filter(query: Record<string, any>): Promise<any[]> {
-    console.log("[PublicUser.filter]", query);
+// ─── VehicleEditRequest ───────────────────────────────────────────────────────
+
+export const VehicleEditRequest = {
+  async filter(query: Record<string, any>, _order?: string): Promise<any[]> {
+    // TODO: GET /api/vehicle-edit-requests?...
+    console.log("[VehicleEditRequest.filter]", query);
     return [];
   },
 
   async create(data: Record<string, any>): Promise<any> {
-    console.log("[PublicUser.create]", data);
-    return { id: "mock-public-user", ...data };
-  }
+    // TODO: POST /api/vehicle-edit-requests
+    console.log("[VehicleEditRequest.create]", data);
+    return { id: "mock-edit-request-1", created_date: new Date().toISOString(), status: "pending", ...data };
+  },
+
+  async update(id: string, data: Record<string, any>): Promise<any> {
+    // TODO: PATCH /api/vehicle-edit-requests/:id
+    console.log("[VehicleEditRequest.update]", id, data);
+    return { id, ...data };
+  },
+
+  async delete(id: string): Promise<void> {
+    // TODO: DELETE /api/vehicle-edit-requests/:id
+    console.log("[VehicleEditRequest.delete]", id);
+  },
 };
-
-

@@ -1,5 +1,7 @@
+'use client'
+
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Calendar, Phone, Video } from "lucide-react";
 
 export default function QuickActions({ onRequestTestDrive }) {

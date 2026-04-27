@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/TextArea';
+import { Label } from '@/components/ui/Label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Separator } from '@/components/ui/Separator';
 import {
   X,
   Loader2,
@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import SuccessModal from './SuccessModal';
 import LocationVerification from './LocationVerification';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/UseToast";
 
 // Helper function to construct absolute URLs, primarily for client-side navigation
 // This function is still useful for general client-side routing logic if needed,
@@ -307,80 +307,80 @@ export default function ManagedSalesRequestForm({
     return parseFloat(askingPrice); // Ensure it's treated as a float
   }, []);
 
-  const uploadFiles = useCallback(async (files) => {
-    if (isUploading) return;
+  // const uploadFiles = useCallback(async (files) => {
+  //   if (isUploading) return;
 
-    const filesToProcess = Array.from(files);
-    if (filesToProcess.length === 0) return;
+  //   const filesToProcess = Array.from(files);
+  //   if (filesToProcess.length === 0) return;
 
-    setIsUploading(true);
-    setUploadCount(filesToProcess.length);
+  //   setIsUploading(true);
+  //   setUploadCount(filesToProcess.length);
 
-    try {
-      for (const file of filesToProcess) {
-        try {
-          console.log(`\n🔄 Processing: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+  //   try {
+  //     for (const file of filesToProcess) {
+  //       try {
+  //         console.log(`\n🔄 Processing: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
 
-          // Process image to multiple sizes on client-side
-          const { files: processedFiles, stats } = await processImageToMultipleSizes(file);
+  //         // Process image to multiple sizes on client-side
+  //         const { files: processedFiles, stats } = await processImageToMultipleSizes(file);
 
-          console.log('📊 Processing complete:', stats);
+  //         console.log('📊 Processing complete:', stats);
 
-          // Upload each size individually using base44.integrations.Core.UploadFile
-          console.log('📤 Uploading to storage...');
+  //         // Upload each size individually using base44.integrations.Core.UploadFile
+  //         console.log('📤 Uploading to storage...');
 
-          const [thumbnailResult, smallResult, mediumResult, largeResult] = await Promise.all([
-          base44.integrations.Core.UploadFile({ file: processedFiles.thumbnail }),
-          base44.integrations.Core.UploadFile({ file: processedFiles.small }),
-          base44.integrations.Core.UploadFile({ file: processedFiles.medium }),
-          base44.integrations.Core.UploadFile({ file: processedFiles.large })]
-          );
+  //         const [thumbnailResult, smallResult, mediumResult, largeResult] = await Promise.all([
+  //         base44.integrations.Core.UploadFile({ file: processedFiles.thumbnail }),
+  //         base44.integrations.Core.UploadFile({ file: processedFiles.small }),
+  //         base44.integrations.Core.UploadFile({ file: processedFiles.medium }),
+  //         base44.integrations.Core.UploadFile({ file: processedFiles.large })]
+  //         );
 
-          // Extract URLs from responses, handling variations in how base44 returns the URL
-          const thumbnailUrl = thumbnailResult.data?.file_url || thumbnailResult.file_url;
-          const smallUrl = smallResult.data?.file_url || smallResult.file_url;
-          const mediumUrl = mediumResult.data?.file_url || mediumResult.file_url;
-          const largeUrl = largeResult.data?.file_url || largeResult.file_url;
+  //         // Extract URLs from responses, handling variations in how base44 returns the URL
+  //         const thumbnailUrl = thumbnailResult.data?.file_url || thumbnailResult.file_url;
+  //         const smallUrl = smallResult.data?.file_url || smallResult.file_url;
+  //         const mediumUrl = mediumResult.data?.file_url || mediumResult.file_url;
+  //         const largeUrl = largeResult.data?.file_url || largeResult.file_url;
 
-          // Verify all uploads succeeded
-          if (!thumbnailUrl || !smallUrl || !mediumUrl || !largeUrl) {
-            throw new Error('Failed to upload one or more image sizes');
-          }
+  //         // Verify all uploads succeeded
+  //         if (!thumbnailUrl || !smallUrl || !mediumUrl || !largeUrl) {
+  //           throw new Error('Failed to upload one or more image sizes');
+  //         }
 
-          console.log('✅ Upload successful!');
-          console.log('📊 Final URLs:', { thumbnailUrl, smallUrl, mediumUrl, largeUrl });
+  //         console.log('✅ Upload successful!');
+  //         console.log('📊 Final URLs:', { thumbnailUrl, smallUrl, mediumUrl, largeUrl });
 
-          // Add the structured image object to form data (now separate arrays)
-          setFormData((prev) => ({
-            ...prev,
-            vehicle_details: {
-              ...prev.vehicle_details,
-              images: [...prev.vehicle_details.images, largeUrl], // large URL
-              images_thumbnails: [...prev.vehicle_details.images_thumbnails, thumbnailUrl],
-              images_small: [...prev.vehicle_details.images_small, smallUrl],
-              images_medium: [...prev.vehicle_details.images_medium, mediumUrl]
-            }
-          }));
+  //         // Add the structured image object to form data (now separate arrays)
+  //         setFormData((prev) => ({
+  //           ...prev,
+  //           vehicle_details: {
+  //             ...prev.vehicle_details,
+  //             images: [...prev.vehicle_details.images, largeUrl], // large URL
+  //             images_thumbnails: [...prev.vehicle_details.images_thumbnails, thumbnailUrl],
+  //             images_small: [...prev.vehicle_details.images_small, smallUrl],
+  //             images_medium: [...prev.vehicle_details.images_medium, mediumUrl]
+  //           }
+  //         }));
 
-          toast({
-            title: "Image Uploaded",
-            description: `${file.name} processed and uploaded successfully`
-          });
+  //         toast({
+  //           title: "Image Uploaded",
+  //           description: `${file.name} processed and uploaded successfully`
+  //         });
 
-        } catch (error) {
-          console.error(`Failed to process ${file.name}:`, error);
-          toast({
-            title: "Upload Failed",
-            description: `Could not process "${file.name}": ${error.message}`,
-            variant: "destructive"
-          });
-        }
-      }
-    } finally {
-      setIsUploading(false);
-      setUploadCount(0);
-    }
-  }, [isUploading, toast]);
+  //       } catch (error) {
+  //         console.error(`Failed to process ${file.name}:`, error);
+  //         toast({
+  //           title: "Upload Failed",
+  //           description: `Could not process "${file.name}": ${error.message}`,
+  //           variant: "destructive"
+  //         });
+  //       }
+  //     }
+  //   } finally {
+  //     setIsUploading(false);
+  //     setUploadCount(0);
+  //   }
+  // }, [isUploading, toast]);
 
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
@@ -421,132 +421,132 @@ export default function ManagedSalesRequestForm({
     }));
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      let user = null;
-      let publicUser = null;
-      try {
-        user = await base44.auth.me(); // Always try to get the logged-in user
-        if (user) {
-          setCurrentUserState(user);
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     let user = null;
+  //     let publicUser = null;
+  //     try {
+  //       user = await base44.auth.me(); // Always try to get the logged-in user
+  //       if (user) {
+  //         setCurrentUserState(user);
           
-          // Fetch PublicUser for display name
-          try {
-            const publicProfiles = await base44.entities.PublicUser.filter({ user_id: user.id });
-            if (publicProfiles.length > 0) {
-              publicUser = publicProfiles[0];
-            }
-          } catch (e) {
-            console.warn("Failed to fetch PublicUser data for ManagedSalesRequestForm.", e);
-          }
-        }
-      } catch (e) {
-        console.warn("User not logged in or failed to fetch user data for ManagedSalesRequestForm.", e);
-        // This is expected if the user is not logged in.
-      }
+  //         // Fetch PublicUser for display name
+  //         try {
+  //           const publicProfiles = await base44.entities.PublicUser.filter({ user_id: user.id });
+  //           if (publicProfiles.length > 0) {
+  //             publicUser = publicProfiles[0];
+  //           }
+  //         } catch (e) {
+  //           console.warn("Failed to fetch PublicUser data for ManagedSalesRequestForm.", e);
+  //         }
+  //       }
+  //     } catch (e) {
+  //       console.warn("User not logged in or failed to fetch user data for ManagedSalesRequestForm.", e);
+  //       // This is expected if the user is not logged in.
+  //     }
 
-      if (requestToEdit) {// If editing an existing request
-        // Transform incoming requestToEdit.vehicle_details.images
-        const existingImages = requestToEdit.vehicle_details.images || [];
-        let images = [];
-        let images_thumbnails = [];
-        let images_small = [];
-        let images_medium = [];
+  //     if (requestToEdit) {// If editing an existing request
+  //       // Transform incoming requestToEdit.vehicle_details.images
+  //       const existingImages = requestToEdit.vehicle_details.images || [];
+  //       let images = [];
+  //       let images_thumbnails = [];
+  //       let images_small = [];
+  //       let images_medium = [];
 
-        if (existingImages.length > 0 && typeof existingImages[0] === 'object' && existingImages[0] !== null) {
-          // If it's an array of objects like { thumbnail: 'url', large: 'url', ... }
-          images = existingImages.map((img) => img.large || img.original || '');
-          images_thumbnails = existingImages.map((img) => img.thumbnail || img.original || img.large || '');
-          images_small = existingImages.map((img) => img.small || img.original || img.large || '');
-          images_medium = existingImages.map((img) => img.medium || img.original || img.large || '');
-        } else if (existingImages.length > 0 && typeof existingImages[0] === 'string') {
-          // If it's an array of strings (legacy, assume these are large/original URLs)
-          images = existingImages;
-          images_thumbnails = existingImages; // Fallback to large for other sizes
-          images_small = existingImages; // Fallback
-          images_medium = existingImages; // Fallback
-        }
+  //       if (existingImages.length > 0 && typeof existingImages[0] === 'object' && existingImages[0] !== null) {
+  //         // If it's an array of objects like { thumbnail: 'url', large: 'url', ... }
+  //         images = existingImages.map((img) => img.large || img.original || '');
+  //         images_thumbnails = existingImages.map((img) => img.thumbnail || img.original || img.large || '');
+  //         images_small = existingImages.map((img) => img.small || img.original || img.large || '');
+  //         images_medium = existingImages.map((img) => img.medium || img.original || img.large || '');
+  //       } else if (existingImages.length > 0 && typeof existingImages[0] === 'string') {
+  //         // If it's an array of strings (legacy, assume these are large/original URLs)
+  //         images = existingImages;
+  //         images_thumbnails = existingImages; // Fallback to large for other sizes
+  //         images_small = existingImages; // Fallback
+  //         images_medium = existingImages; // Fallback
+  //       }
 
-        setFormData((prev) => ({
-          requester_contact_info: { ...prev.requester_contact_info, ...(requestToEdit.requester_contact_info || {}) },
-          vehicle_details: {
-            ...prev.vehicle_details,
-            ...(requestToEdit.vehicle_details || {}),
-            // Ensure numbers are parsed for year, mileage, doors, seating_capacity, seller_asking_price
-            year: requestToEdit.vehicle_details?.year ? parseInt(requestToEdit.vehicle_details.year) : prev.vehicle_details.year,
-            mileage: requestToEdit.vehicle_details?.mileage ? parseInt(requestToEdit.vehicle_details.mileage) : prev.vehicle_details.mileage,
-            doors: requestToEdit.vehicle_details?.doors ? parseInt(requestToEdit.vehicle_details.doors) : prev.vehicle_details.doors,
-            seating_capacity: requestToEdit.vehicle_details?.seating_capacity ? parseInt(requestToEdit.vehicle_details.seating_capacity) : prev.vehicle_details.seating_capacity,
-            seller_asking_price: requestToEdit.vehicle_details?.seller_asking_price ? parseFloat(requestToEdit.vehicle_details.seller_asking_price) : prev.vehicle_details.seller_asking_price,
-            images,
-            images_thumbnails,
-            images_small,
-            images_medium,
-            // Ensure boolean fields are handled
-            alloy_wheels: requestToEdit.vehicle_details?.alloy_wheels ?? false,
-            spoiler: requestToEdit.vehicle_details?.spoiler ?? false,
-            tinted_windows: requestToEdit.vehicle_details?.tinted_windows ?? false,
-            keyless_entry: requestToEdit.vehicle_details?.keyless_entry ?? false,
-            remote_door_locking: requestToEdit.vehicle_details?.remote_door_locking ?? false,
-            rear_camera: requestToEdit.vehicle_details?.rear_camera ?? false,
-            cup_holders_storage: requestToEdit.vehicle_details?.cup_holders_storage ?? false,
-            child_lock_isofix: requestToEdit.vehicle_details?.child_lock_isofix ?? false,
-            // NEW SAFETY & SECURITY BOOLS
-            abs: requestToEdit.vehicle_details?.abs ?? false,
-            esc_stability_control: requestToEdit.vehicle_details?.esc_stability_control ?? false,
-            lane_departure_warning: requestToEdit.vehicle_details?.lane_departure_warning ?? false,
-            collision_mitigation: requestToEdit.vehicle_details?.collision_mitigation ?? false,
-            traction_control: requestToEdit.vehicle_details?.traction_control ?? false,
-            hill_start_assist: requestToEdit.vehicle_details?.hill_start_assist ?? false,
-            immobilizer_alarm: requestToEdit.vehicle_details?.immobilizer_alarm ?? false,
-            seat_belt_sensors: requestToEdit.vehicle_details?.seat_belt_sensors ?? false,
-            // Ensure array fields are handled
-            infotainment_system: requestToEdit.vehicle_details?.infotainment_system ?? [],
-            steering_wheel_controls: requestToEdit.vehicle_details?.steering_wheel_controls ?? [],
-            // NEW AIRBAGS ARRAY
-            airbags: requestToEdit.vehicle_details?.airbags ?? [],
-            cruise_control: requestToEdit.vehicle_details?.cruise_control || 'none',
-            // NEW TECHNOLOGY FIELDS
-            bluetooth: requestToEdit.vehicle_details?.bluetooth ?? false,
-            usb_ports: requestToEdit.vehicle_details?.usb_ports ?? false,
-            twelve_v_outlet: requestToEdit.vehicle_details?.twelve_v_outlet ?? false,
-            smart_key_push_start: requestToEdit.vehicle_details?.smart_key_push_start ?? false,
-            display_screen_size: requestToEdit.vehicle_details?.display_screen_size ?? '',
-            rear_entertainment_system: requestToEdit.vehicle_details?.rear_entertainment_system ?? false,
-            voice_command_hands_free: requestToEdit.vehicle_details?.voice_command_hands_free ?? false,
-            digital_dashboard_display: requestToEdit.vehicle_details?.digital_dashboard_display ?? false,
-            // NEW FINANCE FIELDS
-            financing_available: requestToEdit.vehicle_details?.financing_available ?? '',
-            warranty_available: requestToEdit.vehicle_details?.warranty_available ?? '',
-            warranty_link: requestToEdit.vehicle_details?.warranty_link ?? ''
-          },
-          access_arrangements: { ...prev.access_arrangements, ...(requestToEdit.access_arrangements || {}) },
-          terms_agreed: requestToEdit.terms_agreed ?? false
-        }));
-      } else {// If it's a new request
-        setFormData((prev) => {// Use functional update to ensure latest default is used
-          const newFormData = { ...prev };
-          if (user) {// If a user is logged in, pre-fill contact info
-            // Use PublicUser full_name if available, otherwise fall back to User entity
-            let full_name = publicUser?.full_name || user.full_name || "";
-            let email = user.email || "";
-            let phone = user.phone || "";
+  //       setFormData((prev) => ({
+  //         requester_contact_info: { ...prev.requester_contact_info, ...(requestToEdit.requester_contact_info || {}) },
+  //         vehicle_details: {
+  //           ...prev.vehicle_details,
+  //           ...(requestToEdit.vehicle_details || {}),
+  //           // Ensure numbers are parsed for year, mileage, doors, seating_capacity, seller_asking_price
+  //           year: requestToEdit.vehicle_details?.year ? parseInt(requestToEdit.vehicle_details.year) : prev.vehicle_details.year,
+  //           mileage: requestToEdit.vehicle_details?.mileage ? parseInt(requestToEdit.vehicle_details.mileage) : prev.vehicle_details.mileage,
+  //           doors: requestToEdit.vehicle_details?.doors ? parseInt(requestToEdit.vehicle_details.doors) : prev.vehicle_details.doors,
+  //           seating_capacity: requestToEdit.vehicle_details?.seating_capacity ? parseInt(requestToEdit.vehicle_details.seating_capacity) : prev.vehicle_details.seating_capacity,
+  //           seller_asking_price: requestToEdit.vehicle_details?.seller_asking_price ? parseFloat(requestToEdit.vehicle_details.seller_asking_price) : prev.vehicle_details.seller_asking_price,
+  //           images,
+  //           images_thumbnails,
+  //           images_small,
+  //           images_medium,
+  //           // Ensure boolean fields are handled
+  //           alloy_wheels: requestToEdit.vehicle_details?.alloy_wheels ?? false,
+  //           spoiler: requestToEdit.vehicle_details?.spoiler ?? false,
+  //           tinted_windows: requestToEdit.vehicle_details?.tinted_windows ?? false,
+  //           keyless_entry: requestToEdit.vehicle_details?.keyless_entry ?? false,
+  //           remote_door_locking: requestToEdit.vehicle_details?.remote_door_locking ?? false,
+  //           rear_camera: requestToEdit.vehicle_details?.rear_camera ?? false,
+  //           cup_holders_storage: requestToEdit.vehicle_details?.cup_holders_storage ?? false,
+  //           child_lock_isofix: requestToEdit.vehicle_details?.child_lock_isofix ?? false,
+  //           // NEW SAFETY & SECURITY BOOLS
+  //           abs: requestToEdit.vehicle_details?.abs ?? false,
+  //           esc_stability_control: requestToEdit.vehicle_details?.esc_stability_control ?? false,
+  //           lane_departure_warning: requestToEdit.vehicle_details?.lane_departure_warning ?? false,
+  //           collision_mitigation: requestToEdit.vehicle_details?.collision_mitigation ?? false,
+  //           traction_control: requestToEdit.vehicle_details?.traction_control ?? false,
+  //           hill_start_assist: requestToEdit.vehicle_details?.hill_start_assist ?? false,
+  //           immobilizer_alarm: requestToEdit.vehicle_details?.immobilizer_alarm ?? false,
+  //           seat_belt_sensors: requestToEdit.vehicle_details?.seat_belt_sensors ?? false,
+  //           // Ensure array fields are handled
+  //           infotainment_system: requestToEdit.vehicle_details?.infotainment_system ?? [],
+  //           steering_wheel_controls: requestToEdit.vehicle_details?.steering_wheel_controls ?? [],
+  //           // NEW AIRBAGS ARRAY
+  //           airbags: requestToEdit.vehicle_details?.airbags ?? [],
+  //           cruise_control: requestToEdit.vehicle_details?.cruise_control || 'none',
+  //           // NEW TECHNOLOGY FIELDS
+  //           bluetooth: requestToEdit.vehicle_details?.bluetooth ?? false,
+  //           usb_ports: requestToEdit.vehicle_details?.usb_ports ?? false,
+  //           twelve_v_outlet: requestToEdit.vehicle_details?.twelve_v_outlet ?? false,
+  //           smart_key_push_start: requestToEdit.vehicle_details?.smart_key_push_start ?? false,
+  //           display_screen_size: requestToEdit.vehicle_details?.display_screen_size ?? '',
+  //           rear_entertainment_system: requestToEdit.vehicle_details?.rear_entertainment_system ?? false,
+  //           voice_command_hands_free: requestToEdit.vehicle_details?.voice_command_hands_free ?? false,
+  //           digital_dashboard_display: requestToEdit.vehicle_details?.digital_dashboard_display ?? false,
+  //           // NEW FINANCE FIELDS
+  //           financing_available: requestToEdit.vehicle_details?.financing_available ?? '',
+  //           warranty_available: requestToEdit.vehicle_details?.warranty_available ?? '',
+  //           warranty_link: requestToEdit.vehicle_details?.warranty_link ?? ''
+  //         },
+  //         access_arrangements: { ...prev.access_arrangements, ...(requestToEdit.access_arrangements || {}) },
+  //         terms_agreed: requestToEdit.terms_agreed ?? false
+  //       }));
+  //     } else {// If it's a new request
+  //       setFormData((prev) => {// Use functional update to ensure latest default is used
+  //         const newFormData = { ...prev };
+  //         if (user) {// If a user is logged in, pre-fill contact info
+  //           // Use PublicUser full_name if available, otherwise fall back to User entity
+  //           let full_name = publicUser?.full_name || user.full_name || "";
+  //           let email = user.email || "";
+  //           let phone = user.phone || "";
 
-            newFormData.requester_contact_info = {
-              ...newFormData.requester_contact_info,
-              full_name: newFormData.requester_contact_info.full_name || full_name,
-              email: newFormData.requester_contact_info.email || email,
-              phone: newFormData.requester_contact_info.phone || phone
-            };
-          }
-          return newFormData;
-        });
-      }
-      setIsAuthCheckComplete(true);
-    };
+  //           newFormData.requester_contact_info = {
+  //             ...newFormData.requester_contact_info,
+  //             full_name: newFormData.requester_contact_info.full_name || full_name,
+  //             email: newFormData.requester_contact_info.email || email,
+  //             phone: newFormData.requester_contact_info.phone || phone
+  //           };
+  //         }
+  //         return newFormData;
+  //       });
+  //     }
+  //     setIsAuthCheckComplete(true);
+  //   };
 
-    loadData();
-  }, [requestToEdit]);
+  //   loadData();
+  // }, [requestToEdit]);
 
   // Render nothing or a loading spinner until auth check is complete
   if (!isAuthCheckComplete) {
@@ -795,43 +795,43 @@ export default function ManagedSalesRequestForm({
 
       console.log('📤 Creating MSR with data:', requestData);
 
-      const newRequest = await base44.entities.ManagedSaleRequest.create(requestData);
+      // const newRequest = await base44.entities.ManagedSaleRequest.create(requestData);
 
       console.log('✅ MSR created successfully:', newRequest.id);
       setCreatedRequestId(newRequest.id);
       setNewRequestData(newRequest);
 
-      if (currentUserState?.id) {
-        await base44.entities.Notification.create({
-          recipient_id: currentUserState.id,
-          sender_id: currentUserState.id,
-          type: "managed_sale_status",
-          content: `Your managed sale request for "${formData.vehicle_details.title}" has been submitted successfully. You'll receive $${ownerReceives.toLocaleString()} when the vehicle sells at $${buyerPrice.toLocaleString()}. Our team will review it within 24-48 hours.`,
-          related_entity_type: "ManagedSaleRequest",
-          related_entity_id: newRequest.id,
-          url: "/dashboard",
-          icon: "CheckCircle"
-        });
-      }
+      // if (currentUserState?.id) {
+      //   await base44.entities.Notification.create({
+      //     recipient_id: currentUserState.id,
+      //     sender_id: currentUserState.id,
+      //     type: "managed_sale_status",
+      //     content: `Your managed sale request for "${formData.vehicle_details.title}" has been submitted successfully. You'll receive $${ownerReceives.toLocaleString()} when the vehicle sells at $${buyerPrice.toLocaleString()}. Our team will review it within 24-48 hours.`,
+      //     related_entity_type: "ManagedSaleRequest",
+      //     related_entity_id: newRequest.id,
+      //     url: "/dashboard",
+      //     icon: "CheckCircle"
+      //   });
+      // }
 
-      if (requestData.requester_contact_info.email) {
-        await base44.functions.invoke('sendEmail', {
-          to: requestData.requester_contact_info.email,
-          subject: `Your Managed Sale Request for "${requestData.vehicle_details.title}" has been received!`,
-          html: `<h2>We've received your request!</h2>
-                     <p>Hi ${requestData.requester_contact_info.full_name},</p>
-                     <p>Thank you for submitting your ${requestData.vehicle_details.title} for our Managed Sale program. Our team will review your submission and contact you within 2 business days to discuss the next steps.</p>
-                     <h3>Your Managed Sale Details:</h3>
-                     <ul>
-                       <li><strong>Your Asking Price:</strong> $${requestData.vehicle_details.seller_asking_price.toLocaleString()}</li>
-                       <li><strong>Speedio Service Fee:</strong> $${requestData.service_fee_amount.toLocaleString()} (added to listing price)</li>
-                       <li><strong>Vehicle Listing Price:</strong> $${requestData.final_sale_price_for_buyer.toLocaleString()} (what buyers will see)</li>
-                       <li><strong>You'll Receive:</strong> $${requestData.owner_receives_amount.toLocaleString()} (your full asking price upon sale)</li>
-                     </ul>
-                     <p><strong>How it works:</strong> Your vehicle will be listed at $${requestData.final_sale_price_for_buyer.toLocaleString()}. When it sells, you receive your full asking price of $${requestData.owner_receives_amount.toLocaleString()}. The service fee is included in the listing price, so there's no cost to you.</p>
-                     <p>You can view the status of your request on your dashboard: <a href="${getBaseUrlForClient()}/dashboard">Go to Dashboard</a></p>`
-        });
-      }
+      // if (requestData.requester_contact_info.email) {
+      //   await base44.functions.invoke('sendEmail', {
+      //     to: requestData.requester_contact_info.email,
+      //     subject: `Your Managed Sale Request for "${requestData.vehicle_details.title}" has been received!`,
+      //     html: `<h2>We've received your request!</h2>
+      //                <p>Hi ${requestData.requester_contact_info.full_name},</p>
+      //                <p>Thank you for submitting your ${requestData.vehicle_details.title} for our Managed Sale program. Our team will review your submission and contact you within 2 business days to discuss the next steps.</p>
+      //                <h3>Your Managed Sale Details:</h3>
+      //                <ul>
+      //                  <li><strong>Your Asking Price:</strong> $${requestData.vehicle_details.seller_asking_price.toLocaleString()}</li>
+      //                  <li><strong>Speedio Service Fee:</strong> $${requestData.service_fee_amount.toLocaleString()} (added to listing price)</li>
+      //                  <li><strong>Vehicle Listing Price:</strong> $${requestData.final_sale_price_for_buyer.toLocaleString()} (what buyers will see)</li>
+      //                  <li><strong>You'll Receive:</strong> $${requestData.owner_receives_amount.toLocaleString()} (your full asking price upon sale)</li>
+      //                </ul>
+      //                <p><strong>How it works:</strong> Your vehicle will be listed at $${requestData.final_sale_price_for_buyer.toLocaleString()}. When it sells, you receive your full asking price of $${requestData.owner_receives_amount.toLocaleString()}. The service fee is included in the listing price, so there's no cost to you.</p>
+      //                <p>You can view the status of your request on your dashboard: <a href="${getBaseUrlForClient()}/dashboard">Go to Dashboard</a></p>`
+      //   });
+      // }
 
       console.log('✅ All notifications and emails sent successfully');
       setShowSuccessModal(true);

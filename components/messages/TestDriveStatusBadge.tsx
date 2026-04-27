@@ -1,5 +1,7 @@
+'use client'
+
 import React from "react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/Badge";
 import { Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 export default function TestDriveStatusBadge({ status }) {

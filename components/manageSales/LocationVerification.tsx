@@ -1,11 +1,14 @@
+
+"use client"
+
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { MapPin, CheckCircle, XCircle } from "lucide-react";
-import { User } from "@/entities/User";
+import { User } from "@/api/entities";
 
 export default function LocationVerification({ user, onVerificationComplete }) {
   const [location, setLocation] = useState(user?.location || "");

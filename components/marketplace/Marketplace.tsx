@@ -1,14 +1,16 @@
+"use client"
+
 import React, { useState, useEffect, useCallback } from "react";
-import { Vehicle } from "@/entities/all";
+import { Vehicle } from "@/api/entities";
 import { Search, Car, Filter } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { motion, AnimatePresence } from "framer-motion";
 
-import VehicleCard from "../components/marketplace/VehicleCard";
-import SearchFilters from "../components/marketplace/SearchFilters";
+import VehicleCard from "../marketplace/VehicleCard";
+import SearchFilters from "../marketplace/SearchFilters";
 
 export default function Marketplace() {
   const [vehicles, setVehicles] = useState([]);

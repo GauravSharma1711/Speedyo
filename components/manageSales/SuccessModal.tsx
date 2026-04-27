@@ -1,12 +1,16 @@
 
+"use client"
+import { useRouter } from "next/navigation";
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { CheckCircle, ArrowRight, Clock, Mail } from "lucide-react";
-import { createPageUrl } from "@/utils";
+
 
 export default function SuccessModal({ onClose, isOpen = true }) {
+  const router = useRouter();
+
   // Prevent the modal from closing accidentally
   const handleBackdropClick = (e) => {
     e.stopPropagation();
@@ -68,7 +72,7 @@ export default function SuccessModal({ onClose, isOpen = true }) {
               
               <div className="space-y-3">
                 <Button 
-                  onClick={() => window.location.href = createPageUrl("Feed")}
+                   onClick={() => router.push("/feed")}
                   className="w-full bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
                 >
                   Go to Homepage

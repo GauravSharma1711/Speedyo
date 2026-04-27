@@ -1,8 +1,11 @@
+
+"use client"
+
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/TextArea";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, Clock, MapPin } from "lucide-react";
 

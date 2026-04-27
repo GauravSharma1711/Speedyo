@@ -1,3 +1,6 @@
+
+"use client"
+import Link from "next/link";
 import React, { useState, useEffect, useCallback } from "react";
 import { Vehicle, Message, ManagedSaleRequest, Notification, PublicUser, VehicleTransfer } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle }
@@ -27,8 +30,9 @@ import {
   FileText,
   X
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { useRouter } from "next/navigation";
+
+
 import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -36,9 +40,9 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@/components/ui/Tooltip";
 
-import ManagedSalesRequestForm from "../managedsales/RequestForm";
+import ManagedSalesRequestForm from "../manageSales/RequestForm";
 import ManagedSaleDetailsModal from "./ManagedSaleDetailsModal";
 import GuestTestDriveDetailsModal from "./GuestTestDriveDetailsModal";
 import ManagedSalesActions from "./ManagedSalesActions";
@@ -46,6 +50,7 @@ import TransferProgressTracker from "./TransferProgressTracker";
 import { useToast } from "@/components/ui/UseToast";
 
 export default function GuestDashboard({ user }) {
+  const router = useRouter();
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [messages, setMessages] = useState([]);
   const [managedSaleRequests, setManagedSaleRequests] = useState([]);
@@ -207,7 +212,7 @@ export default function GuestDashboard({ user }) {
             content: `${user.full_name} submitted an edit request for managed sale: "${originalRequest.vehicle_details.title}" (${originalRequest.vehicle_details.year} ${originalRequest.vehicle_details.make} ${originalRequest.vehicle_details.model}).`,
             related_entity_type: "ManagedSaleRequest",
             related_entity_id: originalRequest.id,
-            url: createPageUrl("AdminPanel"),
+            url: "/Admin-Panel",
             icon: "Edit"
           })
         );
@@ -268,7 +273,7 @@ export default function GuestDashboard({ user }) {
               content: `${user.full_name} cancelled their managed sale request for "${requestToCancel.vehicle_details.title}" (${requestToCancel.vehicle_details.year} ${requestToCancel.vehicle_details.make} ${requestToCancel.vehicle_details.model})`,
               related_entity_type: "ManagedSaleRequest",
               related_entity_id: requestToCancel.id,
-              url: createPageUrl("AdminPanel"),
+              url: "/Admin-Panel",
               icon: "AlertCircle"
             })
           );
@@ -329,7 +334,7 @@ export default function GuestDashboard({ user }) {
                       content: `${user.full_name} cancelled their test drive request for "${vehicle?.title}" scheduled for ${format(new Date(updatedDetails.preferred_date), 'MMM d, yyyy')}`,
                       related_entity_type: "Message",
                       related_entity_id: messageId,
-                      url: createPageUrl("AdminPanel"),
+                      url: "/Admin-Panel",
                       icon: "CalendarX"
                     })
                   );
@@ -504,7 +509,7 @@ export default function GuestDashboard({ user }) {
                 <strong>Application Declined:</strong> {user.admin_verification_notes || "Please review your information and try again."}
               </span>
             </div>
-            <Link to={createPageUrl("DealershipRegistration")}>
+           <Link href="/dealership-registration">
               <Button variant="destructive_outline" size="sm">Resubmit Application</Button>
             </Link>
           </AlertDescription>
@@ -652,8 +657,10 @@ export default function GuestDashboard({ user }) {
                     <MessageCircle className="w-5 h-5 text-emerald-500" />
                     Recent Messages
                   </CardTitle>
-                  <Link to={createPageUrl("Messages")}>
-                    <Button variant="outline" size="sm">View All</Button>
+            <Link href="/Messages">
+                    <Button
+                
+                    variant="outline" size="sm">View All</Button>
                   </Link>
                 </CardHeader>
                 <CardContent>
@@ -769,7 +776,7 @@ export default function GuestDashboard({ user }) {
                     <Plus className="w-4 h-4 mr-2" />
                     Submit Request
                   </Button>
-                  <Link to={createPageUrl("ManagedSales")}>
+                <Link href="/Managed-Sales">
                     <Button variant="outline">
                       Learn More
                     </Button>
@@ -890,7 +897,7 @@ export default function GuestDashboard({ user }) {
                                       View Details
                                     </Button>
                                     {request.status === 'listed' && request.created_vehicle_id && (
-                                      <Link to={createPageUrl(`Vehicle?id=${request.created_vehicle_id}`)}>
+                                      <Link to={(`/Vehicle?id=${request.created_vehicle_id}`)}>
                                         <Button size="sm" variant="outline" className="w-full">
                                           <ExternalLink className="w-4 h-4 mr-2" />
                                           View Listing
@@ -927,7 +934,7 @@ export default function GuestDashboard({ user }) {
                     <Eye className="w-5 h-5 text-blue-500" />
                     Recently Viewed
                   </CardTitle>
-                  <Link to={createPageUrl("Marketplace")}>
+                  <Link to={"/Marketplace"}>
                     <Button variant="outline" size="sm">Browse More</Button>
                   </Link>
                 </CardHeader>
@@ -941,7 +948,7 @@ export default function GuestDashboard({ user }) {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {recentlyViewed.slice(0, 3).map((vehicle) => (
-                          <Link key={vehicle.id} to={createPageUrl(`Vehicle?id=${vehicle.id}`)}>
+                          <Link key={vehicle.id} to={(`/Vehicle?id=${vehicle.id}`)}>
                             <div className="flex gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer border">
                               <div className="w-20 h-16 bg-slate-200 rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {vehicle.primary_image ? (
@@ -972,7 +979,7 @@ export default function GuestDashboard({ user }) {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
-                    <Link to={createPageUrl("Marketplace?condition=excellent")}>
+                    <Link to={"/Marketplace?condition=excellent"}>
                       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                           <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -986,7 +993,7 @@ export default function GuestDashboard({ user }) {
                       </Card>
                     </Link>
 
-                    <Link to={createPageUrl("Marketplace?fuel_type=electric")}>
+                    <Link to={"/Marketplace?fuel_type=electric"}>
                       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                           <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -1000,7 +1007,7 @@ export default function GuestDashboard({ user }) {
                       </Card>
                     </Link>
 
-                    <Link to={createPageUrl("Marketplace?verified=true")}>
+                    <Link to={"/Marketplace?verified=true"}>
                       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                           <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -1014,7 +1021,7 @@ export default function GuestDashboard({ user }) {
                       </Card>
                     </Link>
 
-                    <Link to={createPageUrl("Marketplace")}>
+                    <Link to="/Marketplace">
                       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                           <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -1064,12 +1071,14 @@ export default function GuestDashboard({ user }) {
                       </div>
                     </div>
                     <div className="flex-shrink-0">
-                      <Link to={createPageUrl("Subscription")}>
-                        <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-lg px-6 py-3">
+                    
+                        <Button
+                        onClick={() => router.push("/Subscription")}
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-lg px-6 py-3">
                           <TrendingUp className="w-5 h-5 mr-2" />
                           Become a Seller
                         </Button>
-                      </Link>
+                  
                     </div>
                   </div>
                 </CardContent>

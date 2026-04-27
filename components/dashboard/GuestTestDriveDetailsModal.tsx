@@ -1,12 +1,15 @@
+
+"use client"
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import { X, Calendar, Clock as ClockIcon, Car, CheckCircle2, XCircle, Info, MessageSquare, User as UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+
+import { useRouter } from "next/navigation";
 
 const TestDriveStatusInfo = ({ status }) => {
     const statusConfig = {
@@ -27,8 +30,8 @@ const TestDriveStatusInfo = ({ status }) => {
 };
 
 export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveMessage, vehicle, seller, onCancelRequest }) {
+    const router = useRouter();
     if (!isOpen || !testDriveMessage || !vehicle) return null;
-
     const details = testDriveMessage.test_drive_details;
     const canBeCancelled = details?.status === 'pending_review';
 
@@ -140,12 +143,12 @@ export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveM
                             {/* Actions */}
                             <div className="flex gap-3 pt-4 border-t border-slate-200">
                                 {seller && (
-                                    <Link to={createPageUrl(`Messages?recipientId=${seller.id}&vehicleId=${vehicle.id}`)}>
-                                        <Button variant="outline" className="flex items-center gap-2">
-                                            <MessageSquare className="w-4 h-4" />
-                                            Message Seller
-                                        </Button>
-                                    </Link>
+    <Link href={`/messages?recipientId=${seller.id}&vehicleId=${vehicle.id}`}>
+    <Button variant="outline" className="flex items-center gap-2">
+        <MessageSquare className="w-4 h-4" />
+        Message Seller
+    </Button>
+</Link>
                                 )}
                                 
                                 {canBeCancelled && (

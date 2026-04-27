@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { User, Vehicle, Message, ManagedSaleRequest, VehicleEditRequest } from "@/entities/all"; // Add new entities
+import { User, Vehicle, Message, ManagedSaleRequest, VehicleEditRequest } from "@/api/entities"; // Add new entities
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import {

@@ -1,8 +1,11 @@
+
+"use client"
+
 import React, { useState } from "react";
-import { ManagedSaleRequest, Notification } from "@/entities/all";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { ManagedSaleRequest, Notification } from "@/api/entities";
+import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/TextArea";
+import { Label } from "@/components/ui/Label";
 
 
 import {
@@ -15,8 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+} from "@/components/ui/AlertDialog";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { 
   Edit, 
   X, 
@@ -24,7 +27,7 @@ import {
   CheckCircle
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/UseToast";
 
 import VehicleEditRequestModal from "./VehicleEditRequestModal";
 
@@ -73,7 +76,7 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }) 
             content: `User ${currentUser.full_name} has requested to cancel their managed sale for "${request.vehicle_details?.title}". Reason: ${cancelReason}`,
             related_entity_type: "ManagedSaleRequest", 
             related_entity_id: request.id,
-            url: createPageUrl("AdminPanel?tab=managed_sales"),
+           url: "/Admin-Panel?tab=managed_sales",
             icon: "AlertTriangle"
           })
         );
@@ -91,7 +94,7 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }) 
         content: `Your cancellation request for "${request.vehicle_details?.title}" has been submitted and is being reviewed by our team. We'll update you on the status soon.`,
         related_entity_type: "ManagedSaleRequest",
         related_entity_id: request.id,
-        url: createPageUrl("Dashboard"),
+         url: "/Dashboard",
         icon: "AlertTriangle"
       });
 
@@ -145,7 +148,7 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }) 
           <AlertDescription className="text-green-800">
             <strong>Live Listing:</strong> Your vehicle is actively listed and available for test drives.
             <a 
-              href={createPageUrl(`Vehicle?id=${request.created_vehicle_id}`)}
+              href={`/vehicle?id=${request.created_vehicle_id}`}
               className="ml-2 text-green-700 underline hover:text-green-900"
               target="_blank"
               rel="noopener noreferrer"
