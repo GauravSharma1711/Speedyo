@@ -97,7 +97,8 @@ if(existingUserByEmail){
 
         return NextResponse.json({  
             success: true,
-            message: "User registered successfully"
+            message: "User registered successfully",
+             email: email 
         }, { status: 201 });
 
     } catch (error) {

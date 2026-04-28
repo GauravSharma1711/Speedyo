@@ -25,7 +25,7 @@ export default function SignUpPage() {
     const data = await res.json()
     setLoading(false)
     if (!res.ok) setError(data.message || data.error)
-    else router.push(`/verify?email=${form.email}`)
+    else router.push(`/verify?email=${encodeURIComponent(form.email)}`)
   }
 
   const Field = ({ label, name, type, placeholder }: any) => (

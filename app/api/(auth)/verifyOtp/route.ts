@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
         const user = await prisma.user.findFirst({
             where: {
                 email,
-                verificationCode: otp,
             }
         });
 
@@ -37,7 +36,7 @@ export async function POST(request: NextRequest) {
                 data: {                      
                     isVerified: true,        
                     verificationCode: '',  
-                    verificationCodeExpiry: '',
+                  verificationCodeExpiry: new Date(0),
                 }
             });
 
