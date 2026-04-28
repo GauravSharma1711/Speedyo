@@ -260,7 +260,7 @@ model User {
 
   role          Role    @default(user)
   email         String  @unique
-  full_name     String
+  full_name     String?
   bio           String?
   profile_image String?
 
@@ -271,7 +271,8 @@ model User {
 
   location String?
   phone    String?
-  verified Boolean @default(false)
+  isVerified Boolean @default(false)
+  password String
 
   dealership_verification_status DealershipVerificationStatus @default(not_submitted)
   dealership_selected_tier       DealershipSelectedTier?

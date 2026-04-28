@@ -2,31 +2,27 @@
 import {NextAuthOptions} from 'next-auth'
 
 import CredentialsProvider from "next-auth/providers/credentials";
+import FacebookProvider from "next-auth/providers/facebook"
 
 import bcrypt from 'bcryptjs';
 
 import prisma from '../../../../db/prisma';
 
-export const authOptions  = {
+export const authOptions:NextAuthOptions  = {
 
     providers:[
         CredentialsProvider({
              id: "Credentials",
              name: "Credentials",
              credentials: {
-                identifier: { label: "Email or Username", type: "text" },
+                email: { label: "Email", type: "text" },
                password: { label: "Password", type: "password" }
     },
-    async authorize(credentials){
+    async authorize(credentials:any):Promise<any>{
 
         try {
-          const user = await prisma.user.findFirst({
-    where: {
-        OR: [
-            { email: credentials.identifier },
-            { username: credentials.identifier }
-        ]
-    }
+          const user = await prisma.user.findUnique({
+  where: { email: credentials.email }
 })
 
               if(!user){
@@ -55,15 +51,19 @@ export const authOptions  = {
     }
 
 
-        })
+        }),
+         FacebookProvider({
+    clientId: process.env.FACEBOOK_CLIENT_ID,
+    clientSecret: process.env.FACEBOOK_CLIENT_SECRET
+  }),
     ],
     callbacks:{
         async jwt({ token, user }) {
 
             if(user){
-                token.id = user.id?.toString()
-                token.isVerifed = user.isVerifed
-                username = user.username
+                token.id = user.id?.toString();
+                token.isVerified = user.isVerified;
+                token.full_name = user.full_name
             }
 
           return token
@@ -72,20 +72,23 @@ export const authOptions  = {
       async session({ session, token }) {
            if(token){
                 session.user.id = token.id?.toString()
-                session.user.isVerifed = token.isVerifed
-                session.user.username = token.username
+                session.user.isVerified = token.isVerified
+                session.user.full_name = token.full_name
             }
       return session
     }
 
     },
+
+
       
     pages:{
         signIn:'/signIn'
     },
-    session:{
-        strategy:'jwt'
-    },
+ session:{
+    strategy:'jwt'
+ },
+
     secret:process.env.NEXTAUTH_SECRET,
 
      

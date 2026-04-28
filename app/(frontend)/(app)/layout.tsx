@@ -1,5 +1,5 @@
 "use client";
-
+import { signOut, useSession } from "next-auth/react"
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -216,6 +216,8 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
 
   const showSidebar = !pagesWithoutSidebar.includes(currentPageName);
 
+  const { data: session, status } = useSession()
+
   // ── Content max-width per page ─────────────────────────────────────────────
   const getContentMaxWidth = () => {
     switch (currentPageName) {
@@ -244,31 +246,33 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const fetchUser = async () => {
-      let user: CurrentUser | null = null;
-      try {
-        // TODO: Replace with your Next.js auth solution (NextAuth, Clerk, Supabase Auth, etc.)
-        // Example with NextAuth: const session = await getSession(); user = session?.user;
-        // Example with Supabase: const { data: { user } } = await supabase.auth.getUser();
-        //
-        // user = await UserEntity.me();
-        //
-        // For now we leave user as null so the UI renders in logged-out state.
-        setCurrentUser(user);
-        setCurrentUserDisplay(null);
-      } catch {
-        setCurrentUser(null);
-        setCurrentUserDisplay(null);
-      } finally {
-        setIsAuthCheckComplete(true);
-        if (!user && protectedPages.includes(currentPageName)) {
-          // Replace with your login route
-          window.location.href = "/login";
-        }
-      }
-    };
-    fetchUser();
-  }, [currentPageName]);
+  if (status === "loading") return
+
+  if (session?.user) {
+    setCurrentUser({
+      id: session.user.id,
+      email: session.user.email ?? "",
+      full_name: session.user.full_name,
+      // add other fields from your session
+    })
+    setCurrentUserDisplay({
+      full_name: session.user.full_name,
+      profile_image: session.user.image ?? undefined,
+      user_type: session.user.user_type,
+      role: session.user.role,
+    })
+  } else {
+    setCurrentUser(null)
+    setCurrentUserDisplay(null)
+
+    // redirect if on protected page
+    if (protectedPages.includes(currentPageName)) {
+      window.location.href = "/signIn"
+    }
+  }
+
+  setIsAuthCheckComplete(status !== "loading")
+}, [session, status, currentPageName])
 
   // ── Setup dialog ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -390,18 +394,25 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
 
   // ── Auth actions ──────────────────────────────────────────────────────────
   const handleLogin = () => {
-    window.location.href = "/login"; // adjust to your login route
+    window.location.href = "/signIn"; // adjust to your login route
   };
 
+  // const handleLogout = async () => {
+
+  //   // TODO: call your auth provider's sign-out
+  //   // await UserEntity.logout();
+  //   await signOut({ callbackUrl: "/signIn" })
+  //   setCurrentUser(null);
+  //   setCurrentUserDisplay(null);
+  //   setNotifications([]);
+  //   setUnreadCount(0);
+  //   window.location.href = createPageUrl("Feed");
+  // };
+
   const handleLogout = async () => {
-    // TODO: call your auth provider's sign-out
-    // await UserEntity.logout();
-    setCurrentUser(null);
-    setCurrentUserDisplay(null);
-    setNotifications([]);
-    setUnreadCount(0);
-    window.location.href = createPageUrl("Feed");
-  };
+  await signOut({ callbackUrl: "/signIn" })
+}
+
 
   // ── Notification actions ──────────────────────────────────────────────────
   const handleNotificationClick = async (notification: NotificationItem) => {
