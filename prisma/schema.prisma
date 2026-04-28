@@ -1,0 +1,1168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum FeedbackCategory {
+  general
+  marketplace
+  feed
+  messaging
+  managed_sales
+  dashboard
+  other
+}
+
+enum FeedbackStatus {
+  new
+  reviewed
+  in_progress
+  resolved
+}
+
+enum AgreementStatus {
+  draft
+  pending_signature
+  signed
+  cancelled
+}
+
+enum VehicleCondition {
+  excellent
+  good
+  fair
+  poor
+}
+
+enum VehicleStatus {
+  available
+  pending
+  sold
+  cancelled
+  hidden
+  unavailable
+}
+
+enum FuelType {
+  gasoline
+  diesel
+  hybrid
+  electric
+}
+
+enum Transmission {
+  manual
+  automatic
+  cvt
+}
+
+enum PostType {
+  text
+  image
+  video
+  vehicle_promo
+}
+
+enum Role {
+  admin
+  user
+}
+
+enum UserType {
+  guest
+  private_seller
+  dealership
+}
+
+enum SubscriptionTier {
+  tier1
+  tier2
+  tier3
+  none
+}
+
+enum DealershipVerificationStatus {
+  not_submitted
+  pending_payment
+  pending_review
+  approved
+  declined
+}
+
+enum DealershipSelectedTier {
+  tier1
+  tier2
+  tier3
+}
+
+enum PaymentGateway {
+  square
+  stripe
+}
+
+enum GuestPurchaseStatus {
+  pending_payment
+  payment_completed
+  activated
+  expired
+  cancelled
+}
+
+enum LiaisonAgreementStatus {
+  draft
+  pending_signature
+  signed
+  terminated
+}
+
+enum LanguageProficiency {
+  native_both
+  fluent_both
+  business_level
+}
+
+enum LiaisonApplicationStatus {
+  pending_review
+  under_review
+  approved
+  declined
+}
+
+enum ManagedSaleStatus {
+  pending_review
+  approved
+  declined
+  listed
+  sold
+  cancelled
+  cancellation_requested
+  edit_requested
+}
+
+enum MessageType {
+  inquiry
+  test_drive_request
+  general
+  system
+  confirmation_test_drive
+  test_drive_status_update
+}
+
+enum NotificationType {
+  new_message
+  test_drive_request
+  test_drive_status_update
+  managed_sale_status
+  new_managed_sale_request
+  vehicle_edit_request
+  vehicle_edit_approved
+  vehicle_edit_declined
+  new_follower
+  post_like
+  comment_reply
+  managed_sale_edit_request
+  managed_sale_cancellation
+  test_drive_cancellation
+  account_status_update
+  dealership_approved
+  dealership_declined
+  new_post
+  new_vehicle_listing
+}
+
+enum OISTVehicleCondition {
+  excellent
+  good
+  fair
+  poor
+}
+
+enum OISTTradeInStatus {
+  pending
+  contacted
+  quoted
+  completed
+  cancelled
+}
+
+enum PhotographerAgreementStatus {
+  draft
+  pending_signature
+  signed
+  terminated
+}
+
+enum PhotographerApplicationStatus {
+  pending_review
+  under_review
+  approved
+  declined
+}
+
+enum TicketType {
+  general
+  billing
+  technical
+  listing_issue
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum VehicleEditRequestStatus {
+  pending
+  approved
+  declined
+}
+
+enum TransferType {
+  speedio_managed
+  self_service
+}
+
+enum TransferStatus {
+  in_progress
+  completed
+  on_hold
+}
+
+enum VerificationRequestStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  role          Role    @default(user)
+  email         String  @unique
+  full_name     String?
+  bio           String?
+  profile_image String?
+
+  verificationCode String
+  verificationCodeExpiry DateTime
+
+  user_type UserType @default(guest)
+
+  location String?
+  phone    String?
+  isVerified Boolean @default(false)
+  password String
+
+  dealership_verification_status DealershipVerificationStatus @default(not_submitted)
+  dealership_selected_tier       DealershipSelectedTier?
+  business_name                  String?
+  business_address               String?
+  business_city                  String?
+  business_state                 String?
+  business_zip                   String?
+  business_license_urls          String[]
+  tax_id_number                  String?
+  verification_fee_paid          Boolean                      @default(false)
+  admin_verification_notes       String?
+
+  welcome_email_sent Boolean @default(false)
+  setup_completed    Boolean @default(false)
+
+  // Relations (no @relation needed on parent side)
+  private_seller_slots PrivateSellerSlots?
+  seller_subscription  SellerSubscription?
+  email_notifications  EmailNotifications?
+  inapp_notifications  InAppNotifications?
+
+  created_agreements DealershipVehicleAgreement[] @relation("AdminAgreements")
+
+  activatedGuestPurchases GuestPurchase[] @relation("ActivatedGuestPurchases")
+
+  createdLiaisonAgreements LiaisonAgreement[] @relation("AdminLiaisonAgreements")
+
+  reviewedLiaisonApplications LiaisonApplication[] @relation("AdminLiaisonApplications")
+
+  managedSaleRequests ManagedSaleRequest[] @relation("UserManagedSaleRequests")
+
+  createdPhotographerAgreements PhotographerAgreement[] @relation("AdminPhotographerAgreements")
+
+  reviewedPhotographerApplications PhotographerApplication[] @relation("AdminPhotographerApplications")
+
+  vehicleEditRequests VehicleEditRequest[] @relation("UserVehicleEditRequests")
+
+  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
+
+  buyerTransfers  VehicleTransfer[] @relation("BuyerTransfers")
+  sellerTransfers VehicleTransfer[] @relation("SellerTransfers")
+
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  following Follow[] @relation("UserFollowing")
+  followers Follow[] @relation("UserFollowers")
+
+  receivedNotifications Notification[] @relation("ReceivedNotifications")
+  sentNotifications     Notification[] @relation("SentNotifications")
+
+  vehicles Vehicle[]
+  posts    Post[]
+  comments Comment[]
+  feedback Feedback[]
+
+  @@map("users")
+}
+
+model PrivateSellerSlots {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  purchased Int @default(0)
+  used      Int @default(0)
+
+  @@map("private_seller_slots")
+}
+
+model SellerSubscription {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tier                    SubscriptionTier @default(none)
+  expires_at              DateTime?
+  vehicles_sold_this_year Int              @default(0)
+  square_subscription_id  String?
+  square_customer_id      String?
+
+  @@map("seller_subscriptions")
+}
+
+model EmailNotifications {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  new_follower_post    Boolean @default(true)
+  new_follower_vehicle Boolean @default(true)
+  all_emails           Boolean @default(true)
+
+  @@map("email_notifications")
+}
+
+model InAppNotifications {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  new_follower_post    Boolean @default(true)
+  new_follower_vehicle Boolean @default(true)
+  all_notifications    Boolean @default(true)
+
+  @@map("inapp_notifications")
+}
+
+// ------------------------------------------------------------------------------------------------------
+
+model Post {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  content  String
+  authorId String @map("author_id")
+
+  // Optional vehicle link
+  vehicleId String? @map("vehicle_id")
+
+  // Image arrays (different resolutions)
+  images            String[]
+  images_thumbnails String[]
+  images_small      String[]
+  images_medium     String[]
+
+  // Post type
+  post_type PostType @default(text)
+
+  // Counters
+  likes            Int @default(0)
+  shares           Int @default(0)
+  views            Int @default(0)
+  comments_count   Int @default(0)
+  engagement_score Int @default(0)
+
+  // Reactions as JSONB
+  reactions      Json @default("{\"like\":0,\"love\":0,\"wow\":0,\"fire\":0,\"laugh\":0,\"angry\":0}")
+  user_reactions Json @default("[]")
+
+  // Relations
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  vehicle  Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  comments Comment[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  postId   String @map("post_id")
+  content  String
+  authorId String @map("author_id")
+
+  // Optional
+  parentCommentId String? @map("parent_comment_id")
+
+  // Counters (kept as plain columns for fast reads)
+  likes         Int @default(0)
+  replies_count Int @default(0)
+
+  // Reactions stored as JSONB
+  reactions Json @default("{\"like\":0,\"love\":0,\"wow\":0,\"fire\":0,\"laugh\":0,\"angry\":0}")
+
+  // User reactions array stored as JSONB
+  user_reactions Json @default("[]")
+
+  // Relations
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author        User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentComment Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies       Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+model Vehicle {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  title String
+  make  String
+  model String
+  year  Int
+  price Decimal @db.Decimal(12, 2)
+
+  // Optional details
+  mileage      Int?
+  condition    VehicleCondition?
+  description  String?
+  location     String?
+  fuel_type    FuelType?
+  transmission Transmission?
+
+  // Primary image (4 resolutions)
+  primary_image           String?
+  primary_image_thumbnail String?
+  primary_image_small     String?
+  primary_image_medium    String?
+
+  // Additional images (4 resolutions)
+  images            String[]
+  images_thumbnails String[]
+  images_small      String[]
+  images_medium     String[]
+
+  // Flags
+  verified        Boolean @default(false)
+  featured        Boolean @default(false)
+  website_managed Boolean @default(false)
+
+  // Status & engagement
+  status VehicleStatus @default(available)
+  views  Int           @default(0)
+
+  // Managed sale fields
+  authorId          String? @map("author_id")
+  original_owner_id String?
+  dealership_name   String?
+
+  // Scheduling as JSONB
+  recurring_availability Json @default("[]")
+  booked_slots           Json @default("[]")
+
+  dealershipAgreementId String? @map("dealership_agreement_id")
+
+  dealershipAgreement DealershipVehicleAgreement? @relation(fields: [dealershipAgreementId], references: [id], onDelete: SetNull)
+
+  managedSaleRequest ManagedSaleRequest? @relation("ManagedSaleVehicle")
+
+  // Relations
+  author User?  @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  posts  Post[]
+
+  messages             Message[]
+  verificationRequests VerificationRequest[]
+  transfers            VehicleTransfer[]
+  editRequests         VehicleEditRequest[]
+
+  @@map("vehicles")
+}
+
+model DealershipVehicleAgreement {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  dealership_name     String
+  representative_name String
+  email               String
+
+  // Optional contact/legal
+  address        String?
+  phone          String?
+  license_number String?
+
+  // Agreement details
+  service_fee_amount Decimal?        @db.Decimal(12, 2)
+  status             AgreementStatus @default(draft)
+  agreement_url      String?
+  agreement_accepted Boolean         @default(false)
+
+  // Signing details
+  signed_by_name String?
+  signed_at      DateTime?
+
+  // Admin
+  created_by_admin_id String?
+  admin_notes         String?
+
+  // Relations
+  createdByAdmin User?     @relation("AdminAgreements", fields: [created_by_admin_id], references: [id], onDelete: SetNull)
+  vehicles       Vehicle[]
+
+  @@map("dealership_vehicle_agreements")
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  satisfaction_rating Int // enforced 1-5 in app layer
+  feedback_text       String
+
+  // Submitter info (denormalized for cases where user deletes account)
+  userId     String? @map("user_id")
+  user_email String?
+  user_name  String?
+
+  // Categorization
+  category FeedbackCategory @default(general)
+  status   FeedbackStatus   @default(new)
+
+  // Admin
+  admin_notes String?
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("feedback")
+}
+
+model Follow {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  followerId String @map("follower_id")
+  followedId String @map("followed_id")
+
+  // Relations
+  follower User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  followed User @relation("UserFollowers", fields: [followedId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate follows
+  @@unique([followerId, followedId])
+  @@map("follows")
+}
+
+model GuestPurchase {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  guest_email     String
+  guest_name      String
+  slots_purchased Int
+  amount_paid     Decimal @db.Decimal(12, 2)
+  payment_id      String  @unique
+
+  // Payment details
+  payment_gateway PaymentGateway @default(square)
+  promo_code_used String?
+
+  // Status & activation
+  status                GuestPurchaseStatus @default(pending_payment)
+  activated_at          DateTime?
+  activated_for_user_id String?
+
+  // Relations
+  activatedForUser User? @relation("ActivatedGuestPurchases", fields: [activated_for_user_id], references: [id], onDelete: SetNull)
+
+  @@map("guest_purchases")
+}
+
+model LiaisonAgreement {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Agreement details
+  agreement_title         String  @default("Speedio Dealership Partnership Liaison Agreement")
+  position_title          String  @default("Bilingual Dealership Liaison — Speedio Dealership Outreach Program")
+  fixed_fee_percentage    Decimal @default(10) @db.Decimal(5, 2)
+  residual_pay_percentage Decimal @default(3) @db.Decimal(5, 2)
+  termination_notice_days Int     @default(30)
+
+  // Dates
+  agreement_start_date DateTime?
+  agreement_end_date   DateTime?
+
+  // Status
+  status        LiaisonAgreementStatus @default(draft)
+  agreement_url String?
+
+  // Links
+
+  created_by_admin_id String?
+  admin_notes         String?
+
+  application_id String?
+  application    LiaisonApplication? @relation(fields: [application_id], references: [id], onDelete: SetNull)
+
+  // Relations
+  createdByAdmin User? @relation("AdminLiaisonAgreements", fields: [created_by_admin_id], references: [id], onDelete: SetNull)
+
+  @@map("liaison_agreements")
+}
+
+model LiaisonApplication {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  full_name            String
+  email                String
+  phone                String
+  language_proficiency LanguageProficiency
+  motivation           String
+
+  // Optional fields
+  address              String?
+  previous_experience  String?
+  automotive_knowledge String?
+  availability         String?
+  resume_url           String?
+
+  // Status & review
+  status               LiaisonApplicationStatus @default(pending_review)
+  admin_notes          String?
+  reviewed_by_admin_id String?
+  reviewed_at          DateTime?
+
+  // Relations
+  reviewedByAdmin  User?              @relation("AdminLiaisonApplications", fields: [reviewed_by_admin_id], references: [id], onDelete: SetNull)
+  liaisonAgreement LiaisonAgreement[]
+
+  @@map("liaison_applications")
+}
+
+model ManagedSaleRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // ── Requester contact (denormalized — may be guest) ──
+  contact_full_name String
+  contact_email     String
+  contact_phone     String?
+
+  // ── Vehicle details (all stored as flat columns) ──
+  vehicle_title        String?
+  vehicle_make         String?
+  vehicle_model        String?
+  vehicle_year         Int?
+  vehicle_mileage      Int?
+  vehicle_condition    String?
+  vehicle_description  String?
+  vehicle_fuel_type    String?
+  vehicle_transmission String?
+  vehicle_location     String?
+  seller_asking_price  Decimal? @db.Decimal(12, 2)
+  financing_available  String?
+  warranty_available   String?
+  warranty_link        String?
+
+  // Vehicle images (4 resolutions)
+  vehicle_images            String[]
+  vehicle_images_thumbnails String[]
+  vehicle_images_small      String[]
+  vehicle_images_medium     String[]
+
+  // Vehicle specs
+  drive_type                String?
+  engine_size               String?
+  body_type                 String?
+  exterior_color            String?
+  interior_color            String?
+  doors                     Int?
+  seating_capacity          Int?
+  steering_wheel            String?
+  current_plate_type        String?
+  shaken_valid_until        String?
+  road_tax_paid             String?
+  jci_insurance_valid_until String?
+  title_type                String?
+  registration_location     String?
+  engine_type               String?
+  power_output              String?
+  fuel_efficiency           String?
+  drivetrain                String?
+  suspension_type           String?
+  brakes                    String?
+  tire_condition            String?
+  battery_condition         String?
+  hybrid_system_status      String?
+  maintenance_history       String?
+
+  // Exterior features
+  power_sliding_doors String?
+  headlights          String?
+  fog_lights          String?
+  alloy_wheels        Boolean?
+  spoiler             Boolean?
+  tinted_windows      Boolean?
+  roof_type           String?
+  side_mirrors        String?
+  body_condition      String?
+
+  // Interior features
+  air_conditioning          String?
+  upholstery                String?
+  seat_type                 String?
+  seat_adjustments          String?
+  navigation_system         String?
+  rear_camera               Boolean?
+  parking_sensors           String?
+  power_windows             String?
+  interior_lighting         String?
+  cup_holders_storage       Boolean?
+  child_lock_isofix         Boolean?
+  display_screen_size       String?
+  rear_entertainment_system Boolean?
+  digital_dashboard_display Boolean?
+
+  // Infotainment & connectivity (arrays)
+  infotainment_system     String[]
+  steering_wheel_controls String[]
+  airbags                 String[]
+
+  // Connectivity
+  bluetooth                Boolean?
+  usb_ports                Boolean?
+  twelve_v_outlet          Boolean?
+  smart_key_push_start     Boolean?
+  keyless_entry            Boolean?
+  remote_door_locking      Boolean?
+  voice_command_hands_free Boolean?
+
+  // Safety
+  abs                    Boolean?
+  esc_stability_control  Boolean?
+  lane_departure_warning Boolean?
+  collision_mitigation   Boolean?
+  cruise_control         String?
+  traction_control       Boolean?
+  hill_start_assist      Boolean?
+  immobilizer_alarm      Boolean?
+  seat_belt_sensors      Boolean?
+
+  // ── Access arrangements (JSONB — deeply nested, queried as a whole) ──
+  access_arrangements Json @default("{}")
+
+  // ── Financials ──
+  service_fee_amount         Decimal? @db.Decimal(12, 2)
+  owner_receives_amount      Decimal? @db.Decimal(12, 2)
+  final_sale_price_for_buyer Decimal? @db.Decimal(12, 2)
+
+  // ── Status & notes ──
+  status              ManagedSaleStatus @default(pending_review)
+  admin_notes         String?
+  user_facing_notes   String?
+  terms_agreed        Boolean           @default(false)
+  cancellation_reason String?
+
+  // ── Edit request history (JSONB — variable length audit log) ──
+  edit_requests Json @default("[]")
+
+  // ── Links ──
+  submitted_by_user_id String?
+  created_vehicle_id   String? @unique
+
+  messages Message[]
+
+  inspectionChecklists VehicleInspectionChecklist[]
+
+  // ── Relations ──
+  submittedByUser User?    @relation("UserManagedSaleRequests", fields: [submitted_by_user_id], references: [id], onDelete: SetNull)
+  createdVehicle  Vehicle? @relation("ManagedSaleVehicle", fields: [created_vehicle_id], references: [id], onDelete: SetNull)
+
+  @@map("managed_sale_requests")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  senderId    String @map("sender_id")
+  recipientId String @map("recipient_id")
+  content     String
+
+  // Threading
+  conversation_id String?
+
+  // Message type & read status
+  message_type MessageType @default(general)
+  read         Boolean     @default(false)
+
+  // Translation
+  translated_content String?
+  original_language  String?
+  translated_to      String?
+
+  // Optional context links
+  vehicleId            String? @map("vehicle_id")
+  managedSaleRequestId String? @map("managed_sale_request_id")
+
+  // Test drive details (JSONB — always read/written as a whole)
+  test_drive_details Json?
+
+  // Relations
+  sender             User                @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient          User                @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  vehicle            Vehicle?            @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  managedSaleRequest ManagedSaleRequest? @relation(fields: [managedSaleRequestId], references: [id], onDelete: SetNull)
+
+  @@index([conversation_id])
+  @@index([senderId, recipientId])
+  @@map("messages")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Required fields
+  recipientId String           @map("recipient_id")
+  type        NotificationType
+  content     String
+
+  // Optional sender
+  senderId String? @map("sender_id")
+
+  // Read status
+  read Boolean @default(false)
+
+  // Polymorphic reference (entity type + ID)
+  related_entity_type String?
+  related_entity_id   String?
+
+  // Navigation
+  url  String?
+  icon String?
+
+  // Relations
+  recipient User  @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender    User? @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, read])
+  @@index([recipientId, createdAt])
+  @@map("notifications")
+}
+
+model OISTTradeInRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  full_name         String
+  email             String
+  vehicle_make      String
+  vehicle_model     String
+  vehicle_year      String
+  vehicle_mileage   String
+  vehicle_condition OISTVehicleCondition
+
+  // Optional fields
+  facebook_profile   String?
+  additional_details String?
+
+  // Status
+  status OISTTradeInStatus @default(pending)
+
+  @@index([email])
+  @@index([status])
+  @@map("oist_trade_in_requests")
+}
+
+model PhotographerAgreement {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Agreement details
+  agreement_title         String  @default("Speedio Photographer Partnership Agreement")
+  position_title          String  @default("Automotive Photographer - Speedio Platform")
+  fixed_percentage        Decimal @default(10) @db.Decimal(5, 2)
+  termination_notice_days Int     @default(30)
+
+  // Dates
+  agreement_start_date DateTime?
+  agreement_end_date   DateTime?
+
+  // Status
+  status        PhotographerAgreementStatus @default(draft)
+  agreement_url String?
+
+  // Links
+  application_id      String? // proper FK added when PhotographerApplication is created
+  created_by_admin_id String?
+  admin_notes         String?
+
+  // Relations
+  createdByAdmin User?                    @relation("AdminPhotographerAgreements", fields: [created_by_admin_id], references: [id], onDelete: SetNull)
+  application    PhotographerApplication? @relation(fields: [application_id], references: [id], onDelete: SetNull)
+
+  @@map("photographer_agreements")
+}
+
+model PhotographerApplication {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  full_name                    String
+  email                        String
+  phone                        String
+  photography_experience_years Int
+  motivation                   String
+
+  // Optional fields
+  address                           String?
+  automotive_photography_experience String?
+  portfolio_url                     String?
+  equipment                         String?
+  availability                      String?
+  location_preferences              String?
+  sample_work_urls                  String[]
+
+  // Status & review
+  status               PhotographerApplicationStatus @default(pending_review)
+  admin_notes          String?
+  reviewed_by_admin_id String?
+  reviewed_at          DateTime?
+
+  // Relations
+  reviewedByAdmin       User?                   @relation("AdminPhotographerApplications", fields: [reviewed_by_admin_id], references: [id], onDelete: SetNull)
+  photographerAgreement PhotographerAgreement[]
+
+  @@index([email])
+  @@index([status])
+  @@map("photographer_applications")
+}
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  name    String
+  email   String
+  subject String
+  message String
+
+  // Categorization
+  ticket_type TicketType     @default(general)
+  status      TicketStatus   @default(open)
+  priority    TicketPriority @default(medium)
+
+  // Admin
+  assigned_to      String? // admin email
+  resolution_notes String?
+
+  @@index([email])
+  @@index([status, priority])
+  @@map("support_tickets")
+}
+
+model VehicleEditRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  vehicleId         String @map("vehicle_id")
+  requestedByUserId String @map("requested_by_user_id")
+  requested_changes Json // { title, price, description, mileage, condition, location, images, primary_image }
+  reason            String
+
+  // Status & processing
+  status             VehicleEditRequestStatus @default(pending)
+  admin_notes        String?
+  processed_by_admin String? // admin email
+  processed_at       DateTime?
+
+  // Relations
+  vehicle         Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  requestedByUser User    @relation("UserVehicleEditRequests", fields: [requestedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([requestedByUserId])
+  @@index([status])
+  @@map("vehicle_edit_requests")
+}
+
+model VehicleInspectionChecklist {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  date_of_inspection DateTime
+  inspector_name     String
+
+  // Optional header info
+  dealership_name           String?
+  warranty                  String?
+  repair_service_details    String?
+  verified_by_speedio       String?
+  dealership_representative String?
+  inspection_notes          String?
+
+  // Overall assessment
+  overall_condition      String?
+  recommended_sale_price Decimal? @db.Decimal(12, 2)
+
+  // Vehicle info (JSONB — read/written as a whole unit)
+  vehicle_info Json @default("{}")
+
+  // Checklist sections (JSONB arrays — variable length, always read as a whole)
+  exterior_condition Json @default("[]")
+  interior_condition Json @default("[]")
+  engine_mechanical  Json @default("[]")
+  documentation      Json @default("[]")
+  photos_media       Json @default("[]")
+
+  // Link to managed sale request
+  managedSaleRequestId String? @map("managed_sale_request_id")
+
+  // Relations
+  managedSaleRequest ManagedSaleRequest? @relation(fields: [managedSaleRequestId], references: [id], onDelete: SetNull)
+
+  @@index([managedSaleRequestId])
+  @@map("vehicle_inspection_checklists")
+}
+
+model VehicleTransfer {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  vehicleId     String       @map("vehicle_id")
+  transfer_type TransferType
+  buyerId       String       @map("buyer_id")
+
+  // Optional participants
+  sellerId String? @map("seller_id")
+
+  // Progress tracking
+  current_step    Int   @default(1)
+  steps_completed Int[] @default([])
+
+  // Timestamps
+  initiated_date DateTime?
+  completed_date DateTime?
+
+  // Status & notes
+  status            TransferStatus @default(in_progress)
+  admin_notes       String?
+  user_facing_notes String?
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  buyer   User    @relation("BuyerTransfers", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller  User?   @relation("SellerTransfers", fields: [sellerId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@map("vehicle_transfers")
+}
+
+model VerificationRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Required fields
+  vehicleId     String @map("vehicle_id")
+  userId        String @map("user_id")
+  contact_phone String
+
+  // Denormalized user info (in case account is deleted)
+  user_email String?
+  user_name  String?
+
+  // Inspection details
+  preferred_time   String?
+  documents_info   String?
+  inspection_notes String?
+
+  // Status
+  status VerificationRequestStatus @default(pending)
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  user    User    @relation("UserVerificationRequests", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([userId])
+  @@index([status])
+  @@map("verification_requests")
+}
