@@ -52,10 +52,10 @@ export const authOptions:NextAuthOptions  = {
 
 
         }),
-         FacebookProvider({
-    clientId: process.env.FACEBOOK_CLIENT_ID,
-    clientSecret: process.env.FACEBOOK_CLIENT_SECRET
-  }),
+       FacebookProvider({
+  clientId: process.env.FACEBOOK_CLIENT_ID!,
+  clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+        }),
     ],
     callbacks:{
         async jwt({ token, user }) {
@@ -64,6 +64,8 @@ export const authOptions:NextAuthOptions  = {
                 token.id = user.id?.toString();
                 token.isVerified = user.isVerified;
                 token.full_name = user.full_name
+                 token.role = user.role;
+                token.email = user.email
             }
 
           return token
@@ -71,9 +73,11 @@ export const authOptions:NextAuthOptions  = {
 
       async session({ session, token }) {
            if(token){
-                session.user.id = token.id?.toString()
+                session.user.id = token.id ?? ""; 
                 session.user.isVerified = token.isVerified
                 session.user.full_name = token.full_name
+                 session.user.role = token.role;   
+                 token.email = token.email
             }
       return session
     }

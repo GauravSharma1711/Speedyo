@@ -18,7 +18,7 @@ export default function SignInPage() {
     const result = await signIn("Credentials", { email, password, redirect: false })
     setLoading(false)
     if (result?.error) setError(result.error)
-    else router.push("/dashboard")
+    else router.push("/")
   }
 
   return (
