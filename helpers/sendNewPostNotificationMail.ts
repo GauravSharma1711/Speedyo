@@ -13,8 +13,8 @@ export async function sendNewPostNotificationMail(
     const post_url = `${appUrl}/feed`
 
     const emailPromises = followerEmails.map(followerEmail => {
-      const unsubscribe_url = `${appUrl}/unsubscribe?email=${encodeURIComponent(followerEmail)}&type=post`
-      const unsubscribe_all_url = `${appUrl}/unsubscribe?email=${encodeURIComponent(followerEmail)}&type=all`
+const unsubscribe_url = `${appUrl}/api/unsubscribe?email=${encodeURIComponent(followerEmail)}&type=vehicle`
+const unsubscribe_all_url = `${appUrl}/api/unsubscribe?email=${encodeURIComponent(followerEmail)}&type=all`
 
       return resend.emails.send({
         from: fromEmail,

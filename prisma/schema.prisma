@@ -70,6 +70,7 @@ enum PostType {
   image
   video
   vehicle_promo
+  article            
 }
 
 enum Role {
@@ -388,6 +389,13 @@ model Post {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  video_url          String?        // for video posts
+video_thumbnail    String?        // video preview image
+article_title      String?        // for article posts  
+article_excerpt    String?        // short description for articles
+
+
 
   // Required fields
   content  String

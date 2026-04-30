@@ -70,7 +70,7 @@ export default function VerifyEmailPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/verify-otp", {
+      const res = await fetch("/api/verifyOtp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: otpString }),
@@ -80,7 +80,7 @@ export default function VerifyEmailPage() {
 
       if (data.success) {
         toast.success("Email verified successfully!");
-        router.push("/sign-in");
+        router.push("/signIn");
       } else {
         toast.error(data.message || "Verification failed");
         // Clear OTP on error
