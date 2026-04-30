@@ -16,7 +16,7 @@ await resend.emails.send({
     from:fromEmail,
     to:email,
     subject:'Verify your email for Speedyo',
-    react: VerificationEmail({full_name,otp})
+    html: VerificationEmail({full_name,otp})
 
 })
 

@@ -2,7 +2,7 @@
 import prisma from "@/db/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-
+import { sendVerificationMail } from "@/helpers/sendVerificationMail"; 
 
 export async function POST(request: NextRequest) {
     try {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Send new OTP email
-        const emailResponse = await sendVerificationMail(email, user.full_name, otp);
+        const emailResponse = await sendVerificationMail( user.full_name ?? email.split("@")[0], email,otp);
 
         if (!emailResponse.success) {
             return NextResponse.json({

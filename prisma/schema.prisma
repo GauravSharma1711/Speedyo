@@ -70,6 +70,7 @@ enum PostType {
   image
   video
   vehicle_promo
+  article            
 }
 
 enum Role {
@@ -253,6 +254,52 @@ enum VerificationRequestStatus {
   cancelled
 }
 
+enum TestDriveStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+  rescheduled
+}
+
+model TestDriveRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Vehicle
+  vehicleId String @map("vehicle_id")
+
+  // Requester info (denormalized — supports guests too)
+  requester_name  String
+  requester_email String
+  requester_phone String?
+
+  // Scheduling
+  requested_date String   // "2025-04-30"
+  requested_time String   // "10:00 AM"
+  confirmed_date String?
+  confirmed_time String?
+
+  // Status & notes
+  status              TestDriveStatus @default(pending)
+  additional_notes    String?
+  cancellation_reason String?
+  seller_notes        String?
+
+  // Optional — link to a logged-in user if they have an account
+  userId String? @map("user_id")
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId])
+  @@index([userId])
+  @@index([status])
+  @@map("test_drive_requests")
+}
+
 model User {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now()) @map("created_at")
@@ -294,6 +341,10 @@ model User {
   seller_subscription  SellerSubscription?
   email_notifications  EmailNotifications?
   inapp_notifications  InAppNotifications?
+
+  testDriveRequests TestDriveRequest[]
+
+
 
   created_agreements DealershipVehicleAgreement[] @relation("AdminAgreements")
 
@@ -388,6 +439,13 @@ model Post {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  video_url          String?        // for video posts
+video_thumbnail    String?        // video preview image
+article_title      String?        // for article posts  
+article_excerpt    String?        // short description for articles
+
+
 
   // Required fields
   content  String
@@ -515,6 +573,7 @@ model Vehicle {
   // Relations
   author User?  @relation(fields: [authorId], references: [id], onDelete: SetNull)
   posts  Post[]
+  testDriveRequests TestDriveRequest[]
 
   messages             Message[]
   verificationRequests VerificationRequest[]
@@ -865,8 +924,7 @@ model Message {
   vehicleId            String? @map("vehicle_id")
   managedSaleRequestId String? @map("managed_sale_request_id")
 
-  // Test drive details (JSONB — always read/written as a whole)
-  test_drive_details Json?
+ 
 
   // Relations
   sender             User                @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
