@@ -22,7 +22,7 @@ export async function sendGuestPaymentConfirmationMail(
         amount_paid,
         quantity,
         transaction_id,
-        login_url: `${appUrl}/login`,
+        login_url: `${appUrl}/signIn`,
       })
     })
 

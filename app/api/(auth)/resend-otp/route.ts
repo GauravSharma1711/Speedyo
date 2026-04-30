@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendVerificationMail } from "@/helpers/sendVerificationMail";
 
 
-
 export async function POST(request: NextRequest) {
     try {
         const { email } = await request.json();
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Send new OTP email
-        const emailResponse = await sendVerificationMail(user.full_name, email, otp);
+        const emailResponse = await sendVerificationMail(user.full_name ?? '', email, otp);
 
         if (!emailResponse.success) {
             return NextResponse.json({
