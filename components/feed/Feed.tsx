@@ -1,91 +1,101 @@
-  "use client"
-  
-  import React, { useState, useEffect } from "react";
-import PostCard from "./PostCard";
+"use client";
+
+import React, { useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
+
 import CreatePost from "./CreatePost";
 import FeedFilters from "./FeedFilters";
-import { Card, CardContent } from "@/components/ui/Card";
-import { Car } from "lucide-react";
+import PostCard from "./PostCard";
 
-export default function Feed({ posts, users, vehicles, onPostCreated, onReact, onComment, onShare }) {
-  const [filteredPosts, setFilteredPosts] = useState(posts);
+type FeedPost = any;
+type FeedVehicle = any;
+type CurrentUser = any;
 
-  useEffect(() => {
-    setFilteredPosts(posts);
-  }, [posts]);
+type CreatePostResult = { id: string } | null;
 
-  const handleFilterChange = (filters) => {
-    // Basic filtering logic, can be expanded
-    let newFilteredPosts = [...posts];
-    if (filters.postType !== "all") {
-      newFilteredPosts = newFilteredPosts.filter(p => p.post_type === filters.postType);
+interface FeedProps {
+  posts: FeedPost[];
+  vehicles: FeedVehicle[];
+  currentUser?: CurrentUser | null;
+
+  onCreatePost: (data: any) => Promise<CreatePostResult>;
+  onReact: (post: FeedPost, reactionType: string) => void | Promise<void>;
+  onComment: (postId: string) => void | Promise<void>;
+  onShare: (post: FeedPost) => void | Promise<void>;
+  onEdit?: (post: FeedPost) => void;
+}
+
+export default function Feed({
+  posts,
+  vehicles,
+  currentUser = null,
+  onCreatePost,
+  onReact,
+  onComment,
+  onShare,
+  onEdit,
+}: FeedProps) {
+  const [sortBy, setSortBy] = useState("recent");
+  const [showCreatePost, setShowCreatePost] = useState(false);
+
+  const sortedPosts = useMemo(() => {
+    const sorted = [...(posts ?? [])];
+
+    switch (sortBy) {
+      case "popular":
+        return sorted.sort((a, b) => {
+          const r = (p: any) =>
+            p.reactions ? Object.values(p.reactions).reduce((s: number, c: any) => s + c, 0) : 0;
+          return r(b) - r(a);
+        });
+      case "viewed":
+        return sorted.sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
+      case "interactive":
+        return sorted.sort(
+          (a, b) =>
+            (b.comments_count ?? 0) + (b.shares ?? 0) - ((a.comments_count ?? 0) + (a.shares ?? 0))
+        );
+      case "trending": {
+        const ago = new Date(Date.now() - 86_400_000);
+        return sorted
+          .filter((p) => (p.created_date ? new Date(p.created_date) > ago : false))
+          .sort((a, b) => (b.engagement_score ?? 0) - (a.engagement_score ?? 0));
+      }
+      case "engagement":
+        return sorted.sort((a, b) => (b.engagement_score ?? 0) - (a.engagement_score ?? 0));
+      default:
+        return sorted.sort((a, b) => +new Date(b.created_date) - +new Date(a.created_date));
     }
-    setFilteredPosts(newFilteredPosts);
-  };
-
-  const getUserById = (email) => {
-    return users.find((u) => u.email === email);
-  };
-
-  const getVehicleById = (vehicleId) => {
-    return vehicles.find((v) => v.id === vehicleId);
-  };
+  }, [posts, sortBy]);
 
   return (
-    <>
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Filters */}
-        <div className="lg:col-span-1">
-          <FeedFilters onFilterChange={handleFilterChange} />
-        </div>
+    <div className="space-y-6">
+      <FeedFilters sortBy={sortBy} setSortBy={setSortBy} />
 
-        {/* Main Feed Content */}
-        <div className="lg:col-span-3 space-y-6">
-          <CreatePost onPostCreated={onPostCreated} />
+      <AnimatePresence>
+        {showCreatePost && (
+          <CreatePost
+            currentUser={currentUser}
+            vehicles={vehicles}
+            onCreatePost={onCreatePost}
+            onCancel={() => setShowCreatePost(false)}
+            initialPostType="text"
+          />
+        )}
+      </AnimatePresence>
 
-          {filteredPosts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              user={getUserById(post.created_by)}
-              vehicle={post.related_vehicle_id ? getVehicleById(post.related_vehicle_id) : null}
-              onReact={onReact}
-              onComment={onComment}
-              onShare={onShare}
-            />
-          ))}
-        </div>
+      <div className="space-y-6">
+        {sortedPosts.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            onReact={(reactionType: string) => onReact(post, reactionType)}
+            onComment={() => onComment(post.id)}
+            onShare={() => onShare(post)}
+            onEdit={() => onEdit?.(post)}
+          />
+        ))}
       </div>
-      
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold text-slate-800 mb-6">Featured Vehicles</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles
-            .filter(vehicle => vehicle.featured && vehicle.status === 'available') // Only show featured and available vehicles
-            .slice(0, 3)
-            .map((vehicle) => (
-              <Card key={vehicle.id} className="bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-                <div className="h-48 bg-gradient-to-br from-slate-200 to-slate-300 rounded-t-lg relative overflow-hidden">
-                  {vehicle.primary_image ? (
-                    <img
-                      src={vehicle.primary_image}
-                      alt={vehicle.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <Car className="w-12 h-12 text-slate-400" />
-                    </div>
-                  )}
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-bold text-lg">{vehicle.title}</h3>
-                  <p className="text-blue-600 font-semibold mt-1">${vehicle.price?.toLocaleString()}</p>
-                </CardContent>
-              </Card>
-            ))}
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

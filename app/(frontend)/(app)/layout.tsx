@@ -39,6 +39,7 @@ import {
   SidebarFooter,
   SidebarProvider,
   SidebarTrigger,
+  SidebarInset,
 } from "@/components/ui/Sidebar";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -271,7 +272,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
     }
   }
 
-  setIsAuthCheckComplete(status !== "loading")
+  setIsAuthCheckComplete(status === "authenticated" || status === "unauthenticated")
 }, [session, status, currentPageName])
 
   // ── Setup dialog ──────────────────────────────────────────────────────────
@@ -590,17 +591,19 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30">
       <style>{`
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
 
-      <SidebarProvider>
+      <SidebarProvider className="flex flex-1">
         {showSidebar ? (
-          <div className="flex w-full justify-center">
+          <>
             {/* ── Sidebar ───────────────────────────────────────────────── */}
-            <Sidebar className="hidden md:block border-r border-slate-200/60 backdrop-blur-sm w-64 flex-shrink-0">
+            {/* Let shadcn Sidebar manage its own layout classes.
+               Only add styling classes here to avoid breaking the built-in "gap" behavior. */}
+            <Sidebar className="border-r border-slate-200/60 backdrop-blur-sm">
               <SidebarHeader className="border-b border-slate-200/60 pb-0 flex pl-10 pt-6">
                 <Link href={createPageUrl("Landing")}>
                   <img
@@ -732,7 +735,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                       </div>
                     </div>
                   ) : (
-                    <Button onClick={handleLogin} className="w-full bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
+                    <Button onClick={handleLogin} className="w-full bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 font-bold">
                       <LogIn className="w-4 h-4 mr-2" />
                       Login / Register
                     </Button>
@@ -742,7 +745,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
             </Sidebar>
 
             {/* ── Main Content ──────────────────────────────────────────── */}
-            <main className={`flex-1 flex flex-col min-h-screen ${getContentMaxWidth()} overflow-x-hidden`}>
+            <SidebarInset className="min-w-0 overflow-x-hidden bg-transparent">
 
               {/* Mobile Header */}
               {currentPageName !== "Messages" &&
@@ -801,9 +804,12 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                 )}
 
               {/* Desktop Header */}
-              <header className="hidden md:flex bg-white/70 backdrop-blur-md border-b border-slate-200/60 px-4 sm:px-6 py-0 sticky top-0 z-50">
-                <div className={`flex items-center justify-between h-16 w-full mx-auto ${getContentMaxWidth()}`}>
-                  <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors duration-200" />
+              <header className="hidden md:flex sticky top-0 z-50">
+                <div className="w-full px-8">
+                  <div
+                    className={`flex items-center justify-between h-16 w-full mx-auto bg-white/70 backdrop-blur-md border border-slate-200/60 ${getContentMaxWidth()}`}
+                  >
+                    <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors duration-200 ml-2" />
 
                   {/* Desktop Nav Icons */}
                   <div className="flex items-center gap-2">
@@ -819,19 +825,19 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                           className={`px-4 py-2 h-16 w-24 rounded-none border-b-4 transition-all duration-200 ${getNavButtonClasses(page)}`}
                           title={page}
                         >
-                          <Icon className="w-5 h-5" />
+                          <Icon className="w-7 h-7" />
                         </Button>
                       </Link>
                     ))}
                   </div>
 
                   {/* Desktop Right Side */}
-                  <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="flex items-center gap-2 sm:gap-4 mr-2">
                     {currentUser && (
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="ghost" size="icon" className="relative">
-                            <Bell className="w-5 h-5 text-slate-600" />
+                            <Bell className="w-6 h-6 text-slate-600" />
                             {unreadCount > 0 && (
                               <span className="absolute -top-1 -right-1 flex h-5 w-5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
@@ -864,6 +870,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                       </Button>
                     )}
                   </div>
+                  </div>
                 </div>
               </header>
 
@@ -875,7 +882,9 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                   ? "pb-0"
                   : "pb-16"
               } md:pb-0`}>
-                {children}
+                <div className={`w-full mx-auto ${getContentMaxWidth()} px-4 sm:px-6`}>
+                  {children}
+                </div>
               </div>
 
               {/* Mobile Bottom Nav */}
@@ -938,11 +947,11 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                     </div>
                   </div>
                 )}
-            </main>
-          </div>
+            </SidebarInset>
+          </>
         ) : (
           /* Pages without sidebar */
-          <main className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+          <main className="flex-1 min-w-0 flex flex-col min-h-screen overflow-x-hidden">
             <div className="flex-1 overflow-auto">{children}</div>
           </main>
         )}

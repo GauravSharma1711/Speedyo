@@ -523,7 +523,7 @@ export default function GuestDashboard({ user }) {
   const currentPublicUser = sellers.find(s => s.id === user?.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 py-4">
       {getVerificationStatusAlert()}
 
       {/* Content Width Wrapper - Now includes header */}

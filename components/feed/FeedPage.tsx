@@ -227,8 +227,8 @@ export default function FeedPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30 p-2 sm:p-4 overflow-auto">
-      <div className="mx-auto max-w-4xl rounded-lg border shadow-sm bg-white/80 backdrop-blur-sm">
+    <div className="w-full">
+      <div className="w-full rounded-lg border shadow-sm bg-white/80 backdrop-blur-sm">
 
         {/* Create Post Card */}
         <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">

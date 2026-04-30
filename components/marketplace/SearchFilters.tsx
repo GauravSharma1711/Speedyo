@@ -36,7 +36,7 @@ export default function SearchFilters({ filters, setFilters, vehicles, isOpen })
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="overflow-hidden"
         >
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg mt-1">
+          <Card className="bg-white border border-slate-200 shadow-sm mt-1">
             <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center gap-2 mb-3 sm:mb-4">
                 <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
@@ -54,7 +54,7 @@ export default function SearchFilters({ filters, setFilters, vehicles, isOpen })
               
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                 <Select value={filters.make} onValueChange={(value) => handleFilterChange('make', value)}>
-                  <SelectTrigger className="h-10 sm:h-11 text-sm">
+                  <SelectTrigger className="h-10 sm:h-11 text-sm border-slate-200 bg-white">
                     <SelectValue placeholder="Make" />
                   </SelectTrigger>
                   <SelectContent>
@@ -65,7 +65,7 @@ export default function SearchFilters({ filters, setFilters, vehicles, isOpen })
                 </Select>
 
                 <Select value={filters.priceRange} onValueChange={(value) => handleFilterChange('priceRange', value)}>
-                  <SelectTrigger className="h-10 sm:h-11 text-sm">
+                  <SelectTrigger className="h-10 sm:h-11 text-sm border-slate-200 bg-white">
                     <SelectValue placeholder="Price Range" />
                   </SelectTrigger>
                   <SelectContent>
@@ -78,7 +78,7 @@ export default function SearchFilters({ filters, setFilters, vehicles, isOpen })
                 </Select>
 
                 <Select value={filters.condition} onValueChange={(value) => handleFilterChange('condition', value)}>
-                  <SelectTrigger className="h-10 sm:h-11 text-sm">
+                  <SelectTrigger className="h-10 sm:h-11 text-sm border-slate-200 bg-white">
                     <SelectValue placeholder="Condition" />
                   </SelectTrigger>
                   <SelectContent>
@@ -90,7 +90,7 @@ export default function SearchFilters({ filters, setFilters, vehicles, isOpen })
                 </Select>
 
                 <Select value={filters.fuelType} onValueChange={(value) => handleFilterChange('fuelType', value)}>
-                  <SelectTrigger className="h-10 sm:h-11 text-sm">
+                  <SelectTrigger className="h-10 sm:h-11 text-sm border-slate-200 bg-white">
                     <SelectValue placeholder="Fuel Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -105,7 +105,7 @@ export default function SearchFilters({ filters, setFilters, vehicles, isOpen })
                   placeholder="Location"
                   value={filters.location}
                   onChange={(e) => handleFilterChange('location', e.target.value)}
-                  className="border-slate-200 h-10 sm:h-11 text-sm"
+                  className="border-slate-200 bg-white h-10 sm:h-11 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
             </CardContent>
