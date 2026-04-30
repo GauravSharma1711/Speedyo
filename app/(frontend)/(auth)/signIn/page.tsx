@@ -52,7 +52,7 @@ export default function SignInPage() {
                 <div className="space-y-3">
                   <button
                     type="button"
-                    onClick={() => signIn("facebook", { callbackUrl: "/dashboard" })}
+                    onClick={() => signIn("facebook", { callbackUrl: "/Dashboard" })}
                     className="w-full flex items-center justify-center gap-3 bg-white text-slate-700 px-5 py-3.5 rounded-xl border border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm transition-all duration-200 font-medium text-[16px] group"
                   >
                     <div className="transition-transform duration-200">

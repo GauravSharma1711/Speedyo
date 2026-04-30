@@ -497,14 +497,14 @@ const handleGetStarted = () => {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                
-               <Link href="/ManagedSales">
+               <Link href="/Managed-Sales">
                   <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50 text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all w-full sm:w-auto">
                     <Handshake className="w-6 h-6 mr-2 hidden md:inline" />
                     Explore Managed Sales
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-               <Link href="/Contact">
+                <Link href="/contact">
                   <Button variant="outline" size="lg" className="border border-white text-white bg-transparent hover:bg-white hover:text-blue-600 text-lg px-8 py-6 w-full sm:w-auto">
                     <MessageCircle className="w-6 h-6 mr-2" />
                     Get Free Consultation
@@ -746,7 +746,7 @@ const handleGetStarted = () => {
                   </div>
 
                   <div className="pt-6 mt-6 border-t border-slate-200">
-                         <Link href="/managed-sales">
+                        <Link href="/Managed-Sales">
                       <Button className="w-full h-12 text-base font-semibold bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 shadow-md hover:shadow-lg transition-all">
                         <ArrowRight className="w-5 h-5 mr-2" />
                         Request Managed Sale
@@ -781,7 +781,7 @@ const handleGetStarted = () => {
                       Compare All Plans
                     </Button>
                   </Link>
-                  <Link href={'/Contact'} className="w-full">
+                  <Link href={'/contact'} className="w-full">
                     <Button variant="outline" className="w-full border-blue-300 text-blue-600 hover:bg-blue-50">
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Talk to an Expert

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { base44 } from '@/api/base44Client';
+import { invokeFunction } from '@/api/entities';
 
 export default function LiaisonApplicationManager() {
   const [applications, setApplications] = useState([]);
@@ -65,7 +65,7 @@ export default function LiaisonApplicationManager() {
 
         const statusInfo = statusMessages[newStatus];
         if (statusInfo) {
-          await base44.functions.invoke('sendEmail', {
+          await invokeFunction('sendEmail', {
             to: application.email,
             subject: statusInfo.subject,
             fromName: 'Speedio Team',

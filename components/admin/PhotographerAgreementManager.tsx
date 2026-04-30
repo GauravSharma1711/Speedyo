@@ -28,7 +28,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { invokeFunction } from '@/api/entities';
 import { format } from 'date-fns';
 
 export default function PhotographerAgreementManager() {
@@ -147,19 +147,15 @@ export default function PhotographerAgreementManager() {
 
   const handleDownloadPDF = async (agreement) => {
     try {
-      const response = await base44.functions.invoke('generatePhotographerAgreementPDF', {
+      const response = await invokeFunction<{ url?: string }>('generatePhotographerAgreementPDF', {
         agreementId: agreement.id
       });
       
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Photographer_Agreement_${agreement.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      if (response?.url) {
+        window.open(response.url, "_blank", "noopener,noreferrer");
+        return;
+      }
+      alert("PDF generation is not configured yet.");
     } catch (error) {
       console.error('Failed to download PDF:', error);
       alert('Failed to download PDF. Please try again.');
@@ -216,7 +212,7 @@ export default function PhotographerAgreementManager() {
     try {
       const signingUrl = `https://speedio.app${agreement.agreement_url}`;
 
-      await base44.functions.invoke('sendEmail', {
+      await invokeFunction('sendEmail', {
         to: agreement.email, // Use the email from the agreement
         subject: 'Speedio Photographer Partnership - Complete Your Application',
         fromName: 'Speedio Team',
@@ -290,7 +286,7 @@ export default function PhotographerAgreementManager() {
 
       const viewUrl = `https://speedio.app/PhotographerAgreement?id=${agreement.id}`;
       
-      await base44.functions.invoke('sendEmail', {
+      await invokeFunction('sendEmail', {
         to: application.email,
         subject: 'Your Speedio Photographer Agreement & Application',
         fromName: 'Speedio Team',

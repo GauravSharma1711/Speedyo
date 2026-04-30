@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState } from "react";
-// import { base44 } from "@/api/base44Client";
+import { ManagedSaleRequest, Notification, PublicUser, UploadFile, UserEntity } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -11,132 +11,135 @@ import { Label } from "@/components/ui/Label";
 import { Upload, X, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/UseToast";
 
-export default function SimpleManagedSaleForm({ onSuccess, onClose }) {
+type SimpleManagedSaleFormProps = {
+  onSuccess?: () => void;
+  onClose?: () => void;
+};
+
+export default function SimpleManagedSaleForm({ onSuccess, onClose }: SimpleManagedSaleFormProps) {
   const [formData, setFormData] = useState({
     title: "",
     price: "",
     mileage: "",
     description: "",
   });
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
 
-  // const handleImageUpload = async (e) => {
-  //   const files = Array.from(e.target.files);
-  //   if (files.length === 0) return;
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
 
-  //   setIsUploading(true);
-  //   try {
-  //     const uploadPromises = files.map(async (file) => {
-  //       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-  //       return file_url;
-  //     });
+    setIsUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const { file_url } = await UploadFile({ file });
+        return file_url;
+      });
 
-  //     const uploadedUrls = await Promise.all(uploadPromises);
-  //     setImages([...images, ...uploadedUrls]);
+      const uploadedUrls = await Promise.all(uploadPromises);
+      setImages((prev) => [...prev, ...uploadedUrls]);
 
-  //     toast({
-  //       title: "Images Uploaded",
-  //       description: `${uploadedUrls.length} image(s) uploaded successfully.`,
-  //       variant: "success",
-  //     });
-  //   } catch (error) {
-  //     console.error("Failed to upload images:", error);
-  //     toast({
-  //       title: "Upload Failed",
-  //       description: "Could not upload images. Please try again.",
-  //       variant: "destructive",
-  //     });
-  //   }
-  //   setIsUploading(false);
-  // };
+      toast({
+        title: "Images Uploaded",
+        description: `${uploadedUrls.length} image(s) uploaded successfully.`,
+      });
+    } catch (error) {
+      console.error("Failed to upload images:", error);
+      toast({
+        title: "Upload Failed",
+        description: "Could not upload images. Please try again.",
+        variant: "destructive",
+      });
+    }
+    setIsUploading(false);
+    e.target.value = "";
+  };
 
-  // const removeImage = (index) => {
-  //   setImages(images.filter((_, i) => i !== index));
-  // };
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  //   if (!formData.title || !formData.price || !formData.mileage || !formData.description) {
-  //     toast({
-  //       title: "Missing Information",
-  //       description: "Please fill in all required fields.",
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
+    if (!formData.title || !formData.price || !formData.mileage || !formData.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  //   if (images.length === 0) {
-  //     toast({
-  //       title: "No Images",
-  //       description: "Please upload at least one image of your vehicle.",
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
+    if (images.length === 0) {
+      toast({
+        title: "No Images",
+        description: "Please upload at least one image of your vehicle.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  //   setIsSubmitting(true);
-  //   try {
-  //     const user = await base44.auth.me();
+    setIsSubmitting(true);
+    try {
+      const user = await UserEntity.me();
 
-  //     // Create a simplified managed sale request
-  //     const requestData = {
-  //       vehicle_details: {
-  //         title: formData.title,
-  //         seller_asking_price: parseFloat(formData.price),
-  //         mileage: parseFloat(formData.mileage),
-  //         description: formData.description,
-  //         images: images,
-  //       },
-  //       requester_contact_info: {
-  //         full_name: user.full_name,
-  //         email: user.email,
-  //       },
-  //       access_arrangements: {},
-  //       terms_agreed: true,
-  //       submitted_by_user_id: user.id,
-  //       status: "pending_initial_review",
-  //     };
+      const requestData = {
+        vehicle_details: {
+          title: formData.title,
+          seller_asking_price: Number.parseFloat(formData.price),
+          mileage: Number.parseFloat(formData.mileage),
+          description: formData.description,
+          images,
+        },
+        requester_contact_info: {
+          full_name: user.full_name,
+          email: user.email,
+        },
+        access_arrangements: {},
+        terms_agreed: true,
+        submitted_by_user_id: user.id,
+        status: "pending_initial_review",
+      };
 
-  //     const createdRequest = await base44.entities.ManagedSaleRequest.create(requestData);
+      const createdRequest = await ManagedSaleRequest.create(requestData);
 
-  //     // Notify admins
-  //     const admins = await base44.entities.User.filter({ role: "admin" });
-  //     for (const admin of admins) {
-  //       await base44.entities.Notification.create({
-  //         recipient_id: admin.id,
-  //         sender_id: user.id,
-  //         type: "new_managed_sale_request",
-  //         content: `🚗 New managed sale submission from ${user.full_name} for "${formData.title}". ACTION REQUIRED: Complete vehicle details and specifications before listing.`,
-  //         related_entity_type: "ManagedSaleRequest",
-  //         related_entity_id: createdRequest.id,
-  //         url: `/admin-panel?tab=managed-sales`,
-  //         icon: "AlertCircle",
-  //       });
-  //     }
+      const admins = await PublicUser.filter({ role: "admin" });
+      for (const admin of admins) {
+        await Notification.create({
+          recipient_id: admin.user_id,
+          sender_id: user.id,
+          type: "new_managed_sale_request",
+          content: `🚗 New managed sale submission from ${user.full_name} for "${formData.title}". ACTION REQUIRED: Complete vehicle details and specifications before listing.`,
+          related_entity_type: "ManagedSaleRequest",
+          related_entity_id: createdRequest.id,
+          url: `/Admin?tab=managed-sales`,
+          icon: "AlertCircle",
+        });
+      }
 
-  //     setSubmitted(true);
-  //     if (onSuccess) onSuccess();
+      setSubmitted(true);
+      if (onSuccess) onSuccess();
 
-  //     toast({
-  //       title: "Request Submitted",
-  //       description: "Our team will contact you shortly to complete the listing.",
-  //       variant: "success",
-  //     });
-  //   } catch (error) {
-  //     console.error("Failed to submit managed sale request:", error);
-  //     toast({
-  //       title: "Submission Failed",
-  //       description: error.message || "Could not submit your request. Please try again.",
-  //       variant: "destructive",
-  //     });
-  //   }
-  //   setIsSubmitting(false);
-  // };
+      toast({
+        title: "Request Submitted",
+        description: "Our team will contact you shortly to complete the listing.",
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Could not submit your request. Please try again.";
+      console.error("Failed to submit managed sale request:", error);
+      toast({
+        title: "Submission Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
+    setIsSubmitting(false);
+  };
 
   if (submitted) {
     return (
@@ -145,10 +148,10 @@ export default function SimpleManagedSaleForm({ onSuccess, onClose }) {
           <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Request Submitted!</h2>
           <p className="text-slate-600 mb-6">
-            Thank you for choosing Speedio's managed sales service. Our team will review your submission
+            Thank you for choosing Speedio&apos;s managed sales service. Our team will review your submission
             and contact you within 24 hours to gather additional details and finalize your listing.
           </p>
-          <Button onClick={() => window.location.href = "/dashboard"} className="bg-gradient-to-r from-blue-500 to-emerald-500">
+          <Button onClick={() => window.location.href = "/Dashboard"} className="bg-gradient-to-r from-blue-500 to-emerald-500">
             Go to Dashboard
           </Button>
         </CardContent>

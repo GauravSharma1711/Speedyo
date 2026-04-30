@@ -1,12 +1,16 @@
-"use client"
-import React, { useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, ShoppingCart, Facebook, UserPlus } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+"use client";
 
-export default function OISTBuyCar({ onBack }) {
+import React, { useEffect } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { ArrowLeft, ExternalLink, Globe, ShoppingCart, UserPlus } from "lucide-react";
+
+type OISTBuyCarProps = {
+  onBack: () => void;
+};
+
+export default function OISTBuyCar({ onBack }: OISTBuyCarProps) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -77,11 +81,12 @@ export default function OISTBuyCar({ onBack }) {
             <p className="text-slate-600 mb-6 flex-1">
               Browse our curated collection of vehicles with detailed specifications, photos, and seller information.
             </p>
-            <Link to={createPageUrl("Marketplace")}>
-              <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
-                Browse Marketplace
-              </Button>
-            </Link>
+            <Button
+              asChild
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+            >
+              <Link href="/Marketplace">Browse Marketplace</Link>
+            </Button>
           </CardContent>
         </Card>
 
@@ -90,7 +95,7 @@ export default function OISTBuyCar({ onBack }) {
           <CardContent className="p-6 flex flex-col flex-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
-                <Facebook className="w-6 h-6 text-white" />
+                <Globe className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-xl font-bold text-slate-800">Facebook Marketplace</h3>
             </div>
@@ -129,9 +134,9 @@ export default function OISTBuyCar({ onBack }) {
           <p className="text-slate-600 mb-4">
             Need assistance with the buying process or have questions?
           </p>
-          <Link to={createPageUrl("Contact")}>
-            <Button variant="outline">Contact Speedio Support</Button>
-          </Link>
+          <Button asChild variant="outline">
+            <Link href="/contact">Contact Speedio Support</Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

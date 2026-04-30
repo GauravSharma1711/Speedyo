@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 
+import { UserEntity as User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -20,15 +21,17 @@ import { motion } from "framer-motion";
 import OrderSummaryModal from "../components/checkout/OrderSummaryModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSession } from "next-auth/react";
 import Footer from "../components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import DowngradeToGuestModal from "../components/subscription/DowngradeToGuestModal";
 
 // ─── Route helper (replace these with your actual Next.js routes) ─────────────
 const routes: Record<string, string> = {
-  Dashboard: "/dashboard",
-  Checkout: "/checkout",
-  DealershipRegistration: "/dealership-registration",
+  // Keep these aligned with your app’s actual route casing.
+  Dashboard: "/Dashboard",
+  Checkout: "/Checkout",
+  DealershipRegistration: "/DealershipRegistration",
 };
 
 function getRoute(page: string, params?: Record<string, string>): string {
@@ -286,19 +289,18 @@ export default function SubscriptionPage() {
     fetchUser();
   }, []);
 
-// TODO: Replace with your actual API call e.g. GET /api/users/me
-const fetchUser = async () => {
-  setIsLoading(true);
-  try {
-    const res = await fetch("/api/users/me");
-    if (!res.ok) throw new Error("Not authenticated");
-    const user = await res.json();
-    setCurrentUser(user);
-  } catch {
-    setCurrentUser(null);
-  }
-  setIsLoading(false);
-};
+  // NOTE: We intentionally avoid a custom `/api/users/me` route here.
+  // This simply checks NextAuth session presence to decide authenticated UI.
+  const fetchUser = async () => {
+    setIsLoading(true);
+    try {
+      const session = await getSession();
+      setCurrentUser(session?.user ?? null);
+    } catch {
+      setCurrentUser(null);
+    }
+    setIsLoading(false);
+  };
 
   const getCurrentUserType = (): string => {
     if (!currentUser) return "guest";
@@ -411,13 +413,16 @@ const fetchUser = async () => {
         <p className="text-slate-600 mb-6 max-w-md">
           Please log in to view subscription options and manage your account.
         </p>
-        <Button
-          onClick={() => router.push("https://speedio.app/login")}
-          size="lg"
-        >
-          <LogIn className="w-5 h-5 mr-2" />
-          Login / Register
-        </Button>
+        <div className="flex items-center gap-3 flex-wrap justify-center">
+          <Button onClick={() => router.push("/signIn")} size="lg">
+            <LogIn className="w-5 h-5 mr-2" />
+            Sign in
+          </Button>
+          <Button onClick={() => router.push("/signUp")} size="lg" variant="outline">
+            Create account
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+        </div>
       </div>
     );
   }

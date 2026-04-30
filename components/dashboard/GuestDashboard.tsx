@@ -897,7 +897,7 @@ export default function GuestDashboard({ user }) {
                                       View Details
                                     </Button>
                                     {request.status === 'listed' && request.created_vehicle_id && (
-                                      <Link to={(`/Vehicle?id=${request.created_vehicle_id}`)}>
+                                      <Link href={`/Vehicle?id=${request.created_vehicle_id}`}>
                                         <Button size="sm" variant="outline" className="w-full">
                                           <ExternalLink className="w-4 h-4 mr-2" />
                                           View Listing
@@ -934,7 +934,7 @@ export default function GuestDashboard({ user }) {
                     <Eye className="w-5 h-5 text-blue-500" />
                     Recently Viewed
                   </CardTitle>
-                  <Link to={"/Marketplace"}>
+                  <Link href="/Marketplace">
                     <Button variant="outline" size="sm">Browse More</Button>
                   </Link>
                 </CardHeader>
@@ -948,7 +948,7 @@ export default function GuestDashboard({ user }) {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {recentlyViewed.slice(0, 3).map((vehicle) => (
-                          <Link key={vehicle.id} to={(`/Vehicle?id=${vehicle.id}`)}>
+                          <Link key={vehicle.id} href={`/Vehicle?id=${vehicle.id}`}>
                             <div className="flex gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer border">
                               <div className="w-20 h-16 bg-slate-200 rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {vehicle.primary_image ? (
@@ -979,7 +979,7 @@ export default function GuestDashboard({ user }) {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
-                    <Link to={"/Marketplace?condition=excellent"}>
+                    <Link href="/Marketplace?condition=excellent">
                       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                           <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -993,7 +993,7 @@ export default function GuestDashboard({ user }) {
                       </Card>
                     </Link>
 
-                    <Link to={"/Marketplace?fuel_type=electric"}>
+                    <Link href="/Marketplace?fuel_type=electric">
                       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                           <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -1007,7 +1007,7 @@ export default function GuestDashboard({ user }) {
                       </Card>
                     </Link>
 
-                    <Link to={"/Marketplace?verified=true"}>
+                    <Link href="/Marketplace?verified=true">
                       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                           <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -1021,7 +1021,7 @@ export default function GuestDashboard({ user }) {
                       </Card>
                     </Link>
 
-                    <Link to="/Marketplace">
+                    <Link href="/Marketplace">
                       <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                         <CardContent className="p-4 text-center h-full flex flex-col justify-between">
                           <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">

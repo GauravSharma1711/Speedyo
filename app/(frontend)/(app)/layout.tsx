@@ -581,7 +581,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
           </DropdownMenuItem>
         </>
       )}
-      <DropdownMenuItem asChild><Link href={createPageUrl("Contact")} className="cursor-pointer"><HelpCircle className="mr-2 h-4 w-4" />Help &amp; Feedback</Link></DropdownMenuItem>
+      <DropdownMenuItem asChild><Link href={createPageUrl("contact")} className="cursor-pointer"><HelpCircle className="mr-2 h-4 w-4" />Help &amp; Feedback</Link></DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
         <LogOut className="w-4 h-4 mr-2" />Logout

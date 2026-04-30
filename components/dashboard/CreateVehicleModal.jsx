@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/Label';
 import { Loader2, Trash2, ChevronLeft, ChevronRight, CheckCircle, Upload } from 'lucide-react';
 import { useToast } from "@/components/ui/UseToast";
 import { User } from "@/api/entities";
-// import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
 
 // Client-side image processor

@@ -28,7 +28,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { invokeFunction } from '@/api/entities';
 import { format } from 'date-fns';
 
 export default function LiaisonAgreementManager() {
@@ -144,19 +144,15 @@ export default function LiaisonAgreementManager() {
 
   const handleDownloadPDF = async (agreement) => {
     try {
-      const response = await base44.functions.invoke('generateLiaisonAgreementPDF', {
+      const response = await invokeFunction<{ url?: string }>('generateLiaisonAgreementPDF', {
         agreementId: agreement.id
       });
       
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `Liaison_Agreement_${agreement.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      if (response?.url) {
+        window.open(response.url, "_blank", "noopener,noreferrer");
+        return;
+      }
+      alert("PDF generation is not configured yet.");
     } catch (error) {
       console.error('Failed to download PDF:', error);
       alert('Failed to download PDF. Please try again.');
@@ -220,7 +216,7 @@ export default function LiaisonAgreementManager() {
       // Generate the correct URL - always use LiaisonAgreement page
       const viewUrl = `https://speedio.app/LiaisonAgreement?id=${agreement.id}`;
       
-      await base44.functions.invoke('sendEmail', {
+      await invokeFunction('sendEmail', {
         to: application.email,
         subject: 'Your Speedio Liaison Agreement & Application',
         fromName: 'Speedio Team',

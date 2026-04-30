@@ -34,6 +34,8 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(null);
+  const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState<string>("");
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -43,8 +45,12 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus(null);
+    setCreatedTicketId(null);
 
     try {
+      const emailForReceipt = formData.email;
+      setSubmittedEmail(emailForReceipt);
+
       // TODO: Replace with your real API call
       // e.g. POST to /api/contact which creates a support ticket + sends emails
       // await fetch("/api/contact", {
@@ -53,9 +59,12 @@ export default function ContactPage() {
       //   body: JSON.stringify(formData),
       // });
 
-      // Simulate network delay
-      await new Promise((res) => setTimeout(res, 1200));
-      console.log("Support ticket (dummy):", formData);
+      console.log("[ submitting (dummy):", formData);
+
+      await new Promise((res) => setTimeout(res, 900));
+      const dummyId = `TICKET-${Date.now().toString(36).toUpperCase()}`;
+      console.log(" dummy ticket id:", dummyId);
+      setCreatedTicketId(dummyId);
 
       setSubmitStatus("success");
       setFormData({ name: "", email: "", subject: "", message: "", ticket_type: "general" });
@@ -86,8 +95,10 @@ export default function ContactPage() {
               <h3 className="font-semibold text-slate-800 mb-3">What happens next:</h3>
               <ul className="space-y-2 text-slate-600">
                 {[
-                  "Your support ticket has been created and assigned a unique ID",
-                  `You'll receive an email confirmation at ${formData.email}`,
+                  createdTicketId
+                    ? `Your support ticket has been created with ID #${createdTicketId}`
+                    : "Your support ticket has been created and assigned a unique ID",
+                  `You'll receive an email confirmation at ${submittedEmail || "your email"}`,
                   "Our support team will review and respond within 24 hours",
                   "Check your email for updates on your ticket status",
                 ].map((text, i) => (
@@ -124,7 +135,7 @@ export default function ContactPage() {
                 Go to Dashboard
               </Button>
               <Button
-                onClick={() => router.push("/FAQ")}
+                onClick={() => router.push("/faq")}
                 variant="ghost"
                 className="flex-1 max-w-xs"
               >
@@ -234,7 +245,9 @@ export default function ContactPage() {
                       </label>
                       <Textarea
                         value={formData.message}
-                        onChange={(e) => handleInputChange("message", e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                          handleInputChange("message", e.target.value)
+                        }
                         placeholder="Please describe your issue or question in detail."
                         className="h-32"
                         required
@@ -307,7 +320,7 @@ export default function ContactPage() {
                   Have a common question? You might find a quick answer on our FAQ page.
                 </p>
                 <Button variant="outline" asChild>
-                  <Link href="/FAQ">Visit FAQ Page</Link>
+                  <Link href="/faq">Visit FAQ Page</Link>
                 </Button>
               </div>
             </motion.div>
