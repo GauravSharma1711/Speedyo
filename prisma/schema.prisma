@@ -86,6 +86,8 @@ model User {
   vehicleEditRequests              VehicleEditRequest[]         @relation("UserVehicleEditRequests")
   buyerTransfers                   VehicleTransfer[]            @relation("BuyerTransfers")
   sellerTransfers                  VehicleTransfer[]            @relation("SellerTransfers")
+  vehicleLikes                     VehicleLike[]
+  vehicleSaves                     VehicleSave[]
   vehicles                         Vehicle[]
   verificationRequests             VerificationRequest[]        @relation("UserVerificationRequests")
 
@@ -215,6 +217,9 @@ model Vehicle {
   website_managed         Boolean                     @default(false)
   status                  VehicleStatus               @default(available)
   views                   Int                         @default(0)
+  likes_count             Int                         @default(0)
+  saves_count             Int                         @default(0)
+  shares_count            Int                         @default(0)
   authorId                String?                     @map("author_id")
   original_owner_id       String?
   dealership_name         String?
@@ -230,8 +235,36 @@ model Vehicle {
   author                  User?                       @relation(fields: [authorId], references: [id])
   dealershipAgreement     DealershipVehicleAgreement? @relation(fields: [dealershipAgreementId], references: [id])
   verificationRequests    VerificationRequest[]
+  likes                   VehicleLike[]
+  saves                   VehicleSave[]
 
   @@map("vehicles")
+}
+
+model VehicleLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    String   @map("user_id")
+  vehicleId String   @map("vehicle_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vehicleId])
+  @@index([vehicleId])
+  @@map("vehicle_likes")
+}
+
+model VehicleSave {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    String   @map("user_id")
+  vehicleId String   @map("vehicle_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vehicleId])
+  @@index([vehicleId])
+  @@map("vehicle_saves")
 }
 
 model DealershipVehicleAgreement {
@@ -472,6 +505,7 @@ model Message {
   content              String
   conversation_id      String?
   message_type         MessageType         @default(general)
+  test_drive_details   Json?
   read                 Boolean             @default(false)
   translated_content   String?
   original_language    String?
