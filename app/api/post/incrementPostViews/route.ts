@@ -9,8 +9,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing postId" }, { status: 400 });
     }
 
-    // Increment views atomically — no need to fetch first then update
-    // This avoids a race condition where two requests read the same count
     const updatedPost = await prisma.post.update({
       where: { id: postId },
       data: { views: { increment: 1 } },
@@ -21,10 +19,9 @@ export async function POST(request: NextRequest) {
       success: true,
       newViewCount: updatedPost.views,
     });
-
-  } catch (error: any) {
-    // Prisma throws P2025 when record not found
-    if (error?.code === "P2025") {
+  } catch (error: unknown) {
+    const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
+    if (code === "P2025") {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 

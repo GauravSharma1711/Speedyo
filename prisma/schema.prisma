@@ -8,10 +8,10 @@ datasource db {
 }
 
 model TestDriveRequest {
-  id                  String          @id @default(cuid())
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
-  vehicleId           String          @map("vehicle_id")
+  id                  String              @id @default(cuid())
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  vehicleId           String              @map("vehicle_id")
   requester_name      String
   requester_email     String
   requester_phone     String?
@@ -19,13 +19,15 @@ model TestDriveRequest {
   requested_time      String
   confirmed_date      String?
   confirmed_time      String?
-  status              TestDriveStatus @default(pending)
+  status              TestDriveStatus     @default(pending)
   additional_notes    String?
   cancellation_reason String?
   seller_notes        String?
-  userId              String?         @map("user_id")
-  user                User?           @relation(fields: [userId], references: [id])
-  vehicle             Vehicle         @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  userId              String?             @map("user_id")
+  location            String?
+  test_drive_reports  test_drive_reports?
+  user                User?               @relation(fields: [userId], references: [id])
+  vehicle             Vehicle             @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@index([vehicleId])
   @@index([userId])
@@ -34,62 +36,62 @@ model TestDriveRequest {
 }
 
 model User {
-  id                               String                       @id @default(cuid())
-  createdAt                        DateTime                     @default(now()) @map("created_at")
-  updatedAt                        DateTime                     @updatedAt @map("updated_at")
-  role                             Role                         @default(user)
-  email                            String                       @unique
-  full_name                        String?
-  bio                              String?
-  profile_image                    String?
-  user_type                        UserType                     @default(guest)
-  location                         String?
-  phone                            String?
-  dealership_verification_status   DealershipVerificationStatus @default(not_submitted)
-  dealership_selected_tier         DealershipSelectedTier?
-  business_name                    String?
-  business_address                 String?
-  business_city                    String?
-  business_state                   String?
-  business_zip                     String?
-  business_license_urls            String[]
-  tax_id_number                    String?
-  verification_fee_paid            Boolean                      @default(false)
-  admin_verification_notes         String?
-  welcome_email_sent               Boolean                      @default(false)
-  setup_completed                  Boolean                      @default(false)
-  verificationCode                 String
-  verificationCodeExpiry           DateTime
-  isVerified                       Boolean                      @default(false)
-  password                         String
-  comments                         Comment[]
-  created_agreements               DealershipVehicleAgreement[] @relation("AdminAgreements")
-  email_notifications              EmailNotifications?
-  feedback                         Feedback[]
-  followers                        Follow[]                     @relation("UserFollowers")
-  following                        Follow[]                     @relation("UserFollowing")
-  activatedGuestPurchases          GuestPurchase[]              @relation("ActivatedGuestPurchases")
-  inapp_notifications              InAppNotifications?
-  createdLiaisonAgreements         LiaisonAgreement[]           @relation("AdminLiaisonAgreements")
-  reviewedLiaisonApplications      LiaisonApplication[]         @relation("AdminLiaisonApplications")
-  managedSaleRequests              ManagedSaleRequest[]         @relation("UserManagedSaleRequests")
-  receivedMessages                 Message[]                    @relation("ReceivedMessages")
-  sentMessages                     Message[]                    @relation("SentMessages")
-  receivedNotifications            Notification[]               @relation("ReceivedNotifications")
-  sentNotifications                Notification[]               @relation("SentNotifications")
-  createdPhotographerAgreements    PhotographerAgreement[]      @relation("AdminPhotographerAgreements")
-  reviewedPhotographerApplications PhotographerApplication[]    @relation("AdminPhotographerApplications")
-  posts                            Post[]
-  private_seller_slots             PrivateSellerSlots?
-  seller_subscription              SellerSubscription?
-  testDriveRequests                TestDriveRequest[]
-  vehicleEditRequests              VehicleEditRequest[]         @relation("UserVehicleEditRequests")
-  buyerTransfers                   VehicleTransfer[]            @relation("BuyerTransfers")
-  sellerTransfers                  VehicleTransfer[]            @relation("SellerTransfers")
-  vehicleLikes                     VehicleLike[]
-  vehicleSaves                     VehicleSave[]
-  vehicles                         Vehicle[]
-  verificationRequests             VerificationRequest[]        @relation("UserVerificationRequests")
+  id                                                       String                       @id @default(cuid())
+  createdAt                                                DateTime                     @default(now()) @map("created_at")
+  updatedAt                                                DateTime                     @updatedAt @map("updated_at")
+  role                                                     Role                         @default(user)
+  email                                                    String                       @unique
+  full_name                                                String?
+  bio                                                      String?
+  profile_image                                            String?
+  user_type                                                UserType                     @default(guest)
+  location                                                 String?
+  phone                                                    String?
+  dealership_verification_status                           DealershipVerificationStatus @default(not_submitted)
+  dealership_selected_tier                                 DealershipSelectedTier?
+  business_name                                            String?
+  business_address                                         String?
+  business_city                                            String?
+  business_state                                           String?
+  business_zip                                             String?
+  business_license_urls                                    String[]
+  tax_id_number                                            String?
+  verification_fee_paid                                    Boolean                      @default(false)
+  admin_verification_notes                                 String?
+  welcome_email_sent                                       Boolean                      @default(false)
+  setup_completed                                          Boolean                      @default(false)
+  verificationCode                                         String
+  verificationCodeExpiry                                   DateTime
+  isVerified                                               Boolean                      @default(false)
+  password                                                 String
+  verification_status                                      VerificationStatus           @default(prnding_review)
+  comments                                                 Comment[]
+  created_agreements                                       DealershipVehicleAgreement[] @relation("AdminAgreements")
+  email_notifications                                      EmailNotifications?
+  feedback                                                 Feedback[]
+  followers                                                Follow[]                     @relation("UserFollowers")
+  following                                                Follow[]                     @relation("UserFollowing")
+  activatedGuestPurchases                                  GuestPurchase[]              @relation("ActivatedGuestPurchases")
+  inapp_notifications                                      InAppNotifications?
+  createdLiaisonAgreements                                 LiaisonAgreement[]           @relation("AdminLiaisonAgreements")
+  reviewedLiaisonApplications                              LiaisonApplication[]         @relation("AdminLiaisonApplications")
+  managedSaleRequests                                      ManagedSaleRequest[]         @relation("UserManagedSaleRequests")
+  receivedMessages                                         Message[]                    @relation("ReceivedMessages")
+  sentMessages                                             Message[]                    @relation("SentMessages")
+  receivedNotifications                                    Notification[]               @relation("ReceivedNotifications")
+  sentNotifications                                        Notification[]               @relation("SentNotifications")
+  createdPhotographerAgreements                            PhotographerAgreement[]      @relation("AdminPhotographerAgreements")
+  reviewedPhotographerApplications                         PhotographerApplication[]    @relation("AdminPhotographerApplications")
+  posts                                                    Post[]
+  private_seller_slots                                     PrivateSellerSlots?
+  seller_subscription                                      SellerSubscription?
+  testDriveRequests                                        TestDriveRequest[]
+  vehicleEditRequests                                      VehicleEditRequest[]         @relation("UserVehicleEditRequests")
+  buyerTransfers                                           VehicleTransfer[]            @relation("BuyerTransfers")
+  vehicle_transfers_vehicle_transfers_created_by_idTousers VehicleTransfer[]            @relation("vehicle_transfers_created_by_idTousers")
+  sellerTransfers                                          VehicleTransfer[]            @relation("SellerTransfers")
+  vehicles                                                 Vehicle[]
+  verificationRequests                                     VerificationRequest[]        @relation("UserVerificationRequests")
 
   @@map("users")
 }
@@ -217,9 +219,6 @@ model Vehicle {
   website_managed         Boolean                     @default(false)
   status                  VehicleStatus               @default(available)
   views                   Int                         @default(0)
-  likes_count             Int                         @default(0)
-  saves_count             Int                         @default(0)
-  shares_count            Int                         @default(0)
   authorId                String?                     @map("author_id")
   original_owner_id       String?
   dealership_name         String?
@@ -235,36 +234,8 @@ model Vehicle {
   author                  User?                       @relation(fields: [authorId], references: [id])
   dealershipAgreement     DealershipVehicleAgreement? @relation(fields: [dealershipAgreementId], references: [id])
   verificationRequests    VerificationRequest[]
-  likes                   VehicleLike[]
-  saves                   VehicleSave[]
 
   @@map("vehicles")
-}
-
-model VehicleLike {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  userId    String   @map("user_id")
-  vehicleId String   @map("vehicle_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, vehicleId])
-  @@index([vehicleId])
-  @@map("vehicle_likes")
-}
-
-model VehicleSave {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  userId    String   @map("user_id")
-  vehicleId String   @map("vehicle_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, vehicleId])
-  @@index([vehicleId])
-  @@map("vehicle_saves")
 }
 
 model DealershipVehicleAgreement {
@@ -505,7 +476,6 @@ model Message {
   content              String
   conversation_id      String?
   message_type         MessageType         @default(general)
-  test_drive_details   Json?
   read                 Boolean             @default(false)
   translated_content   String?
   original_language    String?
@@ -574,9 +544,10 @@ model PhotographerAgreement {
   agreement_end_date      DateTime?
   status                  PhotographerAgreementStatus @default(draft)
   agreement_url           String?
-  application_id          String?
   created_by_admin_id     String?
   admin_notes             String?
+  photographer_email      String
+  application_id          String?
   application             PhotographerApplication?    @relation(fields: [application_id], references: [id])
   createdByAdmin          User?                       @relation("AdminPhotographerAgreements", fields: [created_by_admin_id], references: [id])
 
@@ -679,23 +650,25 @@ model VehicleInspectionChecklist {
 }
 
 model VehicleTransfer {
-  id                String         @id @default(cuid())
-  createdAt         DateTime       @default(now()) @map("created_at")
-  updatedAt         DateTime       @updatedAt @map("updated_at")
-  vehicleId         String         @map("vehicle_id")
-  transfer_type     TransferType
-  buyerId           String         @map("buyer_id")
-  sellerId          String?        @map("seller_id")
-  current_step      Int            @default(1)
-  steps_completed   Int[]          @default([])
-  initiated_date    DateTime?
-  completed_date    DateTime?
-  status            TransferStatus @default(in_progress)
-  admin_notes       String?
-  user_facing_notes String?
-  buyer             User           @relation("BuyerTransfers", fields: [buyerId], references: [id], onDelete: Cascade)
-  seller            User?          @relation("SellerTransfers", fields: [sellerId], references: [id])
-  vehicle           Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  id                                           String         @id @default(cuid())
+  createdAt                                    DateTime       @default(now()) @map("created_at")
+  updatedAt                                    DateTime       @updatedAt @map("updated_at")
+  vehicleId                                    String         @map("vehicle_id")
+  transfer_type                                TransferType
+  buyerId                                      String         @map("buyer_id")
+  sellerId                                     String?        @map("seller_id")
+  current_step                                 Int            @default(1)
+  steps_completed                              Int[]          @default([])
+  initiated_date                               DateTime?
+  completed_date                               DateTime?
+  status                                       TransferStatus @default(in_progress)
+  admin_notes                                  String?
+  user_facing_notes                            String?
+  created_by_id                                String?
+  buyer                                        User           @relation("BuyerTransfers", fields: [buyerId], references: [id], onDelete: Cascade)
+  users_vehicle_transfers_created_by_idTousers User?          @relation("vehicle_transfers_created_by_idTousers", fields: [created_by_id], references: [id])
+  seller                                       User?          @relation("SellerTransfers", fields: [sellerId], references: [id])
+  vehicle                                      Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
   @@index([vehicleId])
   @@index([buyerId])
@@ -724,6 +697,19 @@ model VerificationRequest {
   @@index([userId])
   @@index([status])
   @@map("verification_requests")
+}
+
+model test_drive_reports {
+  id                     String           @id
+  created_at             DateTime         @default(now())
+  updated_at             DateTime
+  test_drive_request_id  String           @unique
+  buyer_interest_level   String
+  buyer_feedback         String?
+  speedio_assessment     String
+  recommended_next_steps String?
+  admin_notes            String?
+  test_drive_requests    TestDriveRequest @relation(fields: [test_drive_request_id], references: [id], onDelete: Cascade)
 }
 
 enum FeedbackCategory {
@@ -853,6 +839,7 @@ enum LiaisonApplicationStatus {
 }
 
 enum ManagedSaleStatus {
+  pending_initial_review
   pending_review
   approved
   declined
@@ -974,4 +961,11 @@ enum TestDriveStatus {
   cancelled
   completed
   rescheduled
+}
+
+enum VerificationStatus {
+  prnding_review
+  not_submitted
+  approved
+  declined
 }

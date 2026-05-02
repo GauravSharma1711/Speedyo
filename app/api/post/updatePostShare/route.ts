@@ -17,34 +17,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing postId" }, { status: 400 });
     }
 
-    // Count actual comments for this post
-    const commentsCount = await prisma.comment.count({
-      where: { postId },
-    });
-
-    // Update post with real count
     const updatedPost = await prisma.post.update({
       where: { id: postId },
-      data: { comments_count: commentsCount },
+      data: { shares: { increment: 1 } },
       select: {
         id: true,
-        comments_count: true,
+        shares: true,
         content: true,
         authorId: true,
         post_type: true,
         likes: true,
         views: true,
+        comments_count: true,
         createdAt: true,
       },
     });
 
     return NextResponse.json(updatedPost);
-
-  } catch (error: any) {
-    if (error?.code === "P2025") {
+  } catch (error: unknown) {
+    const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
+    if (code === "P2025") {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
-    console.error("Error syncing comment count:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Internal server error";
+    console.error("Error incrementing post shares:", error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

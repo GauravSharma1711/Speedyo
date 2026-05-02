@@ -3,7 +3,6 @@ import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 
-
 const VALID_POST_TYPES = ["text", "image", "video", "article", "vehicle_promo"] as const;
 
 function isValidUrl(url: string): boolean {
@@ -18,7 +17,7 @@ function isValidUrl(url: string): boolean {
 function validatePostBody(body: Record<string, unknown>): string | null {
   const { post_type, content, images, video_url, article_title } = body;
 
-  if (!post_type || !VALID_POST_TYPES.includes(post_type as typeof VALID_POST_TYPES[number])) {
+  if (!post_type || !VALID_POST_TYPES.includes(post_type as (typeof VALID_POST_TYPES)[number])) {
     return `post_type must be one of: ${VALID_POST_TYPES.join(", ")}`;
   }
 
@@ -29,8 +28,7 @@ function validatePostBody(body: Record<string, unknown>): string | null {
       break;
 
     case "image":
-      if (!Array.isArray(images) || images.length === 0)
-        return "at least one image URL is required";
+      if (!Array.isArray(images) || images.length === 0) return "at least one image URL is required";
       if (images.some((img) => typeof img !== "string" || !isValidUrl(img)))
         return "all image entries must be valid URLs";
       break;
@@ -90,7 +88,6 @@ export async function POST(req: NextRequest) {
       article_excerpt,
     } = body;
 
-    // Verify vehicle ownership if vehicleId is present
     if (vehicleId) {
       const vehicle = await prisma.vehicle.findUnique({
         where: { id: vehicleId },
@@ -116,22 +113,20 @@ export async function POST(req: NextRequest) {
 
     const post = await prisma.post.create({
       data: {
-        authorId:         session.user.id,
-        post_type:        post_type ,
-        content:          content ?? "",
-        vehicleId:        vehicleId ?? null,
-        images:           images ?? [],
+        authorId: session.user.id,
+        post_type: post_type,
+        content: content ?? "",
+        vehicleId: vehicleId ?? null,
+        images: images ?? [],
         images_thumbnails: images_thumbnails ?? [],
-        images_small:     images_small ?? [],
-        images_medium:    images_medium ?? [],
+        images_small: images_small ?? [],
+        images_medium: images_medium ?? [],
 
-        // Video
         ...(post_type === "video" && {
           video_url,
           video_thumbnail: video_thumbnail ?? null,
         }),
 
-        // Article
         ...(post_type === "article" && {
           article_title,
           article_excerpt: article_excerpt ?? null,
@@ -140,35 +135,36 @@ export async function POST(req: NextRequest) {
       include: {
         author: {
           select: {
-            id:            true,
-            full_name:     true,
+            id: true,
+            full_name: true,
             profile_image: true,
-            role:          true,
-            user_type:     true,
+            role: true,
+            user_type: true,
             business_name: true,
           },
         },
-        vehicle: post_type === "vehicle_promo"
-          ? {
-              select: {
-                id:                      true,
-                title:                   true,
-                make:                    true,
-                model:                   true,
-                year:                    true,
-                price:                   true,
-                status:                  true,
-                verified:                true,
-                primary_image_thumbnail: true,
-              },
-            }
-          : false,
+        vehicle:
+          post_type === "vehicle_promo"
+            ? {
+                select: {
+                  id: true,
+                  title: true,
+                  make: true,
+                  model: true,
+                  year: true,
+                  price: true,
+                  status: true,
+                  verified: true,
+                  primary_image_thumbnail: true,
+                },
+              }
+            : false,
       },
     });
 
     return NextResponse.json({ success: true, post }, { status: 201 });
   } catch (error) {
-    console.error("[POST /api/posts]", error);
+    console.error("[POST /api/post/createPost]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

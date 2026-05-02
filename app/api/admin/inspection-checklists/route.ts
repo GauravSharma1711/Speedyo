@@ -13,8 +13,11 @@ export async function GET(req: NextRequest) {
       maxLimit: 100,
     });
     const search = (searchParams.get("search") ?? "").trim();
+    const managedSaleRequestId = (searchParams.get("managedSaleRequestId") ?? "").trim();
 
     const where: any = {};
+    if (managedSaleRequestId) where.managedSaleRequestId = managedSaleRequestId;
+
     if (search) {
       where.OR = [
         { dealership_name: { contains: search, mode: "insensitive" } },

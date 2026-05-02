@@ -3,10 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 import prisma from "@/db/prisma";
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { postId: string } }
-) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: string }> }) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -14,9 +11,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { postId } = params;
+    const { postId } = await ctx.params;
 
-    // Fetch current post
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: {
@@ -35,10 +31,13 @@ export async function POST(
     const userId = session.user.id;
     const userEmail = session.user.email;
 
+    if (!userEmail) {
+      return NextResponse.json({ error: "User email required" }, { status: 400 });
+    }
+
     type UserReaction = { user_email: string; reaction: string };
     const userReactions = post.user_reactions as UserReaction[];
 
-    // Check if user already liked this post
     const alreadyLiked = userReactions.some(
       (r) => r.user_email === userEmail && r.reaction === "like"
     );
@@ -47,21 +46,15 @@ export async function POST(
     let updatedUserReactions: UserReaction[];
 
     if (alreadyLiked) {
-      // Unlike — remove the like
       updatedLikes = Math.max(0, post.likes - 1);
       updatedUserReactions = userReactions.filter(
         (r) => !(r.user_email === userEmail && r.reaction === "like")
       );
     } else {
-      // Like — add the like
       updatedLikes = post.likes + 1;
-      updatedUserReactions = [
-        ...userReactions,
-        { user_email: userEmail, reaction: "like" },
-      ];
+      updatedUserReactions = [...userReactions, { user_email: userEmail, reaction: "like" }];
     }
 
-    // Update post likes + user_reactions atomically
     const [updatedPost] = await prisma.$transaction([
       prisma.post.update({
         where: { id: postId },
@@ -78,7 +71,6 @@ export async function POST(
         },
       }),
 
-      // Send notification to post author (if not liking own post)
       ...(post.authorId && post.authorId !== userId
         ? [
             prisma.notification.create({
@@ -102,9 +94,9 @@ export async function POST(
       likes: updatedPost.likes,
       user_reactions: updatedPost.user_reactions,
     });
-
-  } catch (error: any) {
-    if (error?.code === "P2025") {
+  } catch (error: unknown) {
+    const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
+    if (code === "P2025") {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
     console.error("Error liking post:", error);

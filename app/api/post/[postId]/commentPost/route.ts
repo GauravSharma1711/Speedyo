@@ -9,8 +9,7 @@ function validateCommentBody(body: Record<string, unknown>): string | null {
   if (!content || typeof content !== "string" || content.trim().length === 0)
     return "content is required";
 
-  if (content.trim().length > 2000)
-    return "content must be 2000 characters or fewer";
+  if (content.trim().length > 2000) return "content must be 2000 characters or fewer";
 
   if (parentCommentId !== undefined && typeof parentCommentId !== "string")
     return "parentCommentId must be a string";
@@ -18,19 +17,15 @@ function validateCommentBody(body: Record<string, unknown>): string | null {
   return null;
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { postId: string } }
-) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { postId } = params;
+    const { postId } = await ctx.params;
 
-    // Verify post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: { id: true },
@@ -49,7 +44,6 @@ export async function POST(
 
     const { content, parentCommentId } = body;
 
-    // If it's a reply, verify parent comment exists and belongs to this post
     if (parentCommentId) {
       const parentComment = await prisma.comment.findUnique({
         where: { id: parentCommentId },
@@ -67,7 +61,6 @@ export async function POST(
         );
       }
 
-      // Prevent nested replies (only 1 level deep)
       if (parentComment.parentCommentId) {
         return NextResponse.json(
           { error: "Replies to replies are not allowed" },
@@ -76,35 +69,33 @@ export async function POST(
       }
     }
 
-    // Create comment + update counters in a transaction
     const [comment] = await prisma.$transaction([
       prisma.comment.create({
         data: {
           postId,
-          authorId:       session.user.id,
-          content:        content.trim(),
+          authorId: session.user.id,
+          content: content.trim(),
           parentCommentId: parentCommentId ?? null,
         },
         include: {
           author: {
             select: {
-              id:            true,
-              full_name:     true,
+              id: true,
+              full_name: true,
               profile_image: true,
-              role:          true,
-              user_type:     true,
+              role: true,
+              user_type: true,
               business_name: true,
             },
           },
-          // Include parent comment info if it's a reply
           parentComment: parentCommentId
             ? {
                 select: {
-                  id:      true,
+                  id: true,
                   content: true,
                   author: {
                     select: {
-                      id:        true,
+                      id: true,
                       full_name: true,
                     },
                   },
@@ -114,13 +105,11 @@ export async function POST(
         },
       }),
 
-      // Increment post comments_count
       prisma.post.update({
         where: { id: postId },
         data: { comments_count: { increment: 1 } },
       }),
 
-      // If it's a reply, increment parent comment replies_count
       ...(parentCommentId
         ? [
             prisma.comment.update({
@@ -133,23 +122,19 @@ export async function POST(
 
     return NextResponse.json({ success: true, comment }, { status: 201 });
   } catch (error) {
-    console.error("[POST /api/posts/[postId]/comments]", error);
+    console.error("[POST /api/post/[postId]/commentPost]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// GET comments for a post (with pagination)
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { postId: string } }
-) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ postId: string }> }) {
   try {
-    const { postId } = params;
+    const { postId } = await ctx.params;
     const { searchParams } = new URL(req.url);
 
-    const page   = Math.max(1, parseInt(searchParams.get("page")  ?? "1"));
-    const limit  = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
-    const skip   = (page - 1) * limit;
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+    const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
+    const skip = (page - 1) * limit;
 
     const post = await prisma.post.findUnique({
       where: { id: postId },
@@ -160,36 +145,34 @@ export async function GET(
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // Fetch only top-level comments (no parentCommentId)
     const [comments, total] = await prisma.$transaction([
       prisma.comment.findMany({
-        where:   { postId, parentCommentId: null },
+        where: { postId, parentCommentId: null },
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
         include: {
           author: {
             select: {
-              id:            true,
-              full_name:     true,
+              id: true,
+              full_name: true,
               profile_image: true,
-              role:          true,
-              user_type:     true,
+              role: true,
+              user_type: true,
               business_name: true,
             },
           },
-          // Eagerly load first 3 replies per comment
           replies: {
-            take:    3,
+            take: 3,
             orderBy: { createdAt: "asc" },
             include: {
               author: {
                 select: {
-                  id:            true,
-                  full_name:     true,
+                  id: true,
+                  full_name: true,
                   profile_image: true,
-                  role:          true,
-                  user_type:     true,
+                  role: true,
+                  user_type: true,
                   business_name: true,
                 },
               },
@@ -211,11 +194,11 @@ export async function GET(
         limit,
         total,
         totalPages: Math.ceil(total / limit),
-        hasMore:    page * limit < total,
+        hasMore: page * limit < total,
       },
     });
   } catch (error) {
-    console.error("[GET /api/posts/[postId]/comments]", error);
+    console.error("[GET /api/post/[postId]/commentPost]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
