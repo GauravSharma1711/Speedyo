@@ -364,6 +364,8 @@ model User {
   verification_fee_paid          Boolean                      @default(false)
   admin_verification_notes       String?
 
+vehicleViews VehicleView[]
+
   welcome_email_sent Boolean @default(false)
   setup_completed    Boolean @default(false)
 
@@ -606,14 +608,33 @@ model Vehicle {
   author            User?              @relation(fields: [authorId], references: [id], onDelete: SetNull)
   posts             Post[]
   testDriveRequests TestDriveRequest[]
-  
+
 conversations Conversation[]
   messages             Message[]
   verificationRequests VerificationRequest[]
   transfers            VehicleTransfer[]
   editRequests         VehicleEditRequest[]
 
+  vehicleViews VehicleView[]
+
   @@map("vehicles")
+}
+
+model VehicleView {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  vehicleId String @map("vehicle_id")
+  userId    String? @map("user_id") // null for guests
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("vehicle_views")
 }
 
 model DealershipVehicleAgreement {
