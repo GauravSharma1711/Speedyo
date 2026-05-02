@@ -70,7 +70,7 @@ enum PostType {
   image
   video
   vehicle_promo
-  article            
+  article
 }
 
 enum Role {
@@ -82,6 +82,13 @@ enum UserType {
   guest
   private_seller
   dealership
+}
+
+enum VerificationStatus {
+  prnding_review
+  not_submitted
+  approved
+  declined
 }
 
 enum SubscriptionTier {
@@ -276,10 +283,11 @@ model TestDriveRequest {
   requester_phone String?
 
   // Scheduling
-  requested_date String   // "2025-04-30"
-  requested_time String   // "10:00 AM"
+  requested_date String // "2025-04-30"
+  requested_time String // "10:00 AM"
   confirmed_date String?
   confirmed_time String?
+  location String?
 
   // Status & notes
   status              TestDriveStatus @default(pending)
@@ -294,10 +302,31 @@ model TestDriveRequest {
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+report TestDriveReport?  
+
   @@index([vehicleId])
   @@index([userId])
   @@index([status])
   @@map("test_drive_requests")
+}
+
+model TestDriveReport {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+ testDriveRequestId String @unique @map("test_drive_request_id")
+
+  buyer_interest_level  String
+  buyer_feedback        String?
+  speedio_assessment    String
+  recommended_next_steps String?
+  admin_notes           String?
+
+  // Relations
+  testDriveRequest TestDriveRequest @relation(fields: [testDriveRequestId], references: [id], onDelete: Cascade)
+
+  @@map("test_drive_reports")
 }
 
 model User {
@@ -311,15 +340,17 @@ model User {
   bio           String?
   profile_image String?
 
-  verificationCode String
+  verificationCode       String
   verificationCodeExpiry DateTime
+
+  verification_status VerificationStatus @default(prnding_review)
 
   user_type UserType @default(guest)
 
-  location String?
-  phone    String?
+  location   String?
+  phone      String?
   isVerified Boolean @default(false)
-  password String
+  password   String
 
   dealership_verification_status DealershipVerificationStatus @default(not_submitted)
   dealership_selected_tier       DealershipSelectedTier?
@@ -333,6 +364,8 @@ model User {
   verification_fee_paid          Boolean                      @default(false)
   admin_verification_notes       String?
 
+vehicleViews VehicleView[]
+
   welcome_email_sent Boolean @default(false)
   setup_completed    Boolean @default(false)
 
@@ -344,7 +377,10 @@ model User {
 
   testDriveRequests TestDriveRequest[]
 
+  conversations1 Conversation[] @relation("ConversationUser1")
+conversations2 Conversation[] @relation("ConversationUser2")
 
+  createdTransfers VehicleTransfer[] @relation("CreatedTransfers")
 
   created_agreements DealershipVehicleAgreement[] @relation("AdminAgreements")
 
@@ -440,12 +476,10 @@ model Post {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  video_url          String?        // for video posts
-video_thumbnail    String?        // video preview image
-article_title      String?        // for article posts  
-article_excerpt    String?        // short description for articles
-
-
+  video_url       String? // for video posts
+  video_thumbnail String? // video preview image
+  article_title   String? // for article posts  
+  article_excerpt String? // short description for articles
 
   // Required fields
   content  String
@@ -562,7 +596,7 @@ model Vehicle {
 
   // Scheduling as JSONB
   recurring_availability Json @default("[]")
-  booked_slots           Json @default("[]")
+  booked_slots Json @default("[]")
 
   dealershipAgreementId String? @map("dealership_agreement_id")
 
@@ -571,16 +605,36 @@ model Vehicle {
   managedSaleRequest ManagedSaleRequest? @relation("ManagedSaleVehicle")
 
   // Relations
-  author User?  @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  posts  Post[]
+  author            User?              @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  posts             Post[]
   testDriveRequests TestDriveRequest[]
 
+conversations Conversation[]
   messages             Message[]
   verificationRequests VerificationRequest[]
   transfers            VehicleTransfer[]
   editRequests         VehicleEditRequest[]
 
+  vehicleViews VehicleView[]
+
   @@map("vehicles")
+}
+
+model VehicleView {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  vehicleId String @map("vehicle_id")
+  userId    String? @map("user_id") // null for guests
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("vehicle_views")
 }
 
 model DealershipVehicleAgreement {
@@ -908,8 +962,7 @@ model Message {
   recipientId String @map("recipient_id")
   content     String
 
-  // Threading
-  conversation_id String?
+
 
   // Message type & read status
   message_type MessageType @default(general)
@@ -924,17 +977,52 @@ model Message {
   vehicleId            String? @map("vehicle_id")
   managedSaleRequestId String? @map("managed_sale_request_id")
 
- 
-
   // Relations
   sender             User                @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   recipient          User                @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
   vehicle            Vehicle?            @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   managedSaleRequest ManagedSaleRequest? @relation(fields: [managedSaleRequestId], references: [id], onDelete: SetNull)
 
-  @@index([conversation_id])
+  conversationId String? @map("conversation_id")
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+
   @@index([senderId, recipientId])
   @@map("messages")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Participants
+  user1Id String @map("user1_id")
+  user2Id String @map("user2_id")
+
+  // Context (optional vehicle link)
+  vehicleId String? @map("vehicle_id")
+
+  // Last message snapshot (avoids extra query for sidebar)
+  last_message         String?
+  last_message_at      DateTime?
+  last_message_type    MessageType @default(general)
+
+  // Unread counts
+  user1_unread Int @default(0)
+  user2_unread Int @default(0)
+
+  // Relations
+  user1    User     @relation("ConversationUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2    User     @relation("ConversationUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  vehicle  Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  messages Message[]
+
+  // Prevent duplicate conversations between same two users for same vehicle
+  @@unique([user1Id, user2Id, vehicleId])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@map("conversations")
 }
 
 model Notification {
@@ -1000,15 +1088,16 @@ model PhotographerAgreement {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Agreement details
-  agreement_title         String  @default("Speedio Photographer Partnership Agreement")
-  position_title          String  @default("Automotive Photographer - Speedio Platform")
-  fixed_percentage        Decimal @default(10) @db.Decimal(5, 2)
-  termination_notice_days Int     @default(30)
+  photographer_email String
 
+  // Agreement details
+  agreement_title         String    @default("Speedio Photographer Partnership Agreement")
+  position_title          String    @default("Automotive Photographer - Speedio Platform")
+  fixed_percentage        Decimal   @default(10) @db.Decimal(5, 2)
+  termination_notice_days Int       @default(30)
   // Dates
-  agreement_start_date DateTime?
-  agreement_end_date   DateTime?
+  agreement_start_date    DateTime?
+  agreement_end_date      DateTime?
 
   // Status
   status        PhotographerAgreementStatus @default(draft)
@@ -1180,6 +1269,9 @@ model VehicleTransfer {
   status            TransferStatus @default(in_progress)
   admin_notes       String?
   user_facing_notes String?
+
+  createdById String? @map("created_by_id")
+  createdBy   User?   @relation("CreatedTransfers", fields: [createdById], references: [id], onDelete: SetNull)
 
   // Relations
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
