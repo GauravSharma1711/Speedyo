@@ -375,6 +375,9 @@ model User {
 
   testDriveRequests TestDriveRequest[]
 
+  conversations1 Conversation[] @relation("ConversationUser1")
+conversations2 Conversation[] @relation("ConversationUser2")
+
   createdTransfers VehicleTransfer[] @relation("CreatedTransfers")
 
   created_agreements DealershipVehicleAgreement[] @relation("AdminAgreements")
@@ -603,7 +606,8 @@ model Vehicle {
   author            User?              @relation(fields: [authorId], references: [id], onDelete: SetNull)
   posts             Post[]
   testDriveRequests TestDriveRequest[]
-
+  
+conversations Conversation[]
   messages             Message[]
   verificationRequests VerificationRequest[]
   transfers            VehicleTransfer[]
@@ -937,8 +941,7 @@ model Message {
   recipientId String @map("recipient_id")
   content     String
 
-  // Threading
-  conversation_id String?
+
 
   // Message type & read status
   message_type MessageType @default(general)
@@ -959,9 +962,46 @@ model Message {
   vehicle            Vehicle?            @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   managedSaleRequest ManagedSaleRequest? @relation(fields: [managedSaleRequestId], references: [id], onDelete: SetNull)
 
-  @@index([conversation_id])
+  conversationId String? @map("conversation_id")
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+
   @@index([senderId, recipientId])
   @@map("messages")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Participants
+  user1Id String @map("user1_id")
+  user2Id String @map("user2_id")
+
+  // Context (optional vehicle link)
+  vehicleId String? @map("vehicle_id")
+
+  // Last message snapshot (avoids extra query for sidebar)
+  last_message         String?
+  last_message_at      DateTime?
+  last_message_type    MessageType @default(general)
+
+  // Unread counts
+  user1_unread Int @default(0)
+  user2_unread Int @default(0)
+
+  // Relations
+  user1    User     @relation("ConversationUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2    User     @relation("ConversationUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  vehicle  Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  messages Message[]
+
+  // Prevent duplicate conversations between same two users for same vehicle
+  @@unique([user1Id, user2Id, vehicleId])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@map("conversations")
 }
 
 model Notification {
