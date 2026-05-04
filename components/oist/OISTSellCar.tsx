@@ -1,12 +1,16 @@
-"use client"
-import React, { useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Handshake, DollarSign, CheckCircle } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+"use client";
 
-export default function OISTSellCar({ onBack }) {
+import React, { useEffect } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { ArrowLeft, Handshake, DollarSign, CheckCircle } from "lucide-react";
+
+type OISTSellCarProps = {
+  onBack: () => void;
+};
+
+export default function OISTSellCar({ onBack }: OISTSellCarProps) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -57,11 +61,12 @@ export default function OISTSellCar({ onBack }) {
               </div>
             </div>
             <div className="pt-4">
-              <Link to={createPageUrl("ManagedSales")}>
-                <Button className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700">
-                  Learn About Managed Sales
-                </Button>
-              </Link>
+              <Button
+                asChild
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700"
+              >
+                <Link href="/Managed-Sales">Learn About Managed Sales</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -95,11 +100,12 @@ export default function OISTSellCar({ onBack }) {
               </div>
             </div>
             <div className="pt-4">
-              <Link to={createPageUrl("Subscription")}>
-                <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
-                  View Pricing & Features
-                </Button>
-              </Link>
+              <Button
+                asChild
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+              >
+                <Link href="/Subscription">View Pricing & Features</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -156,9 +162,9 @@ export default function OISTSellCar({ onBack }) {
           <p className="text-slate-600 mb-4">
             Have questions about selling your vehicle?
           </p>
-          <Link to={createPageUrl("Contact")}>
-            <Button variant="outline">Contact Speedio Support</Button>
-          </Link>
+          <Button asChild variant="outline">
+            <Link href="/contact">Contact Speedio Support</Link>
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -12,9 +12,26 @@ import { motion, AnimatePresence } from "framer-motion";
 import VehicleCard from "../marketplace/VehicleCard";
 import SearchFilters from "../marketplace/SearchFilters";
 
+type MarketplaceVehicle = {
+  id: string;
+  title?: string;
+  make?: string;
+  model?: string;
+  description?: string;
+  condition?: string;
+  fuel_type?: string;
+  location?: string;
+  price?: number;
+  status?: string;
+  featured?: boolean;
+  verified?: boolean;
+  views?: number;
+  created_by_id?: string;
+};
+
 export default function Marketplace() {
-  const [vehicles, setVehicles] = useState([]);
-  const [filteredVehicles, setFilteredVehicles] = useState([]);
+  const [vehicles, setVehicles] = useState<MarketplaceVehicle[]>([]);
+  const [filteredVehicles, setFilteredVehicles] = useState<MarketplaceVehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -28,8 +45,10 @@ export default function Marketplace() {
 
   const loadData = async () => {
     setIsLoading(true);
-    const allVehiclesData = await Vehicle.list("-created_date", 100); // Fetch all vehicles
-    const filteredByStatus = allVehiclesData.filter(v => v.status === 'available' || v.status === 'unavailable');
+    const allVehiclesData = (await Vehicle.list("-created_date", 100)) as MarketplaceVehicle[]; // Fetch all vehicles
+    const filteredByStatus = allVehiclesData.filter(
+      (v) => v.status === "available" || v.status === "unavailable"
+    );
     setVehicles(filteredByStatus);
     setFilteredVehicles(filteredByStatus);
     setIsLoading(false);
@@ -66,10 +85,11 @@ export default function Marketplace() {
     if (filters.priceRange) {
       const [min, max] = filters.priceRange.split('-').map(Number);
       filtered = filtered.filter((vehicle) => {
+        const price = vehicle.price ?? 0;
         if (max) {
-          return vehicle.price >= min && vehicle.price <= max;
+          return price >= min && price <= max;
         }
-        return vehicle.price >= min;
+        return price >= min;
       });
     }
 
@@ -88,23 +108,6 @@ export default function Marketplace() {
   useEffect(() => {
     filterVehicles();
   }, [filterVehicles]);
-
-  const getUserByEmail = (email) => {
-    // This function is now a placeholder. The required info is on the vehicle object.
-    // The VehicleCard component is updated to use vehicle.author_name etc.
-    return { email };
-  };
-
-  // Helper function for creating page URLs
-  const createPageUrl = (pageName) => {
-    switch (pageName) {
-      case "Contact":
-        return "/contact";
-      // Add other page mappings if necessary
-      default:
-        return `/${pageName.toLowerCase()}`;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30 p-2 sm:p-4">
@@ -178,7 +181,7 @@ export default function Marketplace() {
 
                 <VehicleCard
                   vehicle={vehicle}
-                  seller={getUserByEmail(vehicle.created_by)} />
+                />
 
               </motion.div>
             )}

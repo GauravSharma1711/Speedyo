@@ -13,7 +13,8 @@ export async function middleware(request:NextRequest) {
            url.pathname.startsWith('/verify')
          
     )){
-return NextResponse.redirect(new URL('/', request.url)) 
+        // If already authenticated, send user to the app dashboard.
+        return NextResponse.redirect(new URL('/Dashboard', request.url))
     }
 
      if (!token && (

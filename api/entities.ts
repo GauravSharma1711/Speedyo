@@ -17,12 +17,22 @@ export interface UserData {
   setup_completed?: boolean;
   welcome_email_sent?: boolean;
   created_date?: string;
+
+  // Legacy fields used by older UI flows
+  verification_fee_paid?: boolean;
+  dealership_selected_tier?: string;
+  dealership_verification_status?: "not_submitted" | "pending_review" | "approved" | "declined";
+  admin_verification_notes?: string;
+  seller_subscription?: { tier?: string; expires_at?: string; vehicles_sold_this_year?: number };
+  private_seller_slots?: { purchased?: number; used?: number };
 }
 
 export interface PublicUserData {
   id: string;
   user_id: string;
   full_name?: string;
+  email?: string;
+  phone?: string | null;
   profile_image?: string;
   user_type?: string;
   verified?: boolean;
@@ -39,8 +49,30 @@ export interface NotificationData {
   content: string;
   icon?: string;
   url?: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
   read: boolean;
   created_date: string;
+}
+
+// ─── Functions (server actions via API) ───────────────────────────────────────
+// Replaces base44.functions.invoke("name", payload)
+export async function invokeFunction<TResponse = any>(
+  name: string,
+  payload: unknown
+): Promise<TResponse> {
+  const res = await fetch(`/api/functions/${encodeURIComponent(name)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload ?? {}),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Function ${name} failed (${res.status}): ${text || res.statusText}`);
+  }
+
+  return (await res.json()) as TResponse;
 }
 
 // ─── File Upload ──────────────────────────────────────────────────────────────
@@ -84,9 +116,35 @@ export const UserEntity = {
     };
   },
 
+  async list(_order?: string, _limit?: number): Promise<UserData[]> {
+    // TODO: GET /api/users
+    console.log("[UserEntity.list]");
+    return [];
+  },
+
+  async filter(query: Record<string, any>): Promise<UserData[]> {
+    // TODO: GET /api/users?...
+    console.log("[UserEntity.filter]", query);
+    return [];
+  },
+
+  async get(id: string): Promise<UserData | null> {
+    // TODO: GET /api/users/:id
+    console.log("[UserEntity.get]", id);
+    return null;
+  },
+
   async updateMe(data: Partial<UserData>): Promise<void> {
     // TODO: PATCH /api/user  or your DB update
     console.log("[UserEntity.updateMe]", data);
+  },
+
+  /**
+   * Legacy alias used across older UI.
+   * Prefer `updateMe` going forward.
+   */
+  async updateMyUserData(data: Partial<UserData>): Promise<void> {
+    return await UserEntity.updateMe(data);
   },
 
   async logout(): Promise<void> {
@@ -231,10 +289,21 @@ export const Vehicle = {
     return null;
   },
 
+  async create(data: Record<string, any>): Promise<any> {
+    // TODO: POST /api/vehicles
+    console.log("[Vehicle.create]", data);
+    return { id: "mock-vehicle-1", created_date: new Date().toISOString(), ...data };
+  },
+
   async update(id: string, data: Record<string, any>): Promise<any> {
     // TODO: PATCH /api/vehicles/:id
     console.log("[Vehicle.update]", id, data);
     return { id, ...data };
+  },
+
+  async delete(id: string): Promise<void> {
+    // TODO: DELETE /api/vehicles/:id
+    console.log("[Vehicle.delete]", id);
   },
 };
 
@@ -284,6 +353,12 @@ export const Message = {
 // ─── ManagedSaleRequest ───────────────────────────────────────────────────────
 
 export const ManagedSaleRequest = {
+  async list(_order?: string, _limit?: number): Promise<any[]> {
+    // TODO: GET /api/managed-sale-requests
+    console.log("[ManagedSaleRequest.list]");
+    return [];
+  },
+
   async filter(query: Record<string, any>, _order?: string): Promise<any[]> {
     // TODO: GET /api/managed-sale-requests?...
     console.log("[ManagedSaleRequest.filter]", query);
@@ -299,6 +374,41 @@ export const ManagedSaleRequest = {
   async update(id: string, data: Record<string, any>): Promise<any> {
     // TODO: PATCH /api/managed-sale-requests/:id
     console.log("[ManagedSaleRequest.update]", id, data);
+    return { id, ...data };
+  },
+
+  async delete(id: string): Promise<void> {
+    // TODO: DELETE /api/managed-sale-requests/:id
+    console.log("[ManagedSaleRequest.delete]", id);
+  },
+};
+
+// ─── VehicleInspectionChecklist ───────────────────────────────────────────────
+export const VehicleInspectionChecklist = {
+  async filter(query: Record<string, any>, _order?: string): Promise<any[]> {
+    // TODO: GET /api/vehicle-inspection-checklists?...
+    console.log("[VehicleInspectionChecklist.filter]", query);
+    return [];
+  },
+};
+
+// ─── OISTTradeInRequest ───────────────────────────────────────────────────────
+export const OISTTradeInRequest = {
+  async list(_order?: string, _limit?: number): Promise<any[]> {
+    // TODO: GET /api/oist-trade-in-requests
+    console.log("[OISTTradeInRequest.list]");
+    return [];
+  },
+
+  async create(data: Record<string, any>): Promise<any> {
+    // TODO: POST /api/oist-trade-in-requests
+    console.log("[OISTTradeInRequest.create]", data);
+    return { id: "mock-oist-trade-in-1", created_date: new Date().toISOString(), ...data };
+  },
+
+  async update(id: string, data: Record<string, any>): Promise<any> {
+    // TODO: PATCH /api/oist-trade-in-requests/:id
+    console.log("[OISTTradeInRequest.update]", id, data);
     return { id, ...data };
   },
 };

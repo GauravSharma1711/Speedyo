@@ -1,10 +1,15 @@
-"use client"
+"use client";
+
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { ShoppingCart, DollarSign, RefreshCw } from "lucide-react";
 
-export default function OISTWelcome({ onSelectService }) {
+type OISTWelcomeProps = {
+  onSelectService: (service: "buy" | "sell" | "trade-in") => void;
+};
+
+export default function OISTWelcome({ onSelectService }: OISTWelcomeProps) {
   return (
     <div className="space-y-8">
       {/* Hero Section */}

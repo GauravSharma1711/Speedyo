@@ -1,7 +1,7 @@
 
 "use client"
 import React, { useState, useEffect, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
+import { ManagedSaleRequest, Message, Notification, UserEntity, Vehicle, VehicleInspectionChecklist } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -214,9 +214,9 @@ export default function ManagedSalesAdmin() {
     setIsLoading(true);
     try {
       const [requestsData, usersData, userData] = await Promise.all([
-        base44.entities.ManagedSaleRequest.list("-created_date", 50),
-        base44.entities.User.list(),
-        base44.auth.me(),
+        ManagedSaleRequest.list("-created_date", 50),
+        UserEntity.list(),
+        UserEntity.me(),
       ]);
 
       setRequests(requestsData);
@@ -237,7 +237,7 @@ export default function ManagedSalesAdmin() {
   const loadChecklists = useCallback(async () => {
     setIsLoadingChecklists(true);
     try {
-      const allChecklists = await base44.entities.VehicleInspectionChecklist.filter({});
+      const allChecklists = await VehicleInspectionChecklist.filter({});
       setChecklistsList(allChecklists);
     } catch (error) {
       console.error("Failed to load all checklists:", error);
@@ -377,11 +377,11 @@ export default function ManagedSalesAdmin() {
         let newVehicle = null;
         if (request.created_vehicle_id) {
           // If vehicle already exists, update it
-          await base44.entities.Vehicle.update(request.created_vehicle_id, vehicleData);
+          await Vehicle.update(request.created_vehicle_id, vehicleData);
           newVehicle = { id: request.created_vehicle_id, title: request.vehicle_details.title }; // Mock object for notification
         } else {
           // If vehicle doesn't exist, create it
-          newVehicle = await base44.entities.Vehicle.create(vehicleData);
+          newVehicle = await Vehicle.create(vehicleData);
           updatePayload.created_vehicle_id = newVehicle.id;
         }
 
@@ -402,7 +402,7 @@ export default function ManagedSalesAdmin() {
 
         notificationContent = `Your managed sale for '${request.vehicle_details.title}' has been approved and listed with test drive availability!`;
 
-        await base44.entities.Message.create({
+        await Message.create({
           recipient_id: request.submitted_by_user_id,
           sender_id: currentUser.id,
           content: `🎉 Great news! Your managed sale request for "${request.vehicle_details.title}" has been approved by our team.
@@ -425,7 +425,7 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
 
       } else if (newStatus === 'declined') {
         notificationContent = `Your managed sale for '${request.vehicle_details.title}' was declined. Reason: ${userFacingNotes}`;
-        await base44.entities.Message.create({
+        await Message.create({
           recipient_id: request.submitted_by_user_id,
           sender_id: currentUser.id,
           content: `Regarding your managed sale request for "${request.vehicle_details.title}", it has been declined. Reason: ${userFacingNotes || 'No reason provided.'} Please check your dashboard for more details.`,
@@ -441,9 +441,9 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
 
       updatePayload.admin_notes = userFacingNotes;
 
-      await base44.entities.ManagedSaleRequest.update(requestId, updatePayload);
+      await ManagedSaleRequest.update(requestId, updatePayload);
 
-      await base44.entities.Notification.create({
+      await Notification.create({
         recipient_id: request.submitted_by_user_id,
         sender_id: currentUser.id,
         type: "managed_sale_status_update",
@@ -537,7 +537,7 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
         user_facing_notes: updatedRequest.user_facing_notes
       };
 
-      await base44.entities.ManagedSaleRequest.update(request.id, msrUpdateData);
+      await ManagedSaleRequest.update(request.id, msrUpdateData);
 
       if (updatedRequest.created_vehicle_id) {
         const vehicleUpdates = {};
@@ -570,12 +570,12 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
         }
 
         if (Object.keys(vehicleUpdates).length > 0) {
-          await base44.entities.Vehicle.update(updatedRequest.created_vehicle_id, vehicleUpdates);
+          await Vehicle.update(updatedRequest.created_vehicle_id, vehicleUpdates);
         }
       }
 
       if (currentUser?.id) {
-        await base44.entities.Notification.create({
+        await Notification.create({
           recipient_id: request.submitted_by_user_id,
           sender_id: currentUser.id,
           type: "managed_sale_status_update",
@@ -623,14 +623,14 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
         processed_at: new Date().toISOString()
       };
 
-      await base44.entities.ManagedSaleRequest.update(request.id, {
+      await ManagedSaleRequest.update(request.id, {
         edit_requests: updatedEditRequests,
         status: request.created_vehicle_id ? 'listed' : 'approved',
         user_facing_notes: `Your cancellation request has been declined. Reason: ${reason || 'No reason provided'}`
       });
 
       if (currentUser?.id) {
-        await base44.entities.Notification.create({
+        await Notification.create({
           recipient_id: request.submitted_by_user_id,
           sender_id: currentUser.id,
           type: "managed_sale_status_update",
@@ -667,18 +667,18 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
     if (window.confirm(`Are you sure you want to approve the cancellation request for "${request.vehicle_details.title}"?`)) {
       setIsProcessing(true);
       try {
-        await base44.entities.ManagedSaleRequest.update(request.id, {
+        await ManagedSaleRequest.update(request.id, {
           status: 'cancelled',
           user_facing_notes: 'Your cancellation request has been approved. The listing has been removed.'
         });
 
         if (request.created_vehicle_id) {
-          await base44.entities.Vehicle.update(request.created_vehicle_id, {
+          await Vehicle.update(request.created_vehicle_id, {
             status: 'cancelled'
           });
         }
 
-        await base44.entities.Notification.create({
+        await Notification.create({
           recipient_id: request.submitted_by_user_id,
           sender_id: currentUser.id,
           type: "managed_sale_status_update",
@@ -718,12 +718,12 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
     try {
       const previousStatus = request.created_vehicle_id ? 'listed' : 'approved';
 
-      await base44.entities.ManagedSaleRequest.update(request.id, {
+      await ManagedSaleRequest.update(request.id, {
         status: previousStatus,
         user_facing_notes: `Your cancellation request has been declined. Reason: ${reason || 'No reason provided.'}`
       });
 
-      await base44.entities.Notification.create({
+      await Notification.create({
         recipient_id: request.submitted_by_user_id,
         sender_id: currentUser.id,
         type: "managed_sale_status_update",
@@ -777,7 +777,7 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
     if (window.confirm(`Are you sure you want to approve and list "${request.vehicle_details.title}"?`)) {
       setIsProcessing(true);
       try {
-        const requesterUser = await base44.entities.User.get(request.submitted_by_user_id);
+        const requesterUser = await UserEntity.get(request.submitted_by_user_id);
         if (!requesterUser) {
           throw new Error("Could not find the user who submitted this request. Aborting.");
         }
@@ -846,7 +846,7 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
           primary_image_medium: images_medium[0] || null,
         };
 
-        const createdVehicle = await base44.entities.Vehicle.create(vehicleData);
+        const createdVehicle = await Vehicle.create(vehicleData);
 
         // Update MSR - ensure calculated prices are stored
         const msrUpdateData = {
@@ -867,10 +867,10 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
           },
         };
 
-        await base44.entities.ManagedSaleRequest.update(request.id, msrUpdateData);
+        await ManagedSaleRequest.update(request.id, msrUpdateData);
 
         if (request.submitted_by_user_id) {
-          await base44.entities.Notification.create({
+          await Notification.create({
             recipient_id: request.submitted_by_user_id,
             sender_id: currentUser.id,
             type: "managed_sale_status",
@@ -884,7 +884,7 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
           const sortedUserIds = [currentUser.id, request.submitted_by_user_id].sort().join('_');
           const conversationId = `msr_${request.id}_${sortedUserIds}`;
 
-          await base44.entities.Message.create({
+          await Message.create({
             sender_id: currentUser.id,
             recipient_id: request.submitted_by_user_id,
             content: `🎉 Great news! Your managed sale request for "${request.vehicle_details.title}" has been approved by our team.\n\nYour vehicle is now live on Speedio with the following details:\n• Listed Price (Buyer Pays): $${vehicleListingPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: $${ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: $${serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
@@ -933,12 +933,12 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
       setIsProcessing(true);
       try {
         await Promise.all([
-          base44.entities.ManagedSaleRequest.update(request.id, { status: 'sold' }),
-          base44.entities.Vehicle.update(request.created_vehicle_id, { status: 'sold' })
+          ManagedSaleRequest.update(request.id, { status: 'sold' }),
+          Vehicle.update(request.created_vehicle_id, { status: 'sold' })
         ]);
 
         if (currentUser && currentUser.id) {
-          await base44.entities.Notification.create({
+          await Notification.create({
             recipient_id: request.submitted_by_user_id,
             sender_id: currentUser.id,
             type: "managed_sale_status_update",
@@ -1050,16 +1050,16 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
           recurring_availability: updatedFormData.access_arrangements.recurring_availability || []
         };
 
-        await base44.entities.Vehicle.update(editingRequest.created_vehicle_id, vehicleUpdateData);
+        await Vehicle.update(editingRequest.created_vehicle_id, vehicleUpdateData);
       }
 
-      await base44.entities.ManagedSaleRequest.update(editingRequest.id, updateData);
+      await ManagedSaleRequest.update(editingRequest.id, updateData);
 
       // If completing initial details (moving from pending_initial_review to pending_review)
       if (editingRequest.status === 'pending_initial_review' && updateData.status === 'pending_review') {
         if (currentUser?.id) {
           // Notify the user
-          await base44.entities.Notification.create({
+          await Notification.create({
             recipient_id: editingRequest.submitted_by_user_id,
             sender_id: currentUser.id,
             type: "managed_sale_status_update",
@@ -1072,7 +1072,7 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
         }
       } else if (currentUser?.id) {
         // Regular update notification
-        await base44.entities.Notification.create({
+        await Notification.create({
           recipient_id: editingRequest.submitted_by_user_id,
           sender_id: currentUser.id,
           type: "managed_sale_status_update",
@@ -1124,7 +1124,7 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
 
   const handleOpenChecklist = async (request) => {
     try {
-      const checklists = await base44.entities.VehicleInspectionChecklist.filter({
+      const checklists = await VehicleInspectionChecklist.filter({
         managed_sale_request_id: request.id
       });
 
@@ -1193,14 +1193,14 @@ Thank you for choosing Speedyo's managed sales service! 🚗`,
           );
 
           if (shouldDeleteVehicle) {
-            await base44.entities.Vehicle.delete(request.created_vehicle_id);
+            await Vehicle.delete(request.created_vehicle_id);
           }
         }
 
-        await base44.entities.ManagedSaleRequest.delete(request.id);
+        await ManagedSaleRequest.delete(request.id);
 
         if (currentUser?.id && request.submitted_by_user_id) {
-          await base44.entities.Notification.create({
+          await Notification.create({
             recipient_id: request.submitted_by_user_id,
             sender_id: currentUser.id,
             type: "managed_sale_status_update",

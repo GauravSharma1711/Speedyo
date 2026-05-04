@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 interface EmailTemplateProps {
   full_name: string;
   amount_paid: string | number;

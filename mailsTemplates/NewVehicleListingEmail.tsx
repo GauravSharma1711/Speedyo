@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 interface EmailTemplateProps {
   author_name: string;
   vehicle_title: string;

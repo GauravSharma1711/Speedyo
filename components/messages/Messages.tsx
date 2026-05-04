@@ -924,8 +924,8 @@ We're unable to accommodate this test drive request at this time. Please feel fr
     <div 
       className={`${isMobileView && selectedConversation ? 'h-screen' : 'h-[calc(100vh-56px)]'} md:h-[calc(100vh-64px)] bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30`}
     >
-      <div className="flex justify-center w-full h-full">
-        <div className="flex h-full w-full max-w-5xl">
+      <div className="flex w-full h-full">
+        <div className="flex h-full w-full">
           <div className={`${isMobileView && selectedConversation ? 'hidden' : 'block'} w-full md:w-80 border-r border-slate-200/60 bg-white/80 backdrop-blur-sm flex flex-col flex-shrink-0`}>
             <div className="p-4 border-b border-slate-200/60 bg-white/90 flex-shrink-0">
               <div className="flex items-center gap-3 mb-4">

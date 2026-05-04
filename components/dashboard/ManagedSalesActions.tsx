@@ -64,7 +64,7 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }) 
 
       // Send notification to admins - get all admin users
       try {
-        const { User } = await import("@/entities/User");
+        const { User } = await import("@/api/entities");
         const adminUsers = await User.filter({ role: 'admin' });
         
         // Create notifications for all admin users

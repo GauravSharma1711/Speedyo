@@ -34,22 +34,22 @@ export default function Footer() {
               <h4 className="font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-slate-400">
                 <li>
-                  <Link href="/marketplace" className="hover:text-white">
+                  <Link href="/Marketplace" className="hover:text-white">
                     Browse Vehicles
                   </Link>
                 </li>
                 <li>
-                  <Link href="/feed" className="hover:text-white">
+                  <Link href="/Feed" className="hover:text-white">
                     Community Feed
                   </Link>
                 </li>
                 <li>
-                  <Link href="/dashboard" className="hover:text-white">
+                  <Link href="/Dashboard" className="hover:text-white">
                     Seller Dashboard
                   </Link>
                 </li>
                 <li>
-                  <Link href="/subscription" className="hover:text-white">
+                  <Link href="/Subscription" className="hover:text-white">
                     Pricing Plans
                   </Link>
                 </li>
@@ -71,7 +71,7 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/managed-sales" className="hover:text-white">
+                  <Link href="/Managed-Sales" className="hover:text-white">
                     Managed Sales
                   </Link>
                 </li>
