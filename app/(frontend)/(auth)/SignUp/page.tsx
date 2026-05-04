@@ -90,7 +90,7 @@ export default function SignUpPage() {
     }
     setLoading(true)
     setError("")
-    const res = await fetch("/api/signUp", {
+    const res = await fetch("/api/auth/signUp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form)

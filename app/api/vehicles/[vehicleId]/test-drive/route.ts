@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
+import { upsertVehicleConversation } from "@/lib/conversations/upsertVehicleConversation";
+import { MessageType } from "@/lib/generated/prisma/enums";
 
-export async function POST(req: NextRequest, { params }: { params: { vehicleId: string } }) {
+export async function POST(req: NextRequest, context: { params: Promise<{ vehicleId: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { vehicleId } = params;
+    const { vehicleId } = await context.params;
     const { requested_date, requested_time, additional_notes } = await req.json();
 
     if (!requested_date || !requested_time) {
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: { vehicleId: 
 
     const vehicle = await prisma.vehicle.findUnique({
       where: { id: vehicleId },
-      select: { id: true, status: true, authorId: true, website_managed: true, title: true },
+      select: { id: true, status: true, authorId: true, website_managed: true, title: true, location: true },
     });
 
     if (!vehicle) return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
@@ -46,12 +48,12 @@ export async function POST(req: NextRequest, { params }: { params: { vehicleId: 
       return NextResponse.json({ error: "Recipient not found for this vehicle" }, { status: 400 });
     }
 
-    const conversation_id = [session.user.id, recipientId].sort().join("_") + `_${vehicleId}`;
-    const testDriveDetails = {
-      requested_date,
-      requested_time,
-      additional_notes: additional_notes || null,
-    };
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { phone: true },
+    });
+
+    const vehicleTitle = vehicle.title ?? "Vehicle";
 
     const result = await prisma.$transaction(async (tx) => {
       const created = await tx.testDriveRequest.create({
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: { vehicleId: 
           vehicleId,
           requester_name: requesterName,
           requester_email: requesterEmail,
+          requester_phone: dbUser?.phone ?? null,
           requested_date,
           requested_time,
           additional_notes: additional_notes || null,
@@ -66,20 +69,36 @@ export async function POST(req: NextRequest, { params }: { params: { vehicleId: 
         },
       });
 
+      const conversation = await upsertVehicleConversation(tx, {
+        userAId: session.user.id,
+        userBId: recipientId,
+        vehicleId,
+        recipientUnreadForUserId: recipientId,
+        last_message: `Test drive request for ${vehicleTitle}`,
+        last_message_at: new Date(),
+        last_message_type: MessageType.test_drive_request,
+      });
+
       const message = await tx.message.create({
         data: {
           senderId: session.user.id,
           recipientId,
           vehicleId,
-          conversation_id,
+          conversationId: conversation.id,
           message_type: "test_drive_request",
-          content: `Test drive requested for ${requested_date} at ${requested_time}.`,
-          test_drive_details: testDriveDetails,
+          content: JSON.stringify({
+            testDriveRequestId: created.id,
+            vehicle_title: vehicleTitle,
+            requested_date,
+            requested_time,
+            location: vehicle.location ?? "",
+            status: "pending",
+            additional_notes: additional_notes ?? null,
+          }),
         },
       });
 
       const url = `/vehicle?id=${vehicleId}`;
-      const vehicleTitle = vehicle.title ?? "a vehicle";
 
       await tx.notification.createMany({
         data: [
@@ -98,7 +117,7 @@ export async function POST(req: NextRequest, { params }: { params: { vehicleId: 
             recipientId: session.user.id,
             senderId: recipientId,
             type: "test_drive_request",
-            content: `Your test drive request for ${vehicleTitle} was submitted.`,
+            content: `Your test drive request for "${vehicleTitle}" was submitted.`,
             related_entity_type: "vehicle",
             related_entity_id: vehicleId,
             url,
@@ -113,11 +132,10 @@ export async function POST(req: NextRequest, { params }: { params: { vehicleId: 
 
     return NextResponse.json(
       { success: true, request: result.created, message: result.message },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("POST /api/vehicles/[id]/test-drive failed:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

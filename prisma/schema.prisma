@@ -108,6 +108,8 @@ model User {
   createdTransfers                 VehicleTransfer[]            @relation("CreatedTransfers")
   sellerTransfers                  VehicleTransfer[]            @relation("SellerTransfers")
   vehicleViews                     VehicleView[]
+  vehicleLikes                     VehicleLike[]
+  vehicleSaves                     VehicleSave[]
   vehicles                         Vehicle[]
   verificationRequests             VerificationRequest[]        @relation("UserVerificationRequests")
 
@@ -237,6 +239,7 @@ model Vehicle {
   website_managed         Boolean                     @default(false)
   status                  VehicleStatus               @default(available)
   views                   Int                         @default(0)
+  shares                  Int                         @default(0)
   authorId                String?                     @map("author_id")
   original_owner_id       String?
   dealership_name         String?
@@ -251,6 +254,8 @@ model Vehicle {
   editRequests            VehicleEditRequest[]
   transfers               VehicleTransfer[]
   vehicleViews            VehicleView[]
+  vehicleLikes            VehicleLike[]
+  vehicleSaves            VehicleSave[]
   author                  User?                       @relation(fields: [authorId], references: [id])
   dealershipAgreement     DealershipVehicleAgreement? @relation(fields: [dealershipAgreementId], references: [id])
   verificationRequests    VerificationRequest[]
@@ -270,6 +275,30 @@ model VehicleView {
   @@index([userId])
   @@index([createdAt])
   @@map("vehicle_views")
+}
+
+model VehicleLike {
+  userId    String   @map("user_id")
+  vehicleId String   @map("vehicle_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, vehicleId])
+  @@index([vehicleId])
+  @@map("vehicle_likes")
+}
+
+model VehicleSave {
+  userId    String   @map("user_id")
+  vehicleId String   @map("vehicle_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, vehicleId])
+  @@index([vehicleId])
+  @@map("vehicle_saves")
 }
 
 model DealershipVehicleAgreement {

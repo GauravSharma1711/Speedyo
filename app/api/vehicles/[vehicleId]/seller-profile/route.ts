@@ -3,12 +3,12 @@ import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 
-export async function GET(_req: NextRequest, { params }: { params: { vehicleId: string } }) {
+export async function GET(_req: NextRequest, context: { params: Promise<{ vehicleId: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { vehicleId } = params;
+    const { vehicleId } = await context.params;
     const vehicle = await prisma.vehicle.findUnique({
       where: { id: vehicleId },
       select: { authorId: true },

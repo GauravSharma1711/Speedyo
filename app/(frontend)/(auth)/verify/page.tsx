@@ -70,7 +70,7 @@ export default function VerifyEmailPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/verifyOtp", {
+      const res = await fetch("/api/auth/verifyOtp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: otpString }),
@@ -98,7 +98,7 @@ export default function VerifyEmailPage() {
     if (resendTimer > 0) return;
     setResendLoading(true);
     try {
-      const res = await fetch("/api/resend-otp", {
+      const res = await fetch("/api/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

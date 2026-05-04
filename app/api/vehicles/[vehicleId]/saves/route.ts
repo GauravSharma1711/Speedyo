@@ -3,48 +3,43 @@ import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 
-export async function POST(_req: NextRequest, { params }: { params: { vehicleId: string } }) {
+export async function POST(
+  _req: NextRequest,
+  context: { params: Promise<{ vehicleId: string }> },
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { vehicleId } = params;
+    const { vehicleId } = await context.params;
     const userId = session.user.id;
 
     const existing = await prisma.vehicleSave.findUnique({
       where: { userId_vehicleId: { userId, vehicleId } },
-      select: { id: true },
+      select: { userId: true },
     });
 
     const result = await prisma.$transaction(async (tx) => {
       if (existing) {
-        await tx.vehicleSave.delete({ where: { userId_vehicleId: { userId, vehicleId } } });
-        const v = await tx.vehicle.update({
-          where: { id: vehicleId },
-          data: { saves_count: { decrement: 1 } },
-          select: { saves_count: true },
+        await tx.vehicleSave.delete({
+          where: { userId_vehicleId: { userId, vehicleId } },
         });
-        return { saved: false, saves: v.saves_count };
+      } else {
+        await tx.vehicleSave.create({ data: { userId, vehicleId } });
       }
-
-      await tx.vehicleSave.create({ data: { userId, vehicleId } });
-      const v = await tx.vehicle.update({
-        where: { id: vehicleId },
-        data: { saves_count: { increment: 1 } },
-        select: { saves_count: true },
-      });
-      return { saved: true, saves: v.saves_count };
+      const saves = await tx.vehicleSave.count({ where: { vehicleId } });
+      return { saved: !existing, saves };
     });
 
     return NextResponse.json({ success: true, ...result });
-  } catch (error: any) {
-    if (error?.code === "P2025") {
+  } catch (error: unknown) {
+    const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
+    if (code === "P2025") {
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }
     console.error("POST /api/vehicles/[id]/saves failed:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

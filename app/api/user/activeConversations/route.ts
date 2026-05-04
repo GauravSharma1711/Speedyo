@@ -24,7 +24,7 @@ export async function GET() {
 
     const messages = await prisma.message.findMany({
       where: {
-        conversation_id: { not: null },
+        conversationId: { not: null },
         OR: [{ senderId: userId }, { recipientId: userId }],
       },
       orderBy: { createdAt: "desc" },
@@ -33,7 +33,7 @@ export async function GET() {
         id: true,
         createdAt: true,
         content: true,
-        conversation_id: true,
+        conversationId: true,
         senderId: true,
         recipientId: true,
         read: true,
@@ -45,7 +45,7 @@ export async function GET() {
     const summaries: ConversationSummary[] = [];
 
     for (const m of messages) {
-      const cid = m.conversation_id;
+      const cid = m.conversationId;
       if (!cid || seen.has(cid)) continue;
       seen.add(cid);
 
@@ -57,7 +57,7 @@ export async function GET() {
         }),
         prisma.message.count({
           where: {
-            conversation_id: cid,
+            conversationId: cid,
             recipientId: userId,
             read: false,
           },
@@ -82,4 +82,3 @@ export async function GET() {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

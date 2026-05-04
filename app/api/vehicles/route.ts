@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
     }
     const orderBy = normalizeSort(searchParams.get("sort"));
 
-    const [total, vehicles] = await Promise.all([
+    const [total, rawVehicles] = await Promise.all([
       prisma.vehicle.count({ where }),
       prisma.vehicle.findMany({
         where,
@@ -107,6 +107,7 @@ export async function GET(req: NextRequest) {
           verified: true,
           website_managed: true,
           views: true,
+          shares: true,
           primary_image: true,
           primary_image_thumbnail: true,
           primary_image_small: true,
@@ -115,13 +116,20 @@ export async function GET(req: NextRequest) {
           images_thumbnails: true,
           images_small: true,
           images_medium: true,
-          likes_count: true,
-          saves_count: true,
-          shares_count: true,
           authorId: true,
+          _count: {
+            select: { vehicleLikes: true, vehicleSaves: true },
+          },
         },
       }),
     ]);
+
+    const vehicles = rawVehicles.map(({ _count, ...rest }) => ({
+      ...rest,
+      likes_count: _count.vehicleLikes,
+      saves_count: _count.vehicleSaves,
+      shares_count: rest.shares,
+    }));
 
     return NextResponse.json({
       success: true,

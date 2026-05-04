@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 
-export async function POST(_req: NextRequest, { params }: { params: { vehicleId: string } }) {
+export async function POST(_req: NextRequest, context: { params: Promise<{ vehicleId: string }> }) {
   try {
-    const { vehicleId } = params;
+    const { vehicleId } = await context.params;
     const updated = await prisma.vehicle.update({
       where: { id: vehicleId },
       data: { views: { increment: 1 } },
@@ -11,8 +11,9 @@ export async function POST(_req: NextRequest, { params }: { params: { vehicleId:
     });
 
     return NextResponse.json({ success: true, vehicleId: updated.id, views: updated.views });
-  } catch (error: any) {
-    if (error?.code === "P2025") {
+  } catch (error: unknown) {
+    const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
+    if (code === "P2025") {
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }
     console.error("POST /api/vehicles/[id]/views failed:", error);
