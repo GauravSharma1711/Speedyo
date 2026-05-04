@@ -506,6 +506,7 @@ export default function ProfilePage() {
                   onReact={(emoji: string) => handleReactToPost(post, emoji)}
                   onComment={() => handleCommentOnPost(post.id)}
                   onShare={() => handleSharePost(post.id)}
+                  onEdit={() => {}}
                 />
               ))}
             </div>

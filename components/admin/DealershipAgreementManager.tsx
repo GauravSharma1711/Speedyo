@@ -27,7 +27,7 @@ import {
   Copy
 } from 'lucide-react';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { invokeFunction } from '@/api/entities';
 import { format } from 'date-fns';
 
 export default function DealershipAgreementManager() {
@@ -120,7 +120,7 @@ export default function DealershipAgreementManager() {
     try {
       const signingUrl = `https://speedio.app/SignAgreement?id=${agreement.id}`;
 
-      await base44.functions.invoke('sendEmail', {
+      await invokeFunction('sendEmail', {
         to: agreement.email,
         subject: 'Speedio Managed Sales Service Agreement - Action Required',
         fromName: 'Speedio Team',
@@ -196,7 +196,7 @@ export default function DealershipAgreementManager() {
         ? `https://speedio.app/ViewDealershipAgreement?id=${agreement.id}`
         : `https://speedio.app/SignAgreement?id=${agreement.id}`;
       
-      await base44.functions.invoke('sendEmail', {
+      await invokeFunction('sendEmail', {
         to: agreement.email,
         subject: 'Your Speedio Managed Sales Service Agreement',
         fromName: 'Speedio Team',
@@ -267,20 +267,16 @@ export default function DealershipAgreementManager() {
 
   const downloadAgreement = async (agreement) => {
     try {
-      const response = await base44.functions.invoke('generateAgreementPDF', {
+      const response = await invokeFunction<{ url?: string }>('generateAgreementPDF', {
         agreementId: agreement.id
       });
 
-      // Create blob and download
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Agreement_${agreement.dealership_name}_Managed_Sales.pdf`; // Updated filename
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
+      if (response?.url) {
+        window.open(response.url, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      alert("PDF generation is not configured yet.");
     } catch (error) {
       console.error('Failed to download agreement:', error);
       alert('Failed to download agreement. Please try again.');

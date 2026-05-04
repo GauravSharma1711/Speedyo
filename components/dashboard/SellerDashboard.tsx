@@ -1,8 +1,21 @@
 "use client"
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Vehicle, Post, Message, ManagedSaleRequest, PublicUser, Notification, User, VehicleTransfer } from "@/api/entities";
+import {
+  invokeFunction,
+  type PublicUserData,
+  type UserData,
+  Vehicle,
+  Post,
+  Message,
+  ManagedSaleRequest,
+  PublicUser,
+  Notification,
+  User,
+  VehicleTransfer,
+} from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -71,9 +84,16 @@ import {
 import BuyMoreSlotsModal from "./BuyMoreSlotsModal";
 import NotificationSettings from "./NotificationSettings";
 import TransferProgressTracker from "./TransferProgressTracker";
-// import { base44 } from "@/api/base44Client";
 
-const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel }) => {
+type ManagedSaleDetailsModalProps = {
+  isOpen: boolean;
+  request: any | null;
+  onClose: () => void;
+  onEdit: () => void;
+  onCancel: () => void;
+};
+
+const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel }: ManagedSaleDetailsModalProps) => {
   if (!isOpen || !request) return null;
 
   return (
@@ -105,7 +125,20 @@ const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel })
   );
 };
 
-const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline, onComplete, onEdit, getBuyerById, getVehicleById, user }) => {
+type TestDriveDetailsModalProps = {
+  isOpen: boolean;
+  request: any | null;
+  onClose: () => void;
+  onApprove: (id: string) => void;
+  onDecline: (id: string) => void;
+  onComplete: (id: string) => void;
+  onEdit: () => void;
+  getBuyerById: (buyerId: string) => any;
+  getVehicleById: (vehicleId: string) => any;
+  user: UserData;
+};
+
+const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline, onComplete, onEdit, getBuyerById, getVehicleById, user }: TestDriveDetailsModalProps) => {
   const router = useRouter();
   if (!isOpen || !request) return null;
 
@@ -273,9 +306,9 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
 };
 
 
-export default function SellerDashboard({ user }) {
+export default function SellerDashboard({ user }: { user: UserData }) {
   const router = useRouter();
-  const [publicUser, setPublicUser] = useState(null);
+  const [publicUser, setPublicUser] = useState<PublicUserData | null>(null);
   const [activeTab, setActiveTab] = useState("listings"); // Added for tabs control
 
   useEffect(() => {
@@ -290,19 +323,19 @@ export default function SellerDashboard({ user }) {
     loadPublicUser();
   }, [user]);
 
-  const [listings, setListings] = useState([]); // Vehicles created by the user for direct listing
-  const [managedSaleVehicles, setManagedSaleVehicles] = useState([]); // Vehicles where user is original owner (includes managed sales)
-  const [posts, setPosts] = useState([]);
-  const [messages, setMessages] = useState([]); // All messages where user is recipient
-  const [testDriveRequests, setTestDriveRequests] = useState([]); // All test drive requests (received & sent)
-  const [managedSaleRequests, setManagedSaleRequests] = useState([]); // The actual ManagedSaleRequest objects
-  const [vehiclePerformance, setVehiclePerformance] = useState({});
+  const [listings, setListings] = useState<any[]>([]); // Vehicles created by the user for direct listing
+  const [managedSaleVehicles, setManagedSaleVehicles] = useState<any[]>([]); // Vehicles where user is original owner (includes managed sales)
+  const [posts, setPosts] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]); // All messages where user is recipient
+  const [testDriveRequests, setTestDriveRequests] = useState<any[]>([]); // All test drive requests (received & sent)
+  const [managedSaleRequests, setManagedSaleRequests] = useState<any[]>([]); // The actual ManagedSaleRequest objects
+  const [vehiclePerformance, setVehiclePerformance] = useState<Record<string, any>>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
-  const [editingRequest, setEditingRequest] = useState(null);
+  const [editingRequest, setEditingRequest] = useState<any | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
-  const [buyers, setBuyers] = useState([]);
+  const [buyers, setBuyers] = useState<PublicUserData[]>([]);
   const [stats, setStats] = useState({
     totalListings: 0,
     totalViews: 0,
@@ -314,21 +347,21 @@ export default function SellerDashboard({ user }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false); // Added for handleCreateVehicle
 
-  const [availabilityVehicle, setAvailabilityVehicle] = useState(null);
+  const [availabilityVehicle, setAvailabilityVehicle] = useState<any | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [viewingRequest, setViewingRequest] = useState(null);
-  const [showTestDriveDetails, setShowTestDriveDetails] = useState(null);
-  const [viewingActivity, setViewingActivity] = useState(null);
-  const [editingTestDriveRequest, setEditingTestDriveRequest] = useState(null);
-  const [showVehicleEditRequestModal, setShowVehicleEditRequestModal] = useState(null);
-  const [viewingSentTestDrive, setViewingSentTestDrive] = useState(null);
-  const [isUpdating, setIsUpdating] = useState(null);
+  const [viewingRequest, setViewingRequest] = useState<any | null>(null);
+  const [showTestDriveDetails, setShowTestDriveDetails] = useState<any | null>(null);
+  const [viewingActivity, setViewingActivity] = useState<any | null>(null);
+  const [editingTestDriveRequest, setEditingTestDriveRequest] = useState<any | null>(null);
+  const [showVehicleEditRequestModal, setShowVehicleEditRequestModal] = useState<any | null>(null);
+  const [viewingSentTestDrive, setViewingSentTestDrive] = useState<any | null>(null);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [showBuyMoreSlotsModal, setShowBuyMoreSlotsModal] = useState(false);
   // const [showSlotDetails, setShowSlotDetails] = useState(false); // New state for collapsible details - REMOVED
 
-  const [allUserVehiclesCombined, setAllUserVehiclesCombined] = useState([]); // Combined list for getVehicleById
-  const [vehicleTransfers, setVehicleTransfers] = useState([]);
-  const [selectedTransfer, setSelectedTransfer] = useState(null);
+  const [allUserVehiclesCombined, setAllUserVehiclesCombined] = useState<any[]>([]); // Combined list for getVehicleById
+  const [vehicleTransfers, setVehicleTransfers] = useState<any[]>([]);
+  const [selectedTransfer, setSelectedTransfer] = useState<any | null>(null);
 
   const { toast } = useToast();
 
@@ -376,7 +409,7 @@ export default function SellerDashboard({ user }) {
       ])];
       if (buyerIds.length > 0) {
         // ✅ FIX: Use PublicUser.list() instead of User.list()
-        const allPublicUsers = await PublicUser.list("-created_date", 200);
+        const allPublicUsers = await PublicUser.list();
         setBuyers(allPublicUsers.filter(buyer => buyerIds.includes(buyer.user_id)));
       } else {
         setBuyers([]);
@@ -395,7 +428,7 @@ export default function SellerDashboard({ user }) {
       setVehicleTransfers(allTransfers);
 
       // 10. Calculate `vehiclePerformance` for managed sale requests
-      const performanceData = {};
+      const performanceData: Record<string, any> = {};
       if (Array.isArray(userManagedSaleRequests)) {
         userManagedSaleRequests
           .filter(req => req.status === 'listed' && req.created_vehicle_id)
@@ -455,55 +488,51 @@ export default function SellerDashboard({ user }) {
   };
 
   // Memoize helper functions to prevent useCallback dependency changes
-  const getBuyerById = useCallback((buyerId) => {
+  const getBuyerById = useCallback((buyerId: string) => {
     // ✅ FIX: Match against user_id since we're using PublicUser now
     return buyers.find(buyer => buyer.user_id === buyerId) || { full_name: "Unknown Buyer", email: "unknown", phone: null, user_id: buyerId };
   }, [buyers]);
 
-  const getVehicleById = useCallback((vehicleId) => {
+  const getVehicleById = useCallback((vehicleId: string) => {
     return allUserVehiclesCombined.find(vehicle => vehicle.id === vehicleId) || {};
   }, [allUserVehiclesCombined]);
 
-  // const handleCreateVehicle = async (vehicleData) => {
-  //   setIsSubmitting(true);
-  //   try {
-  //     const newVehicleData = {
-  //       ...vehicleData,
-  //       author_id: user.id, // Only keep the author_id
-  //     };
-  //     const newVehicle = await Vehicle.create(newVehicleData);
+  const handleCreateVehicle = async (vehicleData: any) => {
+    setIsSubmitting(true);
+    try {
+      const newVehicleData = {
+        ...vehicleData,
+        author_id: user.id,
+        created_by: user.email,
+        original_owner_id: user.id,
+      };
 
-  //     // Trigger notification for followers
-  //     try {
-  //       await base44.functions.invoke('notifyFollowersOfNewVehicle', { vehicleId: newVehicle.id });
-  //     } catch (notifError) {
-  //       console.error("Failed to notify followers:", notifError);
-  //       // Don't block vehicle creation if notification fails
-  //     }
+      const newVehicle = await Vehicle.create(newVehicleData);
 
-  //     setShowCreateModal(false);
-  //     loadSellerData(); // Refresh data
-  //     toast({
-  //       title: "Vehicle Created",
-  //       description: "Your vehicle listing has been successfully created.",
-  //       variant: "success",
-  //     });
+      setShowCreateModal(false);
+      setEditingVehicle(null);
+      loadSellerData();
+      toast({
+        title: "Vehicle Created",
+        description: "Your vehicle listing has been successfully created.",
+        variant: "success",
+      });
 
-  //     return newVehicle; // Return the created vehicle
-  //   } catch (error) {
-  //     console.error("Failed to create vehicle:", error);
-  //     toast({
-  //       title: "Creation Failed",
-  //       description: "Could not create the vehicle listing. Please try again.",
-  //       variant: "destructive",
-  //     });
-  //     throw error;
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
+      return newVehicle;
+    } catch (error) {
+      console.error("Failed to create vehicle:", error);
+      toast({
+        title: "Creation Failed",
+        description: "Could not create the vehicle listing. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  const handleUpdateVehicle = async (vehicleData) => {
+  const handleUpdateVehicle = async (vehicleData: any) => {
     if (!editingVehicle) return;
     try {
       await Vehicle.update(editingVehicle.id, vehicleData);
@@ -525,12 +554,12 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleEditVehicle = (vehicle) => {
+  const handleEditVehicle = (vehicle: any) => {
     setEditingVehicle(vehicle);
     setShowCreateModal(true);
   };
 
-  const handleDeleteVehicle = async (vehicleId) => {
+  const handleDeleteVehicle = async (vehicleId: string) => {
     if (confirm("Are you sure you want to delete this listing?")) {
       try {
         await Vehicle.delete(vehicleId);
@@ -551,7 +580,7 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleMarkAsSold = useCallback(async (vehicleId) => {
+  const handleMarkAsSold = useCallback(async (vehicleId: string) => {
     if (window.confirm("Are you sure you want to mark this vehicle as sold? This will remove it from active listings.")) {
       setIsUpdating(vehicleId);
       try {
@@ -575,7 +604,7 @@ export default function SellerDashboard({ user }) {
     }
   }, [loadSellerData, toast]);
 
-  const handleMarkAsUnavailable = useCallback(async (vehicleId) => {
+  const handleMarkAsUnavailable = useCallback(async (vehicleId: string) => {
     if (window.confirm("Mark this vehicle as temporarily unavailable? You can make it available again anytime.")) {
       setIsUpdating(vehicleId);
       try {
@@ -599,7 +628,7 @@ export default function SellerDashboard({ user }) {
     }
   }, [loadSellerData, toast]);
 
-  const handleMarkAsAvailable = useCallback(async (vehicleId) => {
+  const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
     setIsUpdating(vehicleId);
     try {
       await Vehicle.update(vehicleId, { status: 'available' });
@@ -621,7 +650,7 @@ export default function SellerDashboard({ user }) {
     }
   }, [loadSellerData, toast]);
 
-  const handleVehicleEditRequestSubmit = async (vehicleId, changes, notes) => {
+  const handleVehicleEditRequestSubmit = async (vehicleId: string, changes: Record<string, any>, notes: string) => {
     try {
       const currentVehicle = listings.find(v => v.id === vehicleId); // Check from user's direct listings
       if (!currentVehicle) {
@@ -673,13 +702,13 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleEditRequest = (request) => {
+  const handleEditRequest = (request: any) => {
     setEditingRequest(request);
     setShowRequestForm(true);
     setShowDetailsModal(false); // Close details modal when opening edit form
   };
 
-  const handleCancelRequest = async (requestToCancel) => {
+  const handleCancelRequest = async (requestToCancel: any) => {
     if (!requestToCancel || !requestToCancel.id) {
       toast({
         title: "Error",
@@ -732,10 +761,10 @@ export default function SellerDashboard({ user }) {
     loadSellerData();
   };
 
-  const handleUpdateRequest = async (requestData, originalRequest) => {
+  const handleUpdateRequest = async (requestData: any, originalRequest: any) => {
     setIsSubmittingEdit(true);
     try {
-      const changes = {};
+      const changes: Record<string, any> = {};
 
       if (requestData.vehicle_details && originalRequest.vehicle_details) {
         const vehicleDetailKeys = Object.keys(requestData.vehicle_details);
@@ -815,12 +844,12 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleViewDetails = (request) => {
+  const handleViewDetails = (request: any) => {
     setViewingRequest(request);
     setShowDetailsModal(true);
   };
 
-  const handleApproveTestDrive = async (messageId) => {
+  const handleApproveTestDrive = async (messageId: string) => {
     try {
       const message = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
       if (message && message.test_drive_details) {
@@ -844,7 +873,7 @@ export default function SellerDashboard({ user }) {
 
         const buyer = buyers.find(b => b.user_id === message.sender_id);
         if (buyer) {
-          await sendEmail({
+          await invokeFunction("sendEmail", {
             to: buyer.email,
             subject: `Your Test Drive for ${getVehicleById(message.vehicle_id)?.title} is Approved!`,
             html: `<h2>Test Drive Approved!</h2>
@@ -882,7 +911,7 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleDeclineTestDrive = async (messageId) => {
+  const handleDeclineTestDrive = async (messageId: string) => {
     try {
       const message = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
       if (message && message.test_drive_details) {
@@ -906,7 +935,7 @@ export default function SellerDashboard({ user }) {
 
         const buyer = buyers.find(b => b.user_id === message.sender_id);
         if (buyer) {
-          await sendEmail({
+          await invokeFunction("sendEmail", {
             to: buyer.email,
             subject: `Update on your Test Drive Request for ${getVehicleById(message.vehicle_id)?.title}`,
             html: `<h2>Test Drive Request Update</h2>
@@ -944,7 +973,7 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleMarkAsCompleted = async (messageId) => {
+  const handleMarkAsCompleted = async (messageId: string) => {
     try {
       const message = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
       if (message && message.test_drive_details) {
@@ -995,7 +1024,7 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleUpdateTestDriveRequest = async (messageId, updatedDetails) => {
+  const handleUpdateTestDriveRequest = async (messageId: string, updatedDetails: any) => {
     try {
       const message = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
       if (message && message.test_drive_details) {
@@ -1031,7 +1060,7 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleCancelSentTestDriveRequest = async (messageId) => {
+  const handleCancelSentTestDriveRequest = async (messageId: string) => {
     if (window.confirm("Are you sure you want to cancel this test drive request? This action cannot be undone.")) {
       try {
         const messageToUpdate = testDriveRequests.find(msg => msg.id === messageId && msg.sender_id === user.id);
@@ -1069,7 +1098,7 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleCancelTestDrive = async (messageId) => {
+  const handleCancelTestDrive = async (messageId: string) => {
     if (window.confirm("Are you sure you want to cancel this test drive request? The buyer will be notified.")) {
       try {
         const messageToUpdate = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
@@ -1104,7 +1133,7 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleSaveVehicleAvailability = async (vehicleId, availabilityData) => {
+  const handleSaveVehicleAvailability = async (vehicleId: string, availabilityData: any) => {
     try {
       await Vehicle.update(vehicleId, availabilityData);
       await loadSellerData();
@@ -1124,7 +1153,7 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const getTestDriveStatusInfo = (status) => {
+  const getTestDriveStatusInfo = (status: string) => {
     switch (status) {
       case 'pending':
         return {
@@ -1159,14 +1188,14 @@ export default function SellerDashboard({ user }) {
     }
   };
 
-  const handleViewActivity = useCallback((request) => {
+  const handleViewActivity = useCallback((request: any) => {
     const vehicle = getVehicleById(request.vehicle_id);
     const buyer = getBuyerById(request.sender_id);
     setViewingActivity({ request, vehicle, buyer });
   }, [getVehicleById, getBuyerById]);
 
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status: string) => {
     switch (status) {
       case 'pending_review':
         return {
@@ -1227,6 +1256,8 @@ export default function SellerDashboard({ user }) {
     }
   };
 
+  type TierKey = "tier1" | "tier2" | "tier3";
+
   const canPostVehicle = () => {
     if (!user) return false;
 
@@ -1246,13 +1277,14 @@ export default function SellerDashboard({ user }) {
       if (expiresAt <= now) return false; // Subscription expired
 
       const vehiclesSoldThisYear = subscription.vehicles_sold_this_year || 0;
-      const salesLimits = {
-        'tier1': 10,    // Standard: 10 sales per year
-        'tier2': 25,   // Professional: 25 sales per year
-        'tier3': -1    // Enterprise: unlimited sales
+      const salesLimits: Record<TierKey, number> = {
+        tier1: 10, // Standard: 10 sales per year
+        tier2: 25, // Professional: 25 sales per year
+        tier3: -1, // Enterprise: unlimited sales
       };
 
-      const limit = salesLimits[subscription.tier];
+      const tier = (subscription.tier ?? "tier1") as TierKey;
+      const limit = salesLimits[tier];
       if (limit === -1) return true; // Unlimited
 
       return vehiclesSoldThisYear < limit;
@@ -1275,13 +1307,14 @@ export default function SellerDashboard({ user }) {
 
     if (user.user_type === 'dealership') {
       const vehiclesSoldThisYear = user.seller_subscription.vehicles_sold_this_year || 0;
-      const limits = {
-        'tier1': { limit: 10, name: 'Standard' },
-        'tier2': { limit: 25, name: 'Professional' },
-        'tier3': { limit: -1, name: 'Enterprise' }
+      const limits: Record<TierKey, { limit: number; name: string }> = {
+        tier1: { limit: 10, name: "Standard" },
+        tier2: { limit: 25, name: "Professional" },
+        tier3: { limit: -1, name: "Enterprise" },
       };
 
-      const tierInfo = limits[user.seller_subscription.tier] || limits.tier1;
+      const tier = (user.seller_subscription.tier ?? "tier1") as TierKey;
+      const tierInfo = limits[tier] ?? limits.tier1;
       return {
         current: vehiclesSoldThisYear,
         limit: tierInfo.limit,
@@ -1294,18 +1327,19 @@ export default function SellerDashboard({ user }) {
 
   const getSubscriptionPill = () => {
     if (user.user_type === 'dealership' && user.seller_subscription?.tier) {
-      const tierNames = {
-        'tier1': 'Standard',
-        'tier2': 'Professional',
-        'tier3': 'Enterprise'
+      const tierNames: Record<TierKey, string> = {
+        tier1: "Standard",
+        tier2: "Professional",
+        tier3: "Enterprise",
       };
-      const tierColors = {
-        'tier1': 'bg-blue-100 text-blue-800 hover:bg-blue-200',
-        'tier2': 'bg-purple-100 text-purple-800 hover:bg-purple-200',
-        'tier3': 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+      const tierColors: Record<TierKey, string> = {
+        tier1: "bg-blue-100 text-blue-800 hover:bg-blue-200",
+        tier2: "bg-purple-100 text-purple-800 hover:bg-purple-200",
+        tier3: "bg-amber-100 text-amber-800 hover:bg-amber-200",
       };
-      const tierName = tierNames[user.seller_subscription.tier] || user.seller_subscription.tier;
-      const tierColor = tierColors[user.seller_subscription.tier] || 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      const tier = (user.seller_subscription.tier ?? "tier1") as TierKey;
+      const tierName = tierNames[tier] || tier;
+      const tierColor = tierColors[tier] || "bg-blue-100 text-blue-800 hover:bg-blue-200";
 
       return (
         <Badge className={`${tierColor} transition-colors duration-200`}>
@@ -1323,7 +1357,23 @@ export default function SellerDashboard({ user }) {
     return null;
   };
 
-  const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue", trend = null, trendValue = '' }) => (
+  const StatCard = ({
+    icon: Icon,
+    title,
+    value,
+    subtitle,
+    color = "blue",
+    trend = null,
+    trendValue = "",
+  }: {
+    icon: any;
+    title: string;
+    value: any;
+    subtitle?: string;
+    color?: string;
+    trend?: "up" | "down" | null;
+    trendValue?: string;
+  }) => (
     <Card className="bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
@@ -1422,7 +1472,7 @@ export default function SellerDashboard({ user }) {
                 <strong>Dealership Application Declined:</strong> {user.admin_verification_notes || "Please review your information and try again."}
               </span>
             </div>
-            <Link to={"/DealershipRegistration"}>
+            <Link href="/DealershipRegistration">
               <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50">Resubmit Application</Button>
             </Link>
           </AlertDescription>
@@ -1440,7 +1490,7 @@ export default function SellerDashboard({ user }) {
                 <strong>Dealership Approved!</strong> Your dealership has been verified and approved. You can now select a subscription plan to start listing vehicles.
               </span>
             </div>
-            <Link to={("/Subscription")}>
+            <Link href="/Subscription">
               <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">Select Plan</Button>
             </Link>
           </AlertDescription>
@@ -1675,7 +1725,7 @@ export default function SellerDashboard({ user }) {
                             })()
                             : "You need a seller account to list vehicles."}
                       </span>
-                      <Link to={('/Subscription')} className="ml-2 font-semibold underline">
+                      <Link href="/Subscription" className="ml-2 font-semibold underline">
                         {user.user_type === 'private_seller' ? 'Buy Slots' : user.user_type === 'dealership' ? 'Manage Subscription' : 'Upgrade Plan'}
                       </Link>
                     </AlertDescription>
@@ -1693,6 +1743,7 @@ export default function SellerDashboard({ user }) {
                           <p className="text-sm text-blue-700">
                             {(() => {
                               const info = getSalesLimitInfo();
+                              if (!info) return "";
                               if (user.user_type === 'private_seller') {
                                 return `${info.current}/${info.limit} vehicles listed (${info.type})`;
                               }
@@ -1705,6 +1756,7 @@ export default function SellerDashboard({ user }) {
                         </div>
                         {(() => {
                           const info = getSalesLimitInfo();
+                          if (!info) return null;
                           if (info.limit !== -1) {
                             const percentage = (info.current / info.limit) * 100;
                             return (
@@ -1790,7 +1842,7 @@ export default function SellerDashboard({ user }) {
                           </div>
 
                           <div className="flex flex-shrink-0 flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
-                            <Link to={`${("/Vehicle")}?id=${vehicle.id}`} className="w-full sm:w-auto">
+                            <Link href={`/Vehicle?id=${vehicle.id}`} className="w-full sm:w-auto">
                               <Button variant="outline" size="sm" className="w-full justify-center">
                                 <Eye className="w-4 h-4 mr-2" />
                                 View
@@ -2076,7 +2128,7 @@ export default function SellerDashboard({ user }) {
 
                                   {testDriveRequests.filter(req => req.recipient_id === user.id && !getVehicleById(req.vehicle_id)?.website_managed).length > 5 && (
                                     <div className="text-center py-2">
-                                      <Link to={("/Messages")}>
+                                      <Link href="/Messages">
                                         <Button variant="link" size="sm">
                                           View All Test Drive Requests
                                         </Button>
@@ -2289,7 +2341,7 @@ export default function SellerDashboard({ user }) {
                     <Handshake className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                     <p className="font-medium mb-1">No Managed Sale Vehicles</p>
                     <p className="text-sm">Vehicles sold through our managed service will appear here.</p>
-                    <Link to={("/Managed-Sales")} className="mt-4 inline-block">
+                    <Link href="/Managed-Sales" className="mt-4 inline-block">
                       <Button variant="outline">
                         <TrendingUp className="w-4 h-4 mr-2" />
                         Request Managed Sale
@@ -2343,7 +2395,7 @@ export default function SellerDashboard({ user }) {
                           </div>
 
                           <div className="flex gap-2 mt-4">
-                            <Link to={(`/Vehicle?id=${vehicle.id}`)}>
+                            <Link href={`/Vehicle?id=${vehicle.id}`}>
                               <Button size="sm" variant="outline">
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Listing
@@ -2377,14 +2429,14 @@ export default function SellerDashboard({ user }) {
                     <div className="p-3 border border-slate-200 rounded-lg">
                       <h4 className="font-semibold text-slate-800 mb-1">Profile Settings</h4>
                       <p className="text-sm text-slate-600 mb-2">Manage your seller profile and verification status</p>
-                      <Link to={("/Profile")}>
+                      <Link href="/Profile">
                         <Button variant="outline" size="sm">Edit Profile</Button>
                       </Link>
                     </div>
                     <div className="p-3 border border-slate-200 rounded-lg">
                       <h4 className="font-semibold text-slate-800 mb-1">Subscription & Billing</h4>
                       <p className="text-sm text-slate-600 mb-2">View and manage your subscription plan and payment details</p>
-                      <Link to={("/ManageSubscription")}>
+                      <Link href="/ManageSubscription">
                         <Button variant="outline" size="sm">Manage Subscription</Button>
                       </Link>
                     </div>
@@ -2413,7 +2465,7 @@ export default function SellerDashboard({ user }) {
 
                 </div>
                 <div className="flex-shrink-0">
-                  <Link to={("/Subscription")}>
+                  <Link href="/Subscription">
                     <Button className={`bg-gradient-to-r ${upgradeRec.gradient} hover:from-purple-600 hover:to-blue-600 text-lg px-6 py-3`}>
                       <TrendingUp className="w-5 h-5 mr-2" />
                       {upgradeRec.cta}
@@ -2452,7 +2504,6 @@ export default function SellerDashboard({ user }) {
             onSuccess={handleFormSuccess}
             onUpdateRequest={handleUpdateRequest}
             isSubmittingEdit={isSubmittingEdit}
-            user={user}
           />
         )}
       </AnimatePresence>
@@ -2522,7 +2573,11 @@ export default function SellerDashboard({ user }) {
             isOpen={!!showVehicleEditRequestModal}
             vehicle={showVehicleEditRequestModal}
             onClose={() => setShowVehicleEditRequestModal(null)}
-            onSubmit={handleVehicleEditRequestSubmit}
+            onSuccess={() => {
+              setShowVehicleEditRequestModal(null);
+              loadSellerData();
+            }}
+            currentUser={user}
           />
         )}
       </AnimatePresence>
@@ -2636,7 +2691,7 @@ export default function SellerDashboard({ user }) {
                     const vehicle = getVehicleById(viewingSentTestDrive.vehicle_id);
                     if (seller && vehicle) {
                       return (
-                        <Link to={(`/Messages?recipientId=${seller.user_id}&vehicleId=${vehicle.id}`)}>
+                        <Link href={`/Messages?recipientId=${seller.user_id}&vehicleId=${vehicle.id}`}>
                           <Button variant="outline" className="flex items-center gap-1">
                             <MessageSquare className="w-4 h-4" /> Message Seller
                           </Button>

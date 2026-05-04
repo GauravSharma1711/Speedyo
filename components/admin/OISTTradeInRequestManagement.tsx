@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { OISTTradeInRequest } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,7 @@ export default function OISTTradeInRequestManagement() {
   const loadRequests = async () => {
     setIsLoading(true);
     try {
-      const data = await base44.entities.OISTTradeInRequest.list("-created_date", 100);
+      const data = await OISTTradeInRequest.list("-created_date", 100);
       setRequests(data);
     } catch (error) {
       console.error("Failed to load trade-in requests:", error);
@@ -29,7 +29,7 @@ export default function OISTTradeInRequestManagement() {
 
   const handleStatusChange = async (requestId, newStatus) => {
     try {
-      await base44.entities.OISTTradeInRequest.update(requestId, { status: newStatus });
+      await OISTTradeInRequest.update(requestId, { status: newStatus });
       loadRequests();
     } catch (error) {
       console.error("Failed to update status:", error);
