@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { motion } from 'framer-motion';
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import Footer from "@/components/layout/Footer";
 import {
   Car,
-  Users,
   MessageCircle,
   Shield,
   TrendingUp,
@@ -29,66 +29,26 @@ import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 
-
-// ─── Animated Counter ────────────────────────────────────────────────────────
-const AnimatedCounter = ({
-  end,
-  duration = 2000,
-  delay = 500,
-  suffix = "",
-}: {
-  end: number;
-  duration?: number;
-  delay?: number;
-  suffix?: string;
-}) => {
-  const [count, setCount] = useState(0);
-  const [hasStarted, setHasStarted] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setHasStarted(true), delay);
-    return () => clearTimeout(timer);
-  }, [delay]);
-
-  useEffect(() => {
-    if (!hasStarted || end === 0) return;
-    let startTime: number | null = null;
-
-    const animate = (currentTime: number) => {
-      if (startTime === null) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.floor(end * eased));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [end, duration, hasStarted]);
-
-  return (
-    <span>
-      {count}
-      {suffix}
-    </span>
-  );
-};
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-interface Stats {
-  verifiedListings: number;
-  happyUsers: number;
-  satisfactionRate: number;
-  isLoading: boolean;
-}
+import { AnimatedCounter } from "@/components/landing/AnimatedCounter";
+import type { Stats } from "@/components/landing/landingTypes";
+import { landingFeatures, landingTestimonials } from "@/components/landing/landingData";
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function Home() {
   const router = useRouter();
-  const [isLoggedIn] = useState(false); // Replace with real auth check
-   const [currentUser, setCurrentUser] = useState(null);
-const [currentUserDisplay, setCurrentUserDisplay] = useState({
-  full_name: "Gaurav Sharma",
-});
-  const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
+  const isAuthCheckComplete = status !== "loading";
+
+  const currentUser = session?.user ?? null;
+  const currentUserDisplay = currentUser
+    ? {
+        full_name:
+          (currentUser as { full_name?: string }).full_name ??
+          (currentUser.email ? currentUser.email.split("@")[0] : undefined) ??
+          "User",
+      }
+    : null;
   const [stats, setStats] = useState<Stats>({
     verifiedListings: 0,
     happyUsers: 0,
@@ -98,14 +58,6 @@ const [currentUserDisplay, setCurrentUserDisplay] = useState({
 
   useEffect(() => {
     window.scrollTo(0, 0);
-
-    // ── Auth check ──────────────────────────────────────────────────────────
-    // TODO: Replace this with your real auth logic (NextAuth, Clerk, etc.)
-    // Example with NextAuth:
-    //   import { useSession } from "next-auth/react";
-    //   const { data: session, status } = useSession();
-    //   const isLoggedIn = status === "authenticated";
-    setTimeout(() => setIsAuthCheckComplete(true), 500);
 
     // ── Stats fetch ─────────────────────────────────────────────────────────
     // TODO: Replace with your real API calls
@@ -138,68 +90,12 @@ const handleGetStarted = () => {
   if (isLoggedIn) {
     router.push("/Feed");
   } else {
-    window.location.href = "https://speedio.app/login";
+    window.location.href = "https://speedyo.app/login";
   }
 };
 
-  const features = [
-    {
-      icon: Car,
-      title: "Smart Marketplace",
-      description:
-        "Browse thousands of verified vehicles from trusted sellers and dealerships.",
-      color: "blue",
-    },
-    {
-      icon: Users,
-      title: "Social Community",
-      description:
-        "Connect with fellow car enthusiasts, share experiences, and discover trends.",
-      color: "emerald",
-    },
-    {
-      icon: Shield,
-      title: "Trust & Safety",
-      description:
-        "Verified listings, secure messaging, and protected transactions for peace of mind.",
-      color: "purple",
-    },
-    {
-      icon: TrendingUp,
-      title: "Seller Tools",
-      description:
-        "Powerful analytics, subscription tiers, and tools to maximize your sales potential.",
-      color: "amber",
-    },
-  ];
-
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "Happy Buyer",
-      content:
-        "Found my dream car in just 2 days! The verification process gave me complete confidence in my purchase.",
-      rating: 5,
-    },
-    {
-      name: "Mike Rodriguez",
-      role: "Pro Seller",
-      content:
-        "Sold 12 vehicles this year through Speedio. The analytics and seller tools are game-changing!",
-      rating: 5,
-    },
-    {
-      name: "Jennifer Park",
-      role: "Car Enthusiast",
-      content:
-        "Love the community aspect! Sharing my restoration projects and connecting with other enthusiasts.",
-      rating: 5,
-    },
-  ];
-
-
     // Animation variants
-  const fadeUpVariants = {
+  const fadeUpVariants: any = {
     hidden: { opacity: 0, y: 60 },
     visible: {
       opacity: 1,
@@ -208,7 +104,7 @@ const handleGetStarted = () => {
     }
   };
 
-  const staggerContainer = {
+  const staggerContainer: any = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -218,7 +114,7 @@ const handleGetStarted = () => {
     }
   };
 
-  const slideInLeft = {
+  const slideInLeft: any = {
     hidden: { opacity: 0, x: -60 },
     visible: {
       opacity: 1,
@@ -227,7 +123,7 @@ const handleGetStarted = () => {
     }
   };
 
-  const slideInRight = {
+  const slideInRight: any = {
     hidden: { opacity: 0, x: 60 },
     visible: {
       opacity: 1,
@@ -409,7 +305,7 @@ const handleGetStarted = () => {
             viewport={{ once: true, amount: 0.2 }}
             variants={staggerContainer}>
 
-            {features.map((feature, index) =>
+            {landingFeatures.map((feature, index) =>
             <motion.div
               key={index}
               variants={fadeUpVariants}
@@ -601,14 +497,14 @@ const handleGetStarted = () => {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                
-               <Link href="/ManagedSales">
+               <Link href="/Managed-Sales">
                   <Button size="lg" className="bg-white text-blue-900 hover:bg-blue-50 text-lg px-8 py-6 shadow-xl hover:shadow-2xl transition-all w-full sm:w-auto">
                     <Handshake className="w-6 h-6 mr-2 hidden md:inline" />
                     Explore Managed Sales
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-               <Link href="/Contact">
+                <Link href="/contact">
                   <Button variant="outline" size="lg" className="border border-white text-white bg-transparent hover:bg-white hover:text-blue-600 text-lg px-8 py-6 w-full sm:w-auto">
                     <MessageCircle className="w-6 h-6 mr-2" />
                     Get Free Consultation
@@ -850,7 +746,7 @@ const handleGetStarted = () => {
                   </div>
 
                   <div className="pt-6 mt-6 border-t border-slate-200">
-                         <Link href="/managed-sales">
+                        <Link href="/Managed-Sales">
                       <Button className="w-full h-12 text-base font-semibold bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 shadow-md hover:shadow-lg transition-all">
                         <ArrowRight className="w-5 h-5 mr-2" />
                         Request Managed Sale
@@ -885,7 +781,7 @@ const handleGetStarted = () => {
                       Compare All Plans
                     </Button>
                   </Link>
-                  <Link href={'/Contact'} className="w-full">
+                  <Link href={'/contact'} className="w-full">
                     <Button variant="outline" className="w-full border-blue-300 text-blue-600 hover:bg-blue-50">
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Talk to an Expert
@@ -1174,7 +1070,7 @@ const handleGetStarted = () => {
             viewport={{ once: true, amount: 0.2 }}
             variants={staggerContainer}>
 
-            {testimonials.map((testimonial, index) =>
+            {landingTestimonials.map((testimonial, index) =>
             <motion.div key={index} variants={fadeUpVariants}>
                 <Card className="bg-gradient-to-br from-white to-slate-50 shadow-lg hover:shadow-xl transition-all duration-300">
                   <CardContent className="p-6">

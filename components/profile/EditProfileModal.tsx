@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/TextArea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { X, Upload, Loader2, User as UserIcon } from "lucide-react";
-import { PublicUser } from "@/api/entities";
+import { PublicUser, UploadFile, UserEntity as User } from "@/api/entities";
 
 // Client-side image to WebP converter with size tracking
 const convertImageToWebP = (file: File): Promise<{
@@ -87,97 +87,70 @@ export default function EditProfileModal({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file) return;
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  //   setIsUploading(true);
-  //   try {
-  //     console.log(`🔄 Starting WebP conversion for: ${file.name}`);
+    setIsUploading(true);
+    try {
+      // Convert to WebP (smaller) then upload (currently mocked in `api/entities.ts`)
+      const { file: webpFile } = await convertImageToWebP(file);
+      const { file_url } = await UploadFile({ file: webpFile });
+      if (!file_url) throw new Error("No file URL returned from upload");
+      handleInputChange("profile_image", file_url);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("Profile image upload failed", error);
+      alert(`Failed to upload image: ${message}. Please try again.`);
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  };
 
-  //     const { file: webpFile, originalSize, webpSize, compressionRatio } =
-  //       await convertImageToWebP(file);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      // Update "me" (currently logs in mock layer)
+      await User.updateMe({
+        full_name: formData.full_name,
+        bio: formData.bio,
+        location: formData.location,
+        profile_image: formData.profile_image,
+      });
 
-  //     console.log(`✅ Uploading WebP file: ${webpFile.name}`);
+      // Update or create public profile
+      const publicProfiles = await PublicUser.filter({ user_id: user.id });
+      if (publicProfiles.length > 0) {
+        await PublicUser.update(publicProfiles[0].id, {
+          full_name: formData.full_name,
+          bio: formData.bio,
+          location: formData.location,
+          profile_image: formData.profile_image,
+        });
+      } else {
+        await PublicUser.create({
+          user_id: user.id,
+          full_name: formData.full_name,
+          bio: formData.bio,
+          location: formData.location,
+          profile_image: formData.profile_image,
+          user_type: user.user_type || "guest",
+          verified: user.verified || false,
+          role: user.role || "user",
+        });
+      }
 
-  //     const response = await base44.integrations.Core.UploadFile({ file: webpFile });
-  //     const fileUrl = response.data?.file_url || response.file_url;
-
-  //     if (!fileUrl) throw new Error("No file URL returned from upload");
-
-  //     console.log(
-  //       `✅ Upload complete! Saved ${((originalSize - webpSize) / 1024).toFixed(2)} KB (${compressionRatio}% reduction)`
-  //     );
-
-  //     handleInputChange("profile_image", fileUrl);
-  //   } catch (error: any) {
-  //     console.error("Profile image upload failed", error);
-  //     alert(`Failed to upload image: ${error.message}. Please try again.`);
-  //   } finally {
-  //     setIsUploading(false);
-  //     e.target.value = "";
-  //   }
-  // };
-
-  // Next.js: form submission does NOT use e.preventDefault() with Server Actions,
-  // but since this is a client component with custom async logic, we keep it.
-  // const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault();
-  //   setIsSubmitting(true);
-
-  //   try {
-  //     console.log("🔄 Updating profile with:", formData);
-
-  //     try {
-  //       await base44.auth.updateMe({
-  //         bio: formData.bio,
-  //         location: formData.location,
-  //         profile_image: formData.profile_image,
-  //       });
-  //       console.log("✅ User entity updated with custom fields");
-  //     } catch (userError: any) {
-  //       console.error("❌ Failed to update User entity:", userError);
-  //       throw new Error(`Failed to update user profile: ${userError.message}`);
-  //     }
-
-  //     try {
-  //       const publicProfiles = await PublicUser.filter({ user_id: user.id });
-
-  //       if (publicProfiles.length > 0) {
-  //         await PublicUser.update(publicProfiles[0].id, {
-  //           full_name: formData.full_name,
-  //           bio: formData.bio,
-  //           location: formData.location,
-  //           profile_image: formData.profile_image,
-  //         });
-  //         console.log("✅ PublicUser entity updated");
-  //       } else {
-  //         await PublicUser.create({
-  //           user_id: user.id,
-  //           full_name: formData.full_name,
-  //           bio: formData.bio,
-  //           location: formData.location,
-  //           profile_image: formData.profile_image,
-  //           user_type: user.user_type || "guest",
-  //           verified: user.verified || false,
-  //           role: user.role || "user",
-  //         });
-  //         console.log("✅ PublicUser entity created");
-  //       }
-  //     } catch (publicUserError: any) {
-  //       console.error("❌ Failed to update PublicUser entity:", publicUserError);
-  //       throw new Error(`Failed to update public profile: ${publicUserError.message}`);
-  //     }
-
-  //     console.log("✅ Profile update completed successfully");
-  //     onSave();
-  //   } catch (error: any) {
-  //     console.error("❌ Failed to update profile:", error);
-  //     alert(`Failed to update profile: ${error.message}. Please try again.`);
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
+      onSave();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      console.error("Failed to update profile:", error);
+      alert(`Failed to update profile: ${message}. Please try again.`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <motion.div

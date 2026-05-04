@@ -1,19 +1,58 @@
-"use client"
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, RefreshCw, CheckCircle, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
-import { createPageUrl } from "@/utils";
+"use client";
 
-export default function OISTTradeIn({ onBack }) {
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/TextArea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
+import { ArrowLeft, RefreshCw, CheckCircle, Loader2 } from "lucide-react";
+import { Notification, OISTTradeInRequest, PublicUser, UserEntity } from "@/api/entities";
+
+type OISTTradeInProps = {
+  onBack: () => void;
+};
+
+type OISTTradeInFormData = {
+  fullName: string;
+  email: string;
+  facebookProfile: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  vehicleMileage: string;
+  vehicleCondition: string;
+  additionalDetails: string;
+};
+
+export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  const [formData, setFormData] = useState({
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const me = await UserEntity.me();
+        setFormData((prev) => ({
+          ...prev,
+          fullName: prev.fullName || me.full_name || "",
+          email: prev.email || me.email || "",
+        }));
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
+
+  const [formData, setFormData] = useState<OISTTradeInFormData>({
     fullName: "",
     email: "",
     facebookProfile: "",
@@ -27,17 +66,20 @@ export default function OISTTradeIn({ onBack }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = <K extends keyof OISTTradeInFormData>(
+    field: K,
+    value: OISTTradeInFormData[K]
+  ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
       // Create trade-in request in database
-      const tradeInRequest = await base44.entities.OISTTradeInRequest.create({
+      await OISTTradeInRequest.create({
         full_name: formData.fullName,
         email: formData.email,
         facebook_profile: formData.facebookProfile,
@@ -51,12 +93,12 @@ export default function OISTTradeIn({ onBack }) {
       });
 
       // Get all admin users from PublicUser entity
-      const adminUsers = await base44.entities.PublicUser.filter({ role: 'admin' });
+      const adminUsers = await PublicUser.filter({ role: "admin" });
 
       // Send notification to all admins
       await Promise.all(
         adminUsers.map(admin =>
-          base44.entities.Notification.create({
+          Notification.create({
             recipient_id: admin.user_id,
             type: "new_managed_sale_request",
             content: `New OIST Trade-In request from ${formData.fullName} for ${formData.vehicleMake} ${formData.vehicleModel} (${formData.vehicleYear})`,
@@ -69,7 +111,10 @@ export default function OISTTradeIn({ onBack }) {
       setIsSubmitted(true);
     } catch (error) {
       console.error("Failed to submit trade-in request:", error);
-      alert(`Failed to submit request: ${error.message || 'Unknown error'}. Please try again or contact support.`);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(
+        `Failed to submit request: ${message}. Please try again or contact support.`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -94,11 +139,9 @@ export default function OISTTradeIn({ onBack }) {
                     Create Account
                   </Button>
                 </a>
-                <a href={createPageUrl("Marketplace")}>
-                  <Button variant="outline" className="w-full">
-                    Browse Vehicles
-                  </Button>
-                </a>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/Marketplace">Browse Vehicles</Link>
+                </Button>
               </div>
               <Button onClick={onBack} variant="ghost">
                 Return to Services
