@@ -111,21 +111,79 @@ export async function workflowApproveAndList(
       },
     });
 
-    const sorted = [adminId, submitter].sort().join("_");
-    const conversationId = `msr_${requestId}_${sorted}`;
+     const messageContent = 
+      `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\n` +
+      `Your vehicle is now live on Speedio with the following details:\n` +
+      `• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• Status: Available for test drives\n` +
+      `• Managed by: Speedyo Team\n\n` +
+      `We've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\n` +
+      `You can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\n` +
+      `Thank you for choosing Speedyo's managed sales service! 🚗`;
 
+        const [user1Id, user2Id] = [adminId, submitter].sort();
+
+
+ const conversation = await tx.conversation.upsert({
+      where: {
+        user1Id_user2Id_vehicleId: {
+          user1Id,
+          user2Id,
+          vehicleId: vehicle.id,
+        },
+      },
+      create: {
+        user1Id,
+        user2Id,
+        vehicleId: vehicle.id,
+        last_message: messageContent,
+        last_message_at: new Date(),
+        last_message_type: "system",
+        // user1 is admin (sender), so the submitter's unread count = 1
+        user1_unread: user1Id === submitter ? 1 : 0,
+        user2_unread: user2Id === submitter ? 1 : 0,
+      },
+      update: {
+        last_message: messageContent,
+        last_message_at: new Date(),
+        last_message_type: "system",
+        // Increment the submitter's unread count on the correct side
+        user1_unread: user1Id === submitter ? { increment: 1 } : undefined,
+        user2_unread: user2Id === submitter ? { increment: 1 } : undefined,
+      },
+    });
+
+    
     await tx.message.create({
       data: {
         senderId: adminId,
         recipientId: submitter,
-        content: `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\nYour vehicle is now live on Speedio with the following details:\n• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
+        content: messageContent,
         message_type: "system",
         managedSaleRequestId: requestId,
         vehicleId: vehicle.id,
-        conversation_id: conversationId,
+        conversationId: conversation.id,
         read: false,
       },
     });
+
+    // const sorted = [adminId, submitter].sort().join("_");
+    // const conversationId = `msr_${requestId}_${sorted}`;
+
+    // await tx.message.create({
+    //   data: {
+    //     senderId: adminId,
+    //     recipientId: submitter,
+    //     content: `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\nYour vehicle is now live on Speedio with the following details:\n• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
+    //     message_type: "system",
+    //     managedSaleRequestId: requestId,
+    //     vehicleId: vehicle.id,
+    //     conversationId: conversationId,
+    //     read: false,
+    //   },
+    // });
 
     await tx.notification.create({
       data: {

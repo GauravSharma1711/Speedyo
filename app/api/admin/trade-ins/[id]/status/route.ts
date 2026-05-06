@@ -4,7 +4,7 @@ import { requireAdmin } from "@/app/api/_utils/admin";
 
 const VALID_STATUSES = ["pending", "contacted", "quoted", "completed", "cancelled"] as const;
 
-export async function PUT(
+export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {

@@ -4,7 +4,7 @@ import { requireAdmin } from "@/app/api/_utils/admin";
 
 const VALID_STATUSES = ["new", "reviewed", "in_progress", "resolved"] as const;
 
-export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const admin = await requireAdmin();
     if (!admin.ok) return admin.response;

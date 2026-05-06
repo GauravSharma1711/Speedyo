@@ -3,10 +3,9 @@ import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 
-
 export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ vehicleId: string }> },
+  context: { params: Promise<{ vehicleId: string; dealershipAgreementId: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,13 +13,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { vehicleId } = await context.params;
-    const body = await request.json();
-    const { dealershipAgreementId } = body;
-
-    if (!dealershipAgreementId) {
-      return NextResponse.json({ error: "dealershipAgreementId is required" }, { status: 400 });
-    }
+    const { vehicleId, dealershipAgreementId } = await context.params;
 
     const existing = await prisma.vehicle.findUnique({
       where: { id: vehicleId },
@@ -30,7 +23,6 @@ export async function PATCH(
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }
 
-    // Verify the agreement exists
     const agreement = await prisma.dealershipVehicleAgreement.findUnique({
       where: { id: dealershipAgreementId },
     });
@@ -41,7 +33,7 @@ export async function PATCH(
 
     const vehicle = await prisma.vehicle.update({
       where: { id: vehicleId },
-      data: { dealershipAgreementId },
+      data: { dealershipAgreementId: dealershipAgreementId },
       include: {
         dealershipAgreement: {
           select: { id: true, dealership_name: true, representative_name: true, status: true },
@@ -55,4 +47,3 @@ export async function PATCH(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

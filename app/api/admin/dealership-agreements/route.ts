@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
         address,
         phone,
         service_fee_amount,
+        license_number,
+        admin_notes,
         created_by_admin_id: session.user.id,
       },
       include: {
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, agreement }, { status: 201 });
   } catch (error) {
-    console.error("Failed to create transfer", error);
+    console.error("Failed to create dealership aggrement", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -82,7 +84,7 @@ export async function GET() {
 
     return NextResponse.json({ success: true, agreements });
   } catch (error) {
-    console.error("Failed to get agreements", error);
+    console.error("Failed to get dealership agreements", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

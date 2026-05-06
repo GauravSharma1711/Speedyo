@@ -4,6 +4,26 @@ import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 
+const parseDate = (dateStr: string | undefined | null): Date | null => {
+  if (!dateStr) return null;
+
+  // Handle DD-MM-YY or DD-MM-YYYY format
+  if (dateStr.includes("-")) {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]) - 1; // months are 0-indexed
+      const year = parts[2].length === 2 ? 2000 + parseInt(parts[2]) : parseInt(parts[2]);
+      const date = new Date(year, month, day);
+      return isNaN(date.getTime()) ? null : date;
+    }
+  }
+
+  // Fallback for ISO format like "2026-05-10"
+  const parsed = new Date(dateStr);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
 const photographerInclude = {
   createdByAdmin: { select: { id: true, full_name: true, email: true } },
   application: {
@@ -54,9 +74,9 @@ export async function POST(request: NextRequest) {
          ...(photographer_email && { photographer_email }),
         ...(position_title && { position_title }),
         ...(fixed_percentage && { fixed_percentage }),
-        ...(termination_notice_days && { termination_notice_days }),
-        ...(agreement_start_date && { agreement_start_date: new Date(agreement_start_date) }),
-        ...(agreement_end_date && { agreement_end_date: new Date(agreement_end_date) }),
+        ...(termination_notice_days && { termination_notice_days: parseInt(termination_notice_days) }),
+       ...(parseDate(agreement_start_date) && { agreement_start_date: parseDate(agreement_start_date) }),
+    ...(parseDate(agreement_end_date) && { agreement_end_date: parseDate(agreement_end_date) }),
         created_by_admin_id: session.user.id,
         admin_notes: admin_notes ?? null,
       },

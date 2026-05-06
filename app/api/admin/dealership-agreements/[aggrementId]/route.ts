@@ -31,7 +31,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: "Agreement deleted successfully" });
   } catch (error) {
-    console.error("Failed to delete agreement", error);
+    console.error("Failed to delete dealership agreement", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -95,6 +95,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+
+
 
 // SEND Aggrement MAIL
 

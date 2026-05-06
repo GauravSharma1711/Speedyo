@@ -3,6 +3,7 @@ import { requireAdmin } from "@/app/api/_utils/admin";
 import prisma from "@/db/prisma";
 import { workflowAdminPatchMsr, workflowDeleteMsr } from "@/lib/managed-sales/workflows";
 import { managedSaleWorkflowResponse } from "@/app/api/_utils/workflow-error";
+import { uploadFile } from "@/lib/storage/uploadFile";
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
@@ -68,8 +69,56 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     if (!admin.ok) return admin.response;
 
     const { id } = await ctx.params;
-    const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
-    if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+
+     const formData = await req.formData();
+    const body: Record<string, unknown> = {};
+
+        // Parse all non-file fields
+    for (const [key, value] of formData.entries()) {
+      if (typeof value === "string") {
+        try {
+          body[key] = JSON.parse(value);
+        } catch {
+          body[key] = value;
+        }
+      }
+    }
+
+  // Handle vehicle_images upload
+    const imageFiles = formData.getAll("vehicle_images") as File[];
+    const uploadedUrls: string[] = [];
+
+    for (const file of imageFiles) {
+      if (!(file instanceof File) || file.size === 0) continue;
+
+      if (!file.type.startsWith("image/"))
+        return NextResponse.json({ error: "All vehicle_images must be image files" }, { status: 400 });
+
+      if (file.size > 10 * 1024 * 1024)
+        return NextResponse.json({ error: "Each image must be smaller than 10MB" }, { status: 400 });
+
+      const { url } = await uploadFile(file, "managed-sales");
+      uploadedUrls.push(url);
+    }
+
+    const existingUrls: string[] = Array.isArray(body.vehicle_images)
+      ? (body.vehicle_images as string[]).filter((v) => typeof v === "string")
+      : [];
+
+    if (uploadedUrls.length > 0 || existingUrls.length > 0) {
+      body.vehicle_images = [...existingUrls, ...uploadedUrls];
+    }
+
+
+        if (!body.vehicle_images) delete body.vehicle_images;
+
+    if (Object.keys(body).length === 0)
+      return NextResponse.json({ error: "Empty body" }, { status: 400 });
+
+
+
+    // const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+    // if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
     const updated = await workflowAdminPatchMsr(id, admin.userId, body);
     return NextResponse.json({ success: true, request: updated }, { status: 200 });

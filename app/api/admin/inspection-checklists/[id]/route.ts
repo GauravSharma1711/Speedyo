@@ -125,7 +125,7 @@ export async function DELETE(_req: NextRequest, context: { params: Promise<{ id:
     if (!existing) return NextResponse.json({ error: "Checklist not found" }, { status: 404 });
 
     await prisma.vehicleInspectionChecklist.delete({ where: { id } });
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true,message:"inspection checklist deleted successfully" }, { status: 200 });
   } catch (error) {
     console.error("DELETE /api/admin/inspection-checklists/[id] failed:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

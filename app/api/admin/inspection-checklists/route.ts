@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     const checklist = await prisma.vehicleInspectionChecklist.create({
       data: {
-        date_of_inspection: date,
+        date_of_inspection:date,
         inspector_name,
         dealership_name: typeof body.dealership_name === "string" ? body.dealership_name : null,
         warranty: typeof body.warranty === "string" ? body.warranty : null,

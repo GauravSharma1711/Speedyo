@@ -3,7 +3,7 @@ import { requireAdmin } from "@/app/api/_utils/admin";
 import { workflowMarkSold } from "@/lib/managed-sales/workflows";
 import { managedSaleWorkflowResponse } from "@/app/api/_utils/workflow-error";
 
-export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function PATCH(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     const admin = await requireAdmin();
     if (!admin.ok) return admin.response;

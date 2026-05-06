@@ -39,7 +39,7 @@ function pickAllowedVehicleChanges(requestedChanges: unknown) {
   return out;
 }
 
-export async function PUT(
+export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ requestId: string }> }
 ) {
