@@ -1,17 +1,13 @@
-import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { immer } from "zustand/middleware/immer";
+import { persist } from "zustand/middleware";
+import authService from "@/services/authService";
 
 export type User = {
   id: string;
   name: string;
   email: string;
   phone: string;
-};
-
-export type LoginData = {
-  email: string;
-  password: string;
 };
 
 export type SignUpData = {
@@ -33,21 +29,24 @@ export type ForgotPasswordData = {
   email: string;
 };
 
+// LoginData and logoutUser are NOT here — NextAuth handles login/logout.
+// Use signIn("Credentials", { email, password }) and signOut() in your components.
+
 interface AuthState {
   authUser: User | null;
   hydrated: boolean;
+  isLoading: boolean;
+  error: string | null;
 
   setHydrated: () => void;
 
   signUpUser: (data: SignUpData) => Promise<void>;
-  loginUser: (data: LoginData) => Promise<void>;
-  logoutUser: () => Promise<void>;
   getUserProfile: () => Promise<void>;
-
-  resetPassword: (data: ResetPasswordData) => Promise<void>;
+  forgotPassword: (data: ForgotPasswordData) => Promise<void>;
   verifyOtp: (data: VerifyOtpData) => Promise<void>;
   resendOtp: () => Promise<void>;
-  forgotPassword: (data: ForgotPasswordData) => Promise<void>;
+  resetPassword: (data: ResetPasswordData) => Promise<void>;
+  clearError: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -55,78 +54,108 @@ export const useAuthStore = create<AuthState>()(
     immer((set) => ({
       authUser: null,
       hydrated: false,
+      isLoading: false,
+      error: null,
 
       setHydrated() {
         set({ hydrated: true });
       },
 
-      async signUpUser({ email, password, confirmPassword }: SignUpData) {
-      try {
-        
-      } catch (error) {
-        
-      }
+      clearError() {
+        set({ error: null });
       },
 
-      async loginUser({ email, password }: LoginData) {
-       try {
-        
-       } catch (error) {
-        
-       }
-      },
-
-      async logoutUser() {
-      try {
-        
-          set({ authUser: null });
-      } catch (error) {
-        
-      }
-      },
-
-      async getUserProfile() {
-      try {
-        
-      } catch (error) {
-        
-      }
-      },
-
-      async verifyOtp({ otp }: VerifyOtpData) {
-       try {
-        
-       } catch (error) {
-        
-       }
-      },
-
-      async resendOtp() {
+      async signUpUser(data: SignUpData) {
+        set({ isLoading: true, error: null });
         try {
-            
-        } catch (error) {
-            
+          const res = await authService.signUp(data);
+          // After sign up, user typically needs to verify OTP before login.
+          // So we don't set authUser here — just stop loading.
+          set({ isLoading: false });
+          return res;
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error?.response?.data?.message ?? "Sign up failed",
+          });
+          throw error;
         }
       },
 
-      async forgotPassword({ email }: ForgotPasswordData) {
-       try {
-        
-       } catch (error) {
-        
-       }
+      async getUserProfile() {
+        set({ isLoading: true, error: null });
+        try {
+          const res = await authService.getUserProfile();
+          set({ authUser: res.user, isLoading: false });
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error?.response?.data?.message ?? "Failed to fetch profile",
+          });
+          throw error;
+        }
       },
 
-      async resetPassword({ password, newPassword }: ResetPasswordData) {
+      async forgotPassword(data: ForgotPasswordData) {
+        set({ isLoading: true, error: null });
         try {
-            
-        } catch (error) {
-            
+          await authService.forgotPassword(data);
+          set({ isLoading: false });
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error?.response?.data?.message ?? "Failed to send reset email",
+          });
+          throw error;
+        }
+      },
+
+      async verifyOtp(data: VerifyOtpData) {
+        set({ isLoading: true, error: null });
+        try {
+          await authService.verifyOtp(data);
+          set({ isLoading: false });
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error?.response?.data?.message ?? "OTP verification failed",
+          });
+          throw error;
+        }
+      },
+
+      async resendOtp() {
+        set({ isLoading: true, error: null });
+        try {
+          await authService.resendOtp();
+          set({ isLoading: false });
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error?.response?.data?.message ?? "Failed to resend OTP",
+          });
+          throw error;
+        }
+      },
+
+      async resetPassword(data: ResetPasswordData) {
+        set({ isLoading: true, error: null });
+        try {
+          await authService.resetPassword(data);
+          set({ isLoading: false });
+        } catch (error: any) {
+          set({
+            isLoading: false,
+            error: error?.response?.data?.message ?? "Password reset failed",
+          });
+          throw error;
         }
       },
     })),
     {
-      name: 'auth',
+      name: "auth",
+      // Only persist the user profile — everything else resets on page load
+      partialize: (state) => ({ authUser: state.authUser }),
       onRehydrateStorage() {
         return (state, error) => {
           if (!error) state?.setHydrated();
