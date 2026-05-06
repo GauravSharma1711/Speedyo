@@ -60,13 +60,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: st
           { status: 400 }
         );
       }
-
-      if (parentComment.parentCommentId) {
-        return NextResponse.json(
-          { error: "Replies to replies are not allowed" },
-          { status: 400 }
-        );
-      }
     }
 
     const [comment] = await prisma.$transaction([

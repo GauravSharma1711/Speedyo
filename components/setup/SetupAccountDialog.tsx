@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { UserEntity, PublicUser, UploadFile } from "@/api/entities";
 
-export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdate }) {
+export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdate }: { user: any, userDisplay: any, onClose: () => void, onUpdate: () => void }) {
   const [setupData, setSetupData] = useState({
     full_name: userDisplay?.full_name || user?.full_name || "",
     location: userDisplay?.location || user?.location || "",
@@ -27,7 +27,7 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
   });
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeStep, setActiveStep] = useState(null);
+  const [activeStep, setActiveStep] = useState<string | null>(null);
 
   // Calculate completion status
   const steps = [
@@ -58,8 +58,8 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
   const progressPercentage = (completedCount / steps.length) * 100;
   const isFullyComplete = completedCount === steps.length;
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
@@ -73,7 +73,7 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
     setIsUploading(false);
   };
 
-  const handleSaveStep = async (stepId) => {
+  const handleSaveStep = async (stepId: string) => {
     setIsSaving(true);
     try {
       // Update User entity
@@ -129,8 +129,8 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
         className="mt-4 p-4 bg-slate-50 rounded-lg border"
       >
         <h4 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-          <step.icon className="w-4 h-4" />
-          {step.label}
+          {step?.icon && <step.icon className="w-4 h-4" />}
+          {step?.label}
         </h4>
         
         {activeStep === 'profile_picture' && (
@@ -256,7 +256,7 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
                 {Math.round(progressPercentage)}%
               </span>
             </div>
-            <Progress value={progressPercentage} className="h-2" />
+            <Progress value={progressPercentage as number} className="h-2" />
           </div>
         </CardHeader>
         

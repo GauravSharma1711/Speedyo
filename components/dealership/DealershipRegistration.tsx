@@ -108,8 +108,6 @@ export default function DealershipRegistration() {
     const fetchUser = async () => {
       setIsLoading(true);
       try {
-        // NOTE: This is currently a mock entity layer (see `api/entities.ts`).
-        // Replace with your real user fetch when ready.
         const user = await User.me();
         setCurrentUser(user);
 

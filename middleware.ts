@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// export { default } from "next-auth/middleware"
 import { getToken } from "next-auth/jwt"
 
 export async function middleware(request:NextRequest) {
@@ -13,7 +12,6 @@ export async function middleware(request:NextRequest) {
            url.pathname.startsWith('/verify')
          
     )){
-        // If already authenticated, send user to the app dashboard.
         return NextResponse.redirect(new URL('/Dashboard', request.url))
     }
 

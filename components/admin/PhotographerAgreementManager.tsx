@@ -1,377 +1,342 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { PhotographerAgreement } from '@/entities/PhotographerAgreement';
-import { PhotographerApplication } from '@/entities/PhotographerApplication';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+"use client";
+
+import React, { useMemo, useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import {
+  Camera,
+  Copy,
+  Download,
+  Eye,
+  Loader2,
+  Plus,
+  Send,
+  UserCheck,
+  XCircle,
+} from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/TextArea";
+import { Badge } from "@/components/ui/Badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
-import {
-  Camera,
-  Plus,
-  Download,
-  Eye,
-  Send,
-  XCircle,
-  Loader2,
-  Copy,
-  UserCheck
-} from 'lucide-react';
-import { createPageUrl } from '@/utils';
-import { invokeFunction } from '@/api/entities';
-import { format } from 'date-fns';
+  DialogTrigger,
+} from "@/components/ui/Dialog";
+import { useToast } from "@/components/ui/UseToast";
 
-export default function PhotographerAgreementManager() {
-  const [agreements, setAgreements] = useState([]);
-  const [applications, setApplications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedAgreement, setSelectedAgreement] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+type PhotographerAgreementStatus = "draft" | "pending_signature" | "signed" | "terminated";
 
-  const [formData, setFormData] = useState({
-    agreement_title: 'Speedio Photographer Partnership Agreement',
-    position_title: 'Automotive Photographer - Speedio Platform',
+type PhotographerApplicationStatus =
+  | "submitted"
+  | "under_review"
+  | "approved"
+  | "rejected";
+
+type PhotographerApplication = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  photography_experience_years?: number | null;
+  address?: string | null;
+  automotive_photography_experience?: string | null;
+  equipment?: string | null;
+  availability?: string | null;
+  location_preferences?: string | null;
+  motivation?: string | null;
+  portfolio_url?: string | null;
+  sample_work_urls?: string[] | null;
+  status: PhotographerApplicationStatus;
+};
+
+type PhotographerAgreement = {
+  id: string;
+  agreement_title: string;
+  position_title: string;
+  fixed_percentage: number;
+  agreement_start_date?: string | null; // YYYY-MM-DD
+  agreement_end_date?: string | null; // YYYY-MM-DD
+  termination_notice_days: number;
+  admin_notes?: string | null;
+  email?: string | null; // photographer email to send agreement to
+
+  status: PhotographerAgreementStatus;
+  agreement_url?: string | null;
+
+  created_date: string; // ISO
+  application_id?: string | null;
+};
+
+type FormState = {
+  agreement_title: string;
+  position_title: string;
+  fixed_percentage: string;
+  agreement_start_date: string;
+  agreement_end_date: string;
+  termination_notice_days: string;
+  admin_notes: string;
+  email: string;
+};
+
+const MOCK_APPLICATIONS: PhotographerApplication[] = [
+  {
+    id: "papp_001",
+    full_name: "Hiro Sato",
+    email: "hiro.photo@example.com",
+    phone: "+81-90-2222-3333",
+    photography_experience_years: 5,
+    address: "Setagaya, Tokyo",
+    automotive_photography_experience: "Shot listings for 3 local dealerships.",
+    equipment: "Sony A7IV, 24-70mm, gimbal, lights.",
+    availability: "Weekdays (10-4) + weekends",
+    location_preferences: "Tokyo / Kanagawa",
+    motivation: "Want steady work with dealerships.",
+    portfolio_url: "https://example.com/portfolio",
+    sample_work_urls: [
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=70",
+      "https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=800&q=70",
+      "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=800&q=70",
+    ],
+    status: "submitted",
+  },
+];
+
+const MOCK_AGREEMENTS: PhotographerAgreement[] = [
+  {
+    id: "ph_001",
+    agreement_title: "Speedio Photographer Partnership Agreement",
+    position_title: "Automotive Photographer - Speedio Platform",
     fixed_percentage: 10,
-    agreement_start_date: new Date().toISOString().split('T')[0],
-    agreement_end_date: '',
+    agreement_start_date: new Date().toISOString().slice(0, 10),
+    agreement_end_date: "",
     termination_notice_days: 30,
-    admin_notes: '',
-    email: '' // Added email field for sending agreements
+    admin_notes: "Strong portfolio.",
+    email: "hiro.photo@example.com",
+    status: "draft",
+    agreement_url: "/PhotographerAgreement?id=ph_001",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+    application_id: "papp_001",
+  },
+  {
+    id: "ph_002",
+    agreement_title: "Speedio Photographer Partnership Agreement",
+    position_title: "Automotive Photographer - Osaka",
+    fixed_percentage: 12,
+    agreement_start_date: new Date().toISOString().slice(0, 10),
+    agreement_end_date: "",
+    termination_notice_days: 30,
+    admin_notes: "",
+    email: "osaka.photog@example.com",
+    status: "signed",
+    agreement_url: "/PhotographerAgreement?id=ph_002",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18).toISOString(),
+    application_id: null,
+  },
+];
+
+function badgeClass(status: PhotographerAgreementStatus) {
+  if (status === "signed") return "bg-green-100 text-green-800";
+  if (status === "pending_signature") return "bg-amber-100 text-amber-800";
+  if (status === "terminated") return "bg-red-100 text-red-800";
+  return "bg-slate-100 text-slate-800";
+}
+
+function makeId(prefix: string) {
+  return `${prefix}_${Math.random().toString(16).slice(2, 10)}`;
+}
+
+export default function PhotographerAgreementManagerUI() {
+  const { toast } = useToast();
+
+  const [isLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const [agreements, setAgreements] = useState<PhotographerAgreement[]>(MOCK_AGREEMENTS);
+  const [applications] = useState<PhotographerApplication[]>(MOCK_APPLICATIONS);
+
+  const [selected, setSelected] = useState<{
+    agreement: PhotographerAgreement;
+    application: PhotographerApplication;
+  } | null>(null);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const [formData, setFormData] = useState<FormState>({
+    agreement_title: "Speedio Photographer Partnership Agreement",
+    position_title: "Automotive Photographer - Speedio Platform",
+    fixed_percentage: "10",
+    agreement_start_date: today,
+    agreement_end_date: "",
+    termination_notice_days: "30",
+    admin_notes: "",
+    email: "",
   });
 
-  useEffect(() => {
-    fetchAgreementsAndApplications();
-  }, []);
+  const canCreate = useMemo(() => {
+    return (
+      formData.agreement_title.trim().length > 0 &&
+      formData.position_title.trim().length > 0 &&
+      formData.email.trim().length > 0 &&
+      Number(formData.fixed_percentage) > 0 &&
+      Number(formData.termination_notice_days) > 0
+    );
+  }, [formData]);
 
-  const fetchAgreementsAndApplications = async () => {
-    try {
-      const [agreementsData, applicationsData] = await Promise.all([
-        PhotographerAgreement.list('-created_date'),
-        PhotographerApplication.list()
-      ]);
-
-      const updatedAgreements = await Promise.all(
-        agreementsData.map(async (agreement) => {
-          if (agreement.agreement_url && agreement.agreement_url.includes('SignPhotographerAgreement')) {
-            const newUrl = agreement.agreement_url.replace('SignPhotographerAgreement', 'PhotographerAgreement');
-            try {
-              await PhotographerAgreement.update(agreement.id, { agreement_url: newUrl });
-              return { ...agreement, agreement_url: newUrl };
-            } catch (error) {
-              console.error(`Failed to update agreement URL for ${agreement.id}:`, error);
-              return agreement;
-            }
-          }
-          return agreement;
-        })
-      );
-      
-      setAgreements(updatedAgreements);
-      setApplications(applicationsData);
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
+  function onChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }
 
-  const resetForm = () => {
+  function resetForm() {
     setFormData({
-      agreement_title: 'Speedio Photographer Partnership Agreement',
-      position_title: 'Automotive Photographer - Speedio Platform',
-      fixed_percentage: 10,
-      agreement_start_date: new Date().toISOString().split('T')[0],
-      agreement_end_date: '',
-      termination_notice_days: 30,
-      admin_notes: '',
-      email: '' // Reset email field
+      agreement_title: "Speedio Photographer Partnership Agreement",
+      position_title: "Automotive Photographer - Speedio Platform",
+      fixed_percentage: "10",
+      agreement_start_date: today,
+      agreement_end_date: "",
+      termination_notice_days: "30",
+      admin_notes: "",
+      email: "",
     });
-  };
+  }
 
-  const handleCreateAgreement = async (e) => {
+  async function handleCreateAgreement(e: React.FormEvent) {
     e.preventDefault();
+    if (!canCreate) return;
+
     setIsSubmitting(true);
-
     try {
-      const currentUser = await base44.auth.me();
-      
-      // Create with status: 'draft' so it can be sent later
-      const newAgreement = await PhotographerAgreement.create({
-        ...formData,
-        created_by_admin_id: currentUser.id,
-        status: 'draft' // Initial status is draft
-      });
+      const id = makeId("ph");
+      const created: PhotographerAgreement = {
+        id,
+        agreement_title: formData.agreement_title.trim(),
+        position_title: formData.position_title.trim(),
+        fixed_percentage: Number(formData.fixed_percentage) || 10,
+        agreement_start_date: formData.agreement_start_date || null,
+        agreement_end_date: formData.agreement_end_date || null,
+        termination_notice_days: Number(formData.termination_notice_days) || 30,
+        admin_notes: formData.admin_notes.trim() || null,
+        email: formData.email.trim(),
+        status: "draft",
+        agreement_url: `/PhotographerAgreement?id=${id}`,
+        created_date: new Date().toISOString(),
+        application_id: null,
+      };
 
-      const signingUrl = createPageUrl(`PhotographerAgreement?id=${newAgreement.id}`);
-
-      await PhotographerAgreement.update(newAgreement.id, {
-        agreement_url: signingUrl
-      });
-
-      await fetchAgreementsAndApplications();
+      setAgreements((prev) => [created, ...prev]);
       setShowCreateModal(false);
       resetForm();
-      alert('Agreement created successfully as a draft! You can now send it for signature.');
-    } catch (error) {
-      console.error('Failed to create agreement:', error);
-      alert('Failed to create agreement. Please try again.');
+
+      toast({
+        title: "Agreement created",
+        description: "Draft saved locally — API wiring pending.",
+      });
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
-  const copyAgreementLink = (agreement) => {
-    const fullUrl = `https://speedio.app${createPageUrl(`PhotographerAgreement?id=${agreement.id}`)}`;
-    navigator.clipboard.writeText(fullUrl);
-    alert('Agreement link copied to clipboard!');
-  };
+  async function copyAgreementLink(a: PhotographerAgreement) {
+    const href = `/PhotographerAgreement?id=${a.id}`;
+    const fullUrl = `${window.location.origin}${href}`;
+    await navigator.clipboard.writeText(fullUrl);
+    toast({ title: "Copied", description: "Agreement link copied." });
+  }
 
-  const handleDownloadPDF = async (agreement) => {
-    try {
-      const response = await invokeFunction<{ url?: string }>('generatePhotographerAgreementPDF', {
-        agreementId: agreement.id
-      });
-      
-      if (response?.url) {
-        window.open(response.url, "_blank", "noopener,noreferrer");
-        return;
-      }
-      alert("PDF generation is not configured yet.");
-    } catch (error) {
-      console.error('Failed to download PDF:', error);
-      alert('Failed to download PDF. Please try again.');
-    }
-  };
+  function viewApplication(applicationId: string) {
+    const app = applications.find((x) => x.id === applicationId);
+    const ag = agreements.find((x) => x.application_id === applicationId);
 
-  const viewApplication = async (applicationId) => {
-    try {
-      const appFromState = applications.find(app => app.id === applicationId);
-      let foundApplication = appFromState;
-
-      if (!foundApplication) {
-        const apps = await PhotographerApplication.filter({ id: applicationId });
-        if (apps && apps.length > 0) {
-          foundApplication = apps[0];
-          setApplications(prev => {
-            if (!prev.some(app => app.id === foundApplication.id)) {
-              return [...prev, foundApplication];
-            }
-            return prev;
-          });
-        }
-      }
-
-      if (foundApplication) {
-        const associatedAgreement = agreements.find(ag => ag.application_id === applicationId);
-        if (associatedAgreement) {
-          setSelectedAgreement({ ...associatedAgreement, application: foundApplication });
-        } else {
-          console.warn('Associated agreement not found for application ID:', applicationId);
-          alert('Associated agreement not found for this application.');
-        }
-      } else {
-        alert('Application details not found.');
-      }
-    } catch (error) {
-      console.error('Failed to load application:', error);
-      alert('Failed to load application details.');
-    }
-  };
-
-  const handleSendSigningEmail = async (agreement) => {
-    if (!agreement.agreement_url) {
-      alert('Agreement URL not found. Please try recreating the agreement.');
+    if (!app) {
+      toast({ title: "Not found", description: "Application details missing." });
       return;
     }
-    if (!agreement.email) {
-      alert('Photographer email not found for this agreement. Please ensure an email is set when creating the agreement.');
+    if (!ag) {
+      toast({
+        title: "Not found",
+        description: "Associated agreement not found for this application.",
+      });
+      return;
+    }
+
+    setSelected({ agreement: ag, application: app });
+  }
+
+  async function handleSendSigningEmail(a: PhotographerAgreement) {
+    if (!a.email) {
+      toast({
+        title: "Missing email",
+        description: "Set photographer email when creating the agreement.",
+      });
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      const signingUrl = `https://speedio.app${agreement.agreement_url}`;
+      setAgreements((prev) =>
+        prev.map((x) =>
+          x.id === a.id && x.status === "draft"
+            ? { ...x, status: "pending_signature" }
+            : x,
+        ),
+      );
 
-      await invokeFunction('sendEmail', {
-        to: agreement.email, // Use the email from the agreement
-        subject: 'Speedio Photographer Partnership - Complete Your Application',
-        fromName: 'Speedio Team',
-        fromAddress: 'hello@speedio.app',
-        html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);">
-              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png" alt="Speedio" style="width: 140px; filter: brightness(0) invert(1);">
-            </div>
-            
-            <div style="padding: 30px; background: #ffffff;">
-              <h2 style="color: #2563eb;">Join Our Photographer Network</h2>
-              <p>Hello,</p>
-              <p>We're excited to invite you to become a photographer for Speedio! Our platform connects skilled automotive photographers with dealerships and sellers.</p>
-              
-              <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #1e293b; margin-top: 0;">Agreement Details:</h3>
-                <p style="margin: 8px 0;"><strong>Position:</strong> ${agreement.position_title}</p>
-                <p style="margin: 8px 0;"><strong>Compensation:</strong> ${agreement.fixed_percentage}% of service fee per vehicle photographed and sold</p>
-                <p style="margin: 8px 0;"><strong>Minimum Photos:</strong> 5 high-resolution photos per vehicle</p>
-              </div>
-              
-              <p>Click the button below to review the agreement and submit your application:</p>
-              <p style="text-align: center; margin: 30px 0;">
-                <a href="${signingUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                  Review Agreement & Apply
-                </a>
-              </p>
-              
-              <p>If you have any questions, please don't hesitate to reach out.</p>
-              <p>Best regards,<br><strong>The Speedio Team</strong></p>
-            </div>
-            
-            <div style="padding: 20px; background: #f1f5f9; text-align: center; color: #64748b; font-size: 14px;">
-              <p style="margin: 0;">© 2025 Speedio. All rights reserved.</p>
-            </div>
-          </div>
-        `
+      toast({
+        title: "Send agreement",
+        description: `Would email ${a.email} a signing link.`,
       });
-
-      // Update status to pending_signature
-      await PhotographerAgreement.update(agreement.id, {
-        status: 'pending_signature'
-      });
-
-      await fetchAgreementsAndApplications();
-      alert('Agreement sent successfully!');
-    } catch (error) {
-      console.error('Failed to send agreement:', error);
-      alert('Failed to send agreement. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
-  const handleSendApplicationEmail = async (agreement) => {
+  async function handleSendApplicationEmail(a: PhotographerAgreement) {
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      
-      if (!agreement.application_id) {
-        alert('No application found for this agreement.');
-        return;
-      }
-
-      const application = await PhotographerApplication.get(agreement.application_id);
-      
-      if (!application) {
-        alert('Application not found.');
-        return;
-      }
-
-      const viewUrl = `https://speedio.app/PhotographerAgreement?id=${agreement.id}`;
-      
-      await invokeFunction('sendEmail', {
-        to: application.email,
-        subject: 'Your Speedio Photographer Agreement & Application',
-        fromName: 'Speedio Team',
-        fromAddress: 'hello@speedio.app',
-        html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);">
-              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png" alt="Speedio" style="width: 140px; filter: brightness(0) invert(1);">
-            </div>
-            
-            <div style="padding: 30px; background: #ffffff;">
-              <h2 style="color: #1e293b; margin-bottom: 20px;">Your Photographer Agreement & Application</h2>
-              
-              <p style="color: #475569; margin-bottom: 20px;">
-                Hello ${application.full_name},
-              </p>
-              
-              <p style="color: #475569; margin-bottom: 20px;">
-                Thank you for your interest in becoming a Speedio Photographer. This email contains a summary of your agreement and application.
-              </p>
-              
-              <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #1e293b; margin-top: 0;">Agreement Details:</h3>
-                <p style="margin: 8px 0;"><strong>Position:</strong> ${agreement.position_title}</p>
-                <p style="margin: 8px 0;"><strong>Compensation:</strong> ${agreement.fixed_percentage}% of service fee per vehicle photographed and sold</p>
-                <p style="margin: 8px 0;"><strong>Status:</strong> ${agreement.status.replace('_', ' ').toUpperCase()}</p>
-              </div>
-              
-              <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #1e293b; margin-top: 0;">Your Application:</h3>
-                <p style="margin: 8px 0;"><strong>Name:</strong> ${application.full_name}</p>
-                <p style="margin: 8px 0;"><strong>Email:</strong> ${application.email}</p>
-                <p style="margin: 8px 0;"><strong>Phone:</strong> ${application.phone}</p>
-                <p style="margin: 8px 0;"><strong>Experience:</strong> ${application.photography_experience_years} years</p>
-                <p style="margin: 8px 0;"><strong>Application Status:</strong> ${application.status.replace('_', ' ').toUpperCase()}</p>
-              </div>
-              
-              <p style="color: #475569; margin-bottom: 20px;">
-                You can view your agreement and application at any time by clicking the button below:
-              </p>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${viewUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                  View Agreement
-                </a>
-              </div>
-              
-              <p style="color: #475569; margin-top: 30px;">
-                If you have any questions, please don't hesitate to reach out.
-              </p>
-              
-              <p style="color: #475569; margin-top: 20px;">
-                Best regards,<br>
-                <strong>The Speedio Team</strong>
-              </p>
-            </div>
-            
-            <div style="padding: 20px; background: #f1f5f9; text-align: center; color: #64748b; font-size: 14px;">
-              <p style="margin: 0;">© 2025 Speedio. All rights reserved.</p>
-            </div>
-          </div>
-        `
+      toast({
+        title: "Send email",
+        description: "Would email the photographer the agreement + application summary.",
       });
-
-      alert('Application email sent successfully!');
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      alert('Failed to send email. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
-  const handleDelete = async (agreementId) => {
-    if (window.confirm('Are you sure you want to delete this agreement? This action cannot be undone.')) {
-      try {
-        await PhotographerAgreement.delete(agreementId);
-        await fetchAgreementsAndApplications();
-        alert('Agreement deleted successfully!');
-      } catch (error) {
-        console.error('Failed to delete agreement:', error);
-        alert('Failed to delete agreement. Please try again.');
-      }
+  async function handleDownloadPDF(a: PhotographerAgreement) {
+    setIsSubmitting(true);
+    try {
+      toast({
+        title: "Download PDF",
+        description: "PDF generation wiring pending.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }
+
+  async function handleDelete(id: string) {
+    const ok = window.confirm(
+      "Are you sure you want to delete this agreement? This action cannot be undone.",
+    );
+    if (!ok) return;
+
+    setIsSubmitting(true);
+    try {
+      setAgreements((prev) => prev.filter((x) => x.id !== id));
+      toast({ title: "Deleted", description: "Removed locally." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -386,8 +351,11 @@ export default function PhotographerAgreementManager() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Photographer Agreements</h2>
-          <p className="text-slate-600">Manage partnership agreements with automotive photographers</p>
+          <p className="text-slate-600">
+            Manage partnership agreements with automotive photographers
+          </p>
         </div>
+
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
@@ -395,10 +363,12 @@ export default function PhotographerAgreementManager() {
               Create Agreement
             </Button>
           </DialogTrigger>
+
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Photographer Agreement</DialogTitle>
             </DialogHeader>
+
             <form onSubmit={handleCreateAgreement} className="space-y-4">
               <div className="space-y-4">
                 <div>
@@ -407,20 +377,22 @@ export default function PhotographerAgreementManager() {
                     id="agreement_title"
                     name="agreement_title"
                     value={formData.agreement_title}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                     required
                   />
                 </div>
+
                 <div>
                   <Label htmlFor="position_title">Position Title</Label>
                   <Input
                     id="position_title"
                     name="position_title"
                     value={formData.position_title}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                     required
                   />
                 </div>
+
                 <div>
                   <Label htmlFor="email">Photographer Email</Label>
                   <Input
@@ -428,11 +400,14 @@ export default function PhotographerAgreementManager() {
                     name="email"
                     type="email"
                     value={formData.email}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                     required
                   />
-                  <p className="text-sm text-slate-500 mt-1">Email address of the photographer to send the agreement to</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Email address of the photographer to send the agreement to
+                  </p>
                 </div>
+
                 <div>
                   <Label htmlFor="fixed_percentage">Compensation Percentage (%)</Label>
                   <Input
@@ -440,11 +415,14 @@ export default function PhotographerAgreementManager() {
                     name="fixed_percentage"
                     type="number"
                     value={formData.fixed_percentage}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                     required
                   />
-                  <p className="text-sm text-slate-500 mt-1">Percentage of service fee per vehicle photographed and sold</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Percentage of service fee per vehicle photographed and sold
+                  </p>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="agreement_start_date">Agreement Start Date</Label>
@@ -453,10 +431,11 @@ export default function PhotographerAgreementManager() {
                       name="agreement_start_date"
                       type="date"
                       value={formData.agreement_start_date}
-                      onChange={handleInputChange}
+                      onChange={onChange}
                       required
                     />
                   </div>
+
                   <div>
                     <Label htmlFor="agreement_end_date">Agreement End Date</Label>
                     <Input
@@ -464,10 +443,11 @@ export default function PhotographerAgreementManager() {
                       name="agreement_end_date"
                       type="date"
                       value={formData.agreement_end_date}
-                      onChange={handleInputChange}
+                      onChange={onChange}
                     />
                   </div>
                 </div>
+
                 <div>
                   <Label htmlFor="termination_notice_days">Termination Notice (Days)</Label>
                   <Input
@@ -475,33 +455,35 @@ export default function PhotographerAgreementManager() {
                     name="termination_notice_days"
                     type="number"
                     value={formData.termination_notice_days}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                     required
                   />
                 </div>
+
                 <div>
                   <Label htmlFor="admin_notes">Admin Notes</Label>
                   <Textarea
                     id="admin_notes"
                     name="admin_notes"
                     value={formData.admin_notes}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                     rows={3}
                   />
                 </div>
               </div>
+
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={!canCreate || isSubmitting}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating...
                     </>
                   ) : (
-                    'Create Agreement'
+                    "Create Agreement"
                   )}
                 </Button>
               </div>
@@ -520,31 +502,24 @@ export default function PhotographerAgreementManager() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {agreements.map((agreement) => {
-            const associatedApplication = applications.find(app => app.id === agreement.application_id);
-            
+          {agreements.map((a) => {
+            const associatedApplication = a.application_id
+              ? applications.find((x) => x.id === a.application_id)
+              : undefined;
+
             return (
-              <Card key={agreement.id} className="hover:shadow-lg transition-all duration-200">
+              <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-slate-800">{agreement.position_title}</h3>
+                      <h3 className="font-semibold text-lg text-slate-800">{a.position_title}</h3>
                       <p className="text-sm text-slate-600 mt-1">
-                        Compensation: {agreement.fixed_percentage}% of service fee per vehicle photographed and sold
+                        Compensation: {a.fixed_percentage}% of service fee per vehicle photographed and sold
                       </p>
                     </div>
-                    <Badge
-                      className={
-                        agreement.status === 'signed'
-                          ? 'bg-green-100 text-green-800'
-                          : agreement.status === 'pending_signature'
-                          ? 'bg-amber-100 text-amber-800'
-                          : agreement.status === 'terminated'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-slate-100 text-slate-800'
-                      }
-                    >
-                      {agreement.status.replace('_', ' ').toUpperCase()}
+
+                    <Badge className={badgeClass(a.status)}>
+                      {a.status.replace("_", " ").toUpperCase()}
                     </Badge>
                   </div>
 
@@ -552,58 +527,56 @@ export default function PhotographerAgreementManager() {
                     <div>
                       <span className="text-slate-500">Start Date:</span>
                       <p className="text-slate-700">
-                        {agreement.agreement_start_date
-                          ? format(new Date(agreement.agreement_start_date), 'MMM d, yyyy')
-                          : 'Not set'}
+                        {a.agreement_start_date
+                          ? format(new Date(a.agreement_start_date), "MMM d, yyyy")
+                          : "Not set"}
                       </p>
                     </div>
+
                     <div>
                       <span className="text-slate-500">Created:</span>
-                      <p className="text-slate-700">{format(new Date(agreement.created_date), 'MMM d, yyyy')}</p>
+                      <p className="text-slate-700">
+                        {format(new Date(a.created_date), "MMM d, yyyy")}
+                      </p>
                     </div>
-                    {agreement.application_id && (
+
+                    {a.application_id ? (
                       <div className="col-span-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => viewApplication(agreement.application_id)}
+                          onClick={() => viewApplication(a.application_id as string)}
                           className="w-full"
                         >
                           <UserCheck className="w-4 h-4 mr-2" />
                           View Submitted Application
                         </Button>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {agreement.agreement_url && (
+                    {a.agreement_url ? (
                       <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyAgreementLink(agreement)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => copyAgreementLink(a)}>
                           <Copy className="w-4 h-4 mr-2" />
                           Copy Link
                         </Button>
-                        <Link to={createPageUrl(`PhotographerAgreement?id=${agreement.id}`)}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                          >
+
+                        <Link href={`/ViewPhotographerAgreement/${a.id}`}>
+                          <Button size="sm" variant="outline">
                             <Eye className="w-4 h-4 mr-2" />
                             View Agreement
                           </Button>
                         </Link>
                       </>
-                    )}
+                    ) : null}
 
-                    {agreement.status === 'draft' && (
+                    {a.status === "draft" ? (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleSendSigningEmail(agreement)}
+                        onClick={() => handleSendSigningEmail(a)}
                         disabled={isSubmitting}
                         className="text-blue-600 border-blue-300 hover:bg-blue-50"
                       >
@@ -614,13 +587,13 @@ export default function PhotographerAgreementManager() {
                         )}
                         Send Agreement
                       </Button>
-                    )}
-                    
-                    {agreement.status === 'signed' && agreement.application_id && associatedApplication && (
+                    ) : null}
+
+                    {a.status === "signed" && a.application_id && associatedApplication ? (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleSendApplicationEmail(agreement)}
+                        onClick={() => handleSendApplicationEmail(a)}
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? (
@@ -630,24 +603,16 @@ export default function PhotographerAgreementManager() {
                         )}
                         Send Email
                       </Button>
-                    )}
+                    ) : null}
 
-                    {agreement.status === 'signed' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadPDF(agreement)}
-                      >
+                    {a.status === "signed" ? (
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(a)}>
                         <Download className="w-4 h-4 mr-2" />
                         Download PDF
                       </Button>
-                    )}
+                    ) : null}
 
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(agreement.id)}
-                    >
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)}>
                       <XCircle className="w-4 h-4 mr-2" />
                       Delete
                     </Button>
@@ -659,72 +624,92 @@ export default function PhotographerAgreementManager() {
         </div>
       )}
 
-      {selectedAgreement && selectedAgreement.application && (
-        <Dialog open={!!selectedAgreement} onOpenChange={() => setSelectedAgreement(null)}>
+      {selected ? (
+        <Dialog open={true} onOpenChange={() => setSelected(null)}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Photographer Application Details</DialogTitle>
             </DialogHeader>
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-slate-600">Full Name</Label>
-                  <p className="font-medium">{selectedAgreement.application.full_name}</p>
+                  <p className="font-medium">{selected.application.full_name}</p>
                 </div>
                 <div>
                   <Label className="text-slate-600">Email</Label>
-                  <p className="font-medium">{selectedAgreement.application.email}</p>
+                  <p className="font-medium">{selected.application.email}</p>
                 </div>
                 <div>
                   <Label className="text-slate-600">Phone</Label>
-                  <p className="font-medium">{selectedAgreement.application.phone}</p>
+                  <p className="font-medium">{selected.application.phone}</p>
                 </div>
                 <div>
                   <Label className="text-slate-600">Experience (Years)</Label>
-                  <p className="font-medium">{selectedAgreement.application.photography_experience_years}</p>
+                  <p className="font-medium">
+                    {selected.application.photography_experience_years ?? "—"}
+                  </p>
                 </div>
               </div>
-              {selectedAgreement.application.address && (
+
+              {selected.application.address ? (
                 <div>
                   <Label className="text-slate-600">Address</Label>
-                  <p className="font-medium">{selectedAgreement.application.address}</p>
+                  <p className="font-medium">{selected.application.address}</p>
                 </div>
-              )}
-              {selectedAgreement.application.automotive_photography_experience && (
+              ) : null}
+
+              {selected.application.automotive_photography_experience ? (
                 <div>
                   <Label className="text-slate-600">Automotive Photography Experience</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.automotive_photography_experience}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.automotive_photography_experience}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.equipment && (
+              ) : null}
+
+              {selected.application.equipment ? (
                 <div>
                   <Label className="text-slate-600">Equipment</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.equipment}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.equipment}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.availability && (
+              ) : null}
+
+              {selected.application.availability ? (
                 <div>
                   <Label className="text-slate-600">Availability</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.availability}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.availability}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.location_preferences && (
+              ) : null}
+
+              {selected.application.location_preferences ? (
                 <div>
                   <Label className="text-slate-600">Location Preferences</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.location_preferences}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.location_preferences}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.motivation && (
+              ) : null}
+
+              {selected.application.motivation ? (
                 <div>
                   <Label className="text-slate-600">Motivation</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.motivation}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.motivation}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.portfolio_url && (
+              ) : null}
+
+              {selected.application.portfolio_url ? (
                 <div>
                   <Label className="text-slate-600">Portfolio</Label>
                   <a
-                    href={selectedAgreement.application.portfolio_url}
+                    href={selected.application.portfolio_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline flex items-center gap-2"
@@ -733,21 +718,27 @@ export default function PhotographerAgreementManager() {
                     View Portfolio
                   </a>
                 </div>
-              )}
-              {selectedAgreement.application.sample_work_urls && selectedAgreement.application.sample_work_urls.length > 0 && (
+              ) : null}
+
+              {selected.application.sample_work_urls?.length ? (
                 <div>
                   <Label className="text-slate-600">Sample Work</Label>
                   <div className="grid grid-cols-3 gap-2 mt-2">
-                    {selectedAgreement.application.sample_work_urls.map((url, index) => (
-                      <img key={index} src={url} alt={`Sample ${index + 1}`} className="w-full h-32 object-cover rounded" />
+                    {selected.application.sample_work_urls.map((url, idx) => (
+                      <img
+                        key={`${url}-${idx}`}
+                        src={url}
+                        alt={`Sample ${idx + 1}`}
+                        className="w-full h-32 object-cover rounded"
+                      />
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           </DialogContent>
         </Dialog>
-      )}
+      ) : null}
     </div>
   );
 }

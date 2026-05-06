@@ -1,163 +1,251 @@
-"use client"
-import React, { useState, useEffect } from "react";
-import { Message, Vehicle, PublicUser as User } from "@/entities/all"; // Use PublicUser and alias it
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+"use client";
+
+import React, { useMemo, useState } from "react";
 import {
+  AlertCircle,
   Calendar,
-  Clock,
-  User as UserIcon,
   Car,
-  Search,
-  Eye,
-  Edit,
   CheckCircle,
+  Clock,
+  Edit,
+  Eye,
+  Search,
+  User as UserIcon,
   XCircle,
-  AlertCircle
 } from "lucide-react";
-import { format } from "date-fns";
 
-import TestDriveActivityModal from "../dashboard/TestDriveActivityModal";
-import TestDriveReportModal from "./TestDriveReportModal";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
+import { Textarea } from "@/components/ui/TextArea";
+import { toast } from "@/components/ui/UseToast";
+import TestDriveActivityModalUI from "./TestDriveActivityModal";
+import TestDriveReportModalUI from "./TestDriveReportModal";
 
-export default function TestDriveManagement({ currentUser }) {
-  const [testDrives, setTestDrives] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
-  const [users, setUsers] = useState([]); // This will now hold PublicUser data
-  const [isLoading, setIsLoading] = useState(true);
+type Status = "pending" | "approved" | "completed" | "declined" | "no_show";
+
+type TestDrive = {
+  id: string;
+  vehicle_id: string;
+  sender_id: string; // buyer
+  recipient_id: string; // seller
+  created_date: string; // ISO
+  test_drive_details: {
+    status: Status;
+    preferred_date?: string; // ISO or yyyy-mm-dd
+    preferred_time?: string;
+    notes?: string;
+    report?: string;
+  };
+  buyer_interest_level?: string;
+  buyer_feedback?: string;
+  speedio_report?: string;
+  next_steps?: string;
+  admin_notes?: string;
+};
+
+type Vehicle = {
+  id: string;
+  title: string;
+  primary_image?: string | null;
+};
+
+type PublicUser = {
+  user_id: string;
+  full_name: string;
+};
+
+const MOCK_VEHICLES: Vehicle[] = [
+  {
+    id: "veh_1",
+    title: "Toyota Aqua 2018",
+    primary_image:
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=70",
+  },
+  { id: "veh_2", title: "Honda Fit 2016", primary_image: null },
+];
+
+const MOCK_USERS: PublicUser[] = [
+  { user_id: "u_buyer_1", full_name: "Test Buyer" },
+  { user_id: "u_seller_1", full_name: "Test Seller" },
+  { user_id: "u_buyer_2", full_name: "Rockstar Ahuja" },
+];
+
+const MOCK_TEST_DRIVES: TestDrive[] = [
+  {
+    id: "td_1",
+    vehicle_id: "veh_1",
+    sender_id: "u_buyer_1",
+    recipient_id: "u_seller_1",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+    test_drive_details: {
+      status: "pending",
+      preferred_date: "2026-05-10",
+      preferred_time: "14:00",
+      notes: "Weekend preferred.",
+    },
+  },
+  {
+    id: "td_2",
+    vehicle_id: "veh_2",
+    sender_id: "u_buyer_2",
+    recipient_id: "u_seller_1",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
+    test_drive_details: {
+      status: "approved",
+      preferred_date: "2026-05-12",
+      preferred_time: "11:30",
+    },
+  },
+  {
+    id: "td_3",
+    vehicle_id: "veh_1",
+    sender_id: "u_buyer_2",
+    recipient_id: "u_seller_1",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18).toISOString(),
+    test_drive_details: {
+      status: "completed",
+      preferred_date: "2026-04-20",
+      preferred_time: "10:00",
+      report: "Buyer liked the car. Follow-up pending.",
+    },
+  },
+];
+
+function fmtDate(input?: string) {
+  if (!input) return "Date not set";
+  const d = new Date(input);
+  if (Number.isNaN(d.getTime())) return input; // for yyyy-mm-dd
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function getStatusInfo(status?: Status) {
+  switch (status) {
+    case "pending":
+      return { icon: <Clock className="w-3 h-3" />, color: "bg-amber-100 text-amber-800", text: "Pending" };
+    case "approved":
+      return { icon: <CheckCircle className="w-3 h-3" />, color: "bg-blue-100 text-blue-800", text: "Approved" };
+    case "completed":
+      return { icon: <CheckCircle className="w-3 h-3" />, color: "bg-green-100 text-green-800", text: "Completed" };
+    case "declined":
+      return { icon: <XCircle className="w-3 h-3" />, color: "bg-red-100 text-red-800", text: "Declined" };
+    case "no_show":
+      return { icon: <AlertCircle className="w-3 h-3" />, color: "bg-orange-100 text-orange-800", text: "No Show" };
+    default:
+      return { icon: <Clock className="w-3 h-3" />, color: "bg-slate-100 text-slate-800", text: "Unknown" };
+  }
+}
+
+function getActiveCount(list: TestDrive[]) {
+  return list.filter((t) => ["pending", "approved"].includes(t.test_drive_details?.status ?? "pending")).length;
+}
+
+export default function TestDriveManagementUI() {
+  const [testDrives, setTestDrives] = useState<TestDrive[]>(MOCK_TEST_DRIVES);
+  const [vehicles] = useState<Vehicle[]>(MOCK_VEHICLES);
+  const [users] = useState<PublicUser[]>(MOCK_USERS);
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  
-  // Modal state - keep these separate to avoid conflicts
-  const [selectedTestDrive, setSelectedTestDrive] = useState(null);
-  const [showActivityModal, setShowActivityModal] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
 
-  useEffect(() => {
-    loadTestDriveData();
-  }, []);
+  const [selected, setSelected] = useState<TestDrive | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
-  const loadTestDriveData = async () => {
-    setIsLoading(true);
-    try {
-      const [testDriveMessages, allVehicles, allUsers] = await Promise.all([
-        Message.filter({ message_type: "test_drive_request" }, "-created_date", 100),
-        Vehicle.list("-created_date", 200),
-        User.list("-created_date", 200) // Now fetches from PublicUser
-      ]);
+  const [reportDraft, setReportDraft] = useState("");
 
-      // No longer need to filter in JS, the DB query does the work
-      setTestDrives(testDriveMessages);
-      setVehicles(allVehicles);
-      setUsers(allUsers);
-    } catch (error) {
-      console.error("Failed to load test drive data:", error);
-    }
-    setIsLoading(false);
+  const getVehicleById = (vehicleId: string) =>
+    vehicles.find((v) => v.id === vehicleId) ?? { id: vehicleId, title: "Unknown Vehicle" };
+
+  const getUserById = (userId: string) =>
+    users.find((u) => u.user_id === userId) ?? { user_id: userId, full_name: "Unknown" };
+
+  const filtered = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return testDrives.filter((t) => {
+      const v = getVehicleById(t.vehicle_id);
+      const buyer = getUserById(t.sender_id);
+      const seller = getUserById(t.recipient_id);
+
+      const matchesSearch =
+        !q ||
+        v.title.toLowerCase().includes(q) ||
+        buyer.full_name.toLowerCase().includes(q) ||
+        seller.full_name.toLowerCase().includes(q);
+
+      const matchesStatus =
+        statusFilter === "all" || (t.test_drive_details?.status ?? "pending") === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter, testDrives]);
+
+  const openDetails = (t: TestDrive) => {
+    setSelected(t);
+    setShowDetails(true);
+    setShowReport(false);
   };
 
-  const getVehicleById = (vehicleId) => {
-    return vehicles.find(vehicle => vehicle.id === vehicleId) || {};
+  const openReport = (t: TestDrive) => {
+    setSelected(t);
+    setReportDraft(t.test_drive_details.report ?? "");
+    setShowReport(true);
+    setShowDetails(false);
   };
 
-  const getUserById = (userId) => {
-    // This function now correctly finds a user from the PublicUser list by their user_id
-    return users.find(user => user.user_id === userId) || {};
+  const closeAll = () => {
+    setShowDetails(false);
+    setShowReport(false);
+    setSelected(null);
+    setReportDraft("");
   };
 
-  const getStatusInfo = (status) => {
-    switch (status) {
-      case 'pending':
-        return { icon: <Clock className="w-3 h-3" />, color: 'bg-amber-100 text-amber-800', text: 'Pending' };
-      case 'approved':
-        return { icon: <CheckCircle className="w-3 h-3" />, color: 'bg-blue-100 text-blue-800', text: 'Approved' };
-      case 'completed':
-        return { icon: <CheckCircle className="w-3 h-3" />, color: 'bg-green-100 text-green-800', text: 'Completed' };
-      case 'declined':
-        return { icon: <XCircle className="w-3 h-3" />, color: 'bg-red-100 text-red-800', text: 'Declined' };
-      case 'no_show':
-        return { icon: <AlertCircle className="w-3 h-3" />, color: 'bg-orange-100 text-orange-800', text: 'No Show' };
-      default:
-        return { icon: <Clock className="w-3 h-3" />, color: 'bg-slate-100 text-slate-800', text: status || 'Unknown' };
-    }
-  };
-
-  const getActiveTestDrivesCount = () => {
-    const activeStatuses = ['pending', 'approved']; 
-    return testDrives.filter(request => 
-      request.test_drive_details && activeStatuses.includes(request.test_drive_details.status)
-    ).length;
-  };
-
-  const filteredTestDrives = testDrives.filter(testDrive => {
-    const vehicle = getVehicleById(testDrive.vehicle_id);
-    const buyer = getUserById(testDrive.sender_id);
-    const seller = getUserById(testDrive.recipient_id);
-
-    const matchesSearch = !searchTerm || 
-      vehicle.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      buyer.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      seller.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = statusFilter === "all" || 
-      (testDrive.test_drive_details?.status || 'pending') === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  // Fixed handlers with proper state management
-  const handleViewDetails = (testDrive) => {
-    console.log("Opening view details for:", testDrive.id);
-    setSelectedTestDrive(testDrive);
-    setShowActivityModal(true);
-    setShowReportModal(false); // Ensure other modal is closed
-  };
-
-  const handleEditReport = (testDrive) => {
-    console.log("Opening edit report for:", testDrive.id);
-    setSelectedTestDrive(testDrive);
-    setShowReportModal(true);
-    setShowActivityModal(false); // Ensure other modal is closed
-  };
-
-  const handleCloseActivityModal = () => {
-    console.log("Closing activity modal");
-    setShowActivityModal(false);
-    setSelectedTestDrive(null);
-  };
-
-  const handleCloseReportModal = () => {
-    console.log("Closing report modal");
-    setShowReportModal(false);
-    setSelectedTestDrive(null);
-  };
-
-  const handleReportSubmitted = async () => {
-    console.log("Report submitted, reloading data");
-    await loadTestDriveData();
-    handleCloseReportModal();
+  const saveReport = () => {
+    if (!selected) return;
+    setTestDrives((prev) =>
+      prev.map((t) =>
+        t.id === selected.id
+          ? {
+            ...t,
+            test_drive_details: {
+              ...t.test_drive_details,
+              report: reportDraft.trim(),
+              status: t.test_drive_details.status === "pending" ? "approved" : t.test_drive_details.status,
+            },
+          }
+          : t
+      )
+    );
+    toast({ title: "Saved", description: "Report saved." });
+    closeAll();
   };
 
   return (
     <>
       <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <div className="p-6 border-b">
+          <div className="flex items-center gap-2 text-lg font-semibold text-slate-800">
             <Calendar className="w-5 h-5 text-purple-500" />
             Test Drive Management
             <Badge variant="outline" className="ml-2">
-              {getActiveTestDrivesCount()} Active
+              {getActiveCount(testDrives)} Active
             </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Filters */}
+          </div>
+        </div>
+
+        <CardContent className="p-6">
           <div className="flex gap-4 mb-6">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input
                 placeholder="Search by vehicle, buyer, or seller..."
                 value={searchTerm}
@@ -165,7 +253,8 @@ export default function TestDriveManagement({ currentUser }) {
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -180,127 +269,118 @@ export default function TestDriveManagement({ currentUser }) {
             </Select>
           </div>
 
-          {/* Test Drive List */}
-          {isLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredTestDrives.map(testDrive => {
-                const vehicle = getVehicleById(testDrive.vehicle_id);
-                const buyer = getUserById(testDrive.sender_id);
-                const seller = getUserById(testDrive.recipient_id);
-                const statusInfo = getStatusInfo(testDrive.test_drive_details?.status);
+          <div className="space-y-3">
+            {filtered.map((t) => {
+              const v = getVehicleById(t.vehicle_id);
+              const buyer = getUserById(t.sender_id);
+              const seller = getUserById(t.recipient_id);
+              const statusInfo = getStatusInfo(t.test_drive_details?.status);
 
-                return (
-                  <div key={testDrive.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-4 items-center">
-                        {/* Vehicle Thumbnail */}
-                        <div className="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                          {vehicle.primary_image ? (
-                            <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <Car className="w-6 h-6 text-slate-400" />
-                          )}
-                        </div>
-
-                        {/* Test Drive Info */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-slate-800">{vehicle.title}</h3>
-                            <Badge className={statusInfo.color}>
-                              {statusInfo.icon}
-                              <span className="ml-1">{statusInfo.text}</span>
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center gap-4 text-sm text-slate-600">
-                            <div className="flex items-center gap-1">
-                              <UserIcon className="w-3 h-3" />
-                              Buyer: {buyer.full_name || 'Unknown'}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {testDrive.test_drive_details?.preferred_date 
-                                ? format(new Date(testDrive.test_drive_details.preferred_date), 'MMM d, yyyy')
-                                : 'Date not set'
-                              }
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {testDrive.test_drive_details?.preferred_time || 'Time not set'}
-                            </div>
-                          </div>
-
-                          <p className="text-xs text-slate-500 mt-1">
-                            Requested {format(new Date(testDrive.created_date), 'MMM d, yyyy')} • 
-                            Seller: {seller.full_name || 'Unknown'}
-                          </p>
-                        </div>
+              return (
+                <div key={t.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex gap-4 items-center min-w-0">
+                      <div className="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {v.primary_image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={v.primary_image} alt={v.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <Car className="w-6 h-6 text-slate-400" />
+                        )}
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(testDrive)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View / Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditReport(testDrive)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          {testDrive.test_drive_details?.status === 'completed' ? 'Edit Report' : 'Add Report'}
-                        </Button>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h3 className="font-semibold text-slate-800 truncate">{v.title}</h3>
+                          <Badge className={statusInfo.color}>
+                            {statusInfo.icon}
+                            <span className="ml-1">{statusInfo.text}</span>
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-sm text-slate-600 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <UserIcon className="w-3 h-3" />
+                            Buyer: {buyer.full_name}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {fmtDate(t.test_drive_details?.preferred_date)}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {t.test_drive_details?.preferred_time || "Time not set"}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-500 mt-1">
+                          Requested {fmtDate(t.created_date)} • Seller: {seller.full_name}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
 
-              {filteredTestDrives.length === 0 && !isLoading && (
-                <div className="text-center py-8 text-slate-500">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p>No test drives found</p>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button variant="outline" size="sm" onClick={() => openDetails(t)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View / Edit
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openReport(t)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        {t.test_drive_details?.status === "completed" ? "Edit Report" : "Add Report"}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+              );
+            })}
+
+            {filtered.length === 0 && (
+              <div className="text-center py-8 text-slate-500">
+                <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                <p>No test drives found</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
-
-      {/* View Details Modal */}
-      {showActivityModal && selectedTestDrive && (
-        <TestDriveActivityModal
-          testDriveRequest={selectedTestDrive}
-          buyer={getUserById(selectedTestDrive.sender_id)}
-          vehicle={getVehicleById(selectedTestDrive.vehicle_id)}
-          isOpen={showActivityModal}
-          onClose={handleCloseActivityModal}
-          onUpdate={loadTestDriveData}
-          currentUser={currentUser}
-        />
-      )}
-
-      {/* Edit Report Modal */}
-      {showReportModal && selectedTestDrive && (
-        <TestDriveReportModal
-          testDriveMessage={selectedTestDrive}
-          buyer={getUserById(selectedTestDrive.sender_id)}
-          vehicle={getVehicleById(selectedTestDrive.vehicle_id)}
-          isOpen={showReportModal}
-          onClose={handleCloseReportModal}
-          onReportSubmitted={handleReportSubmitted}
-          currentUser={currentUser}
-        />
-      )}
+      <TestDriveActivityModalUI
+        isOpen={showDetails}
+        onClose={closeAll}
+        testDriveRequest={selected}
+        buyer={selected ? { user_id: selected.sender_id, full_name: getUserById(selected.sender_id).full_name } : null}
+        vehicle={selected ? { id: selected.vehicle_id, title: getVehicleById(selected.vehicle_id).title } : null}
+        onSave={(updated) => {
+          setTestDrives((prev) => prev.map((t) => (t.id === updated.id ? (updated as any) : t)));
+          toast({ title: "Saved", description: "Test drive updated." });
+        }}
+      />
+      <TestDriveReportModalUI
+        isOpen={showReport}
+        onClose={closeAll}
+        vehicleTitle={selected ? getVehicleById(selected.vehicle_id).title : undefined}
+        buyerName={selected ? getUserById(selected.sender_id).full_name : undefined}
+        preferred_date={selected?.test_drive_details?.preferred_date}
+        preferred_time={selected?.test_drive_details?.preferred_time}
+        initialValue={selected?.test_drive_details as any}
+        onSave={(data) => {
+          if (!selected) return;
+          setTestDrives((prev) =>
+            prev.map((t) =>
+              t.id === selected.id
+                ? {
+                  ...t,
+                  test_drive_details: {
+                    ...t.test_drive_details,
+                    ...data,
+                    status: "completed",
+                  },
+                }
+                : t,
+            ),
+          );
+          toast({ title: "Saved", description: "Report saved." });  
+        }}
+      />
     </>
   );
 }

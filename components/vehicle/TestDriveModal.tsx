@@ -1,14 +1,23 @@
 "use client"
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/TextArea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { X, Calendar, Car } from "lucide-react";
-
-export default function TestDriveModal({ vehicle, onClose, onSubmit }) {
+ 
+type Vehicle = {
+  id: string;
+  title: string;
+  price: number;
+  location: string;
+  notes: string;
+  preferred_date: string;
+  preferred_time: string;
+}
+export default function TestDriveModal({ vehicle, onClose, onSubmit }: { vehicle: Vehicle, onClose: () => void, onSubmit: (data: any) => void }) {
   const [formData, setFormData] = useState({
     preferred_date: "",
     preferred_time: "",
@@ -16,11 +25,11 @@ export default function TestDriveModal({ vehicle, onClose, onSubmit }) {
     notes: ""
   });
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     onSubmit({

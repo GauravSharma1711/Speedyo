@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/TextArea";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, Clock, MapPin } from "lucide-react";
 
-export default function EditTestDriveRequestModal({ isOpen, request, onClose, onSave }) {
+export default function EditTestDriveRequestModal({ isOpen, request, onClose, onSave }: { isOpen: boolean, request: any, onClose: () => void, onSave: (id: string, details: any) => void }) {
     const [details, setDetails] = useState({
         preferred_date: '',
         preferred_time: '',
@@ -27,7 +27,7 @@ export default function EditTestDriveRequestModal({ isOpen, request, onClose, on
         }
     }, [request]);
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setDetails({ ...details, [e.target.name]: e.target.value });
     };
 

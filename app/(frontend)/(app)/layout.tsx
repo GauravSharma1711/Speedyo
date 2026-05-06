@@ -135,7 +135,7 @@ function createPageUrl(pageName: string, params?: Record<string, string>): strin
     GuestOrderConfirmation: "/Guest-Order-Confirmation",
     DealershipManagedSales: "/Dealership-Managed-Sales",
     SignAgreement: "/Sign-Agreement",
-    AdminPanel: "/Admin",
+    AdminPanel: "/AdminPanel",
     LiaisonAgreement: "/Liaison-Agreement",
     ViewDealershipAgreement: "/View-Dealership-Agreement",
     LiaisonApplication: "/Liaison-Application",
