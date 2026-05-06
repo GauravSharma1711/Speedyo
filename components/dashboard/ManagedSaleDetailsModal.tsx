@@ -1,3 +1,64 @@
+type ManagedSaleStatus =
+  | "pending_initial_review"
+  | "pending_review"
+  | "approved"
+  | "declined"
+  | "listed"
+  | "sold"
+  | "edit_requested"
+  | "cancellation_requested"
+  | "cancelled";
+
+type UserRow = {
+  id: string;
+  full_name?: string | null;
+  email?: string | null;
+  role?: string | null;
+};
+
+type ManagedSaleRequestDetails = {
+  id: string;
+  created_date: string;
+  status: ManagedSaleStatus;
+
+  submitted_by_user_id: string;
+  cancellation_reason?: string | null;
+
+  user_facing_notes?: string | null;
+
+  vehicle_details?: any;
+  access_arrangements?: any;
+
+  service_fee_amount?: number | string | null;
+  calculated_buyer_price?: number | string | null;
+
+  edit_requests?: any[];
+};
+type Props = {
+  isOpen: boolean;
+  request: ManagedSaleRequestDetails | null;
+  onClose: () => void;
+
+  onEdit?: (request: ManagedSaleRequestDetails) => void;
+  onCancel?: (request: ManagedSaleRequestDetails) => void;
+
+  users?: UserRow[];
+  currentUser?: { role?: string; email?: string } | null;
+
+  onStatusChange?: (requestId: string, newStatus: ManagedSaleStatus, notes?: string) => void;
+  onApproveEditRequest?: (request: ManagedSaleRequestDetails, editRequestIndex: number) => void;
+  onDeclineEditRequest?: (request: ManagedSaleRequestDetails, editRequestIndex: number) => void;
+
+  onMarkAsSold?: (request: ManagedSaleRequestDetails) => void;
+
+  isLoading?: boolean;
+  adminNotes?: string;
+  setAdminNotes?: (v: string) => void;
+  loadRequests?: () => void;
+
+  onApproveCancellation?: (request: ManagedSaleRequestDetails) => void;
+  onDeclineCancellation?: (request: ManagedSaleRequestDetails) => void;
+}; 
 
 import React from "react";
 import { Button } from "@/components/ui/Button";
@@ -26,7 +87,7 @@ export default function ManagedSaleDetailsModal({
   onClose,
   onEdit,
   onCancel,
-  users = [], // Default empty array - Preserving existing default
+  users = [],
   currentUser,
   onStatusChange,
   onApproveEditRequest,
@@ -36,20 +97,20 @@ export default function ManagedSaleDetailsModal({
   adminNotes,
   setAdminNotes,
   loadRequests,
-  onApproveCancellation, // Added new prop
-  onDeclineCancellation // Added new prop
-}) {
+  onApproveCancellation,
+  onDeclineCancellation,
+}: Props): React.ReactNode {
   if (!isOpen || !request) return null;
 
   // Safe user lookup with fallback
-  const getUserById = (userId) => {
+  const getUserById = (userId:string) => {
     if (!users || !Array.isArray(users)) return { full_name: 'Unknown User', email: 'unknown@email.com' };
     return users.find(user => user.id === userId) || { full_name: 'Unknown User', email: 'unknown@email.com' };
   };
 
   const isAdminView = currentUser && (currentUser.role === 'admin' || currentUser.email === 'admin@speedio.com');
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status:ManagedSaleStatus) => {
     switch (status) {
       case 'pending_review':
         return {
@@ -117,7 +178,7 @@ export default function ManagedSaleDetailsModal({
     }
   };
 
-  const renderChangeValue = (value, field) => {
+  const renderChangeValue = (value:any, field:string) => {
     if (field === 'seller_asking_price' || field === 'price') {
       // Ensure value is treated as a number before toLocaleString
       return `$${Number(value)?.toLocaleString()}`;
@@ -296,9 +357,8 @@ export default function ManagedSaleDetailsModal({
               </CardContent>
             </Card>
           )}
-
-          {/* Vehicle Information */}
-          <Card>
+                    {/* Vehicle Information */}
+                    <Card>
             <CardContent className="p-4">
               <div className="flex gap-4">
                 <div className="w-24 h-20 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">

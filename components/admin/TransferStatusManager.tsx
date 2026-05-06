@@ -1,160 +1,178 @@
+"use client";
 
-"use client"
-import React, { useState, useEffect } from 'react';
-import { VehicleTransfer, Vehicle, Notification } from '@/entities/all';
-import { PublicUser } from '@/entities/PublicUser';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Plus, Edit, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
+import React, { useMemo, useState } from "react";
+import { AlertCircle, Edit, Plus, Search } from "lucide-react";
+
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
+import { Textarea } from "@/components/ui/TextArea";
+import { toast } from "@/components/ui/UseToast";
+
+type TransferType = "speedio_managed" | "self_service";
+type TransferStatus = "in_progress" | "on_hold" | "completed";
+
+type Vehicle = { id: string; title: string };
+type PublicUser = { id: string; full_name: string; email: string };
+
+type VehicleTransfer = {
+  id: string;
+  vehicleId: string;
+  transferType: TransferType;
+  buyerId: string;
+  sellerId?: string | null;
+  currentStep: number;
+  stepsCompleted: number[];
+  status: TransferStatus;
+  userFacingNotes: string;
+  adminNotes: string;
+  createdAt: string;
+};
 
 const SPEEDIO_MANAGED_STEPS = [
-  { number: 1, title: 'Documents Prepared' },
-  { number: 2, title: 'LTO Inspection Completed' },
-  { number: 3, title: 'PDI Insurance Purchased' },
-  { number: 4, title: 'JSVRO Paperwork Submitted' },
-  { number: 5, title: 'Y-Plates Purchased & Installed' },
-  { number: 6, title: 'JSVRO Finalization Complete' }
-];
+  { number: 1, title: "Documents Prepared" },
+  { number: 2, title: "LTO Inspection Completed" },
+  { number: 3, title: "PDI Insurance Purchased" },
+  { number: 4, title: "JSVRO Paperwork Submitted" },
+  { number: 5, title: "Y-Plates Purchased & Installed" },
+  { number: 6, title: "JSVRO Finalization Complete" },
+] as const;
 
 const SELF_SERVICE_STEPS = [
-  { number: 1, title: 'JSVRO Paperwork Submitted' },
-  { number: 2, title: 'Y-Plates Purchased & Installed' },
-  { number: 3, title: 'LTO Inspection Completed' },
-  { number: 4, title: 'Returned to JSVRO' },
-  { number: 5, title: 'Road Tax Conversion Complete' },
-  { number: 6, title: 'Final SOFA Registration Complete' }
+  { number: 1, title: "JSVRO Paperwork Submitted" },
+  { number: 2, title: "Y-Plates Purchased & Installed" },
+  { number: 3, title: "LTO Inspection Completed" },
+  { number: 4, title: "Returned to JSVRO" },
+  { number: 5, title: "Road Tax Conversion Complete" },
+  { number: 6, title: "Final SOFA Registration Complete" },
+] as const;
+
+const MOCK_VEHICLES: Vehicle[] = [
+  { id: "veh_1", title: "Toyota Aqua 2018" },
+  { id: "veh_2", title: "Honda Fit 2016" },
 ];
 
-export default function TransferStatusManager() {
-  const [transfers, setTransfers] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedTransfer, setSelectedTransfer] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const { toast } = useToast();
+const MOCK_USERS: PublicUser[] = [
+  { id: "u_1", full_name: "Test Buyer", email: "buyer@test.com" },
+  { id: "u_2", full_name: "Test Seller", email: "seller@test.com" },
+  { id: "u_3", full_name: "Rockstar Ahuja", email: "rockstarahuja99@gmail.com" },
+];
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [transfersData, vehiclesData, usersData] = await Promise.all([
-        VehicleTransfer.list('-created_date', 100),
-        Vehicle.list('-created_date', 100),
-        PublicUser.list()
-      ]);
-      setTransfers(transfersData);
-      setVehicles(vehiclesData);
-      setUsers(usersData);
-    } catch (error) {
-      console.error('Failed to load data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load transfer data',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-    }
+const MOCK_TRANSFERS: VehicleTransfer[] = [
+  {
+    id: "tr_1",
+    vehicleId: "veh_1",
+    transferType: "speedio_managed",
+    buyerId: "u_1",
+    sellerId: "u_2",
+    currentStep: 2,
+    stepsCompleted: [1],
+    status: "in_progress",
+    userFacingNotes: "Docs started.",
+    adminNotes: "",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+  },
+  {
+    id: "tr_2",
+    vehicleId: "veh_2",
+    transferType: "self_service",
+    buyerId: "u_3",
+    sellerId: null,
+    currentStep: 4,
+    stepsCompleted: [1, 2, 3],
+    status: "on_hold",
+    userFacingNotes: "Waiting for plates.",
+    adminNotes: "Follow up next week.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
+  },
+];
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function statusBadgeVariant(status: TransferStatus): "default" | "secondary" | "outline" {
+  if (status === "completed") return "default";
+  if (status === "on_hold") return "outline";
+  return "secondary";
+}
+
+export default function TransferStatusManagerUI() {
+  const [transfers, setTransfers] = useState<VehicleTransfer[]>(MOCK_TRANSFERS);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpenForId, setEditOpenForId] = useState<string | null>(null);
+
+  const filteredTransfers = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return transfers;
+    return transfers.filter((t) => {
+      const vehicle = MOCK_VEHICLES.find((v) => v.id === t.vehicleId);
+      const buyer = MOCK_USERS.find((u) => u.id === t.buyerId);
+      const hay = [
+        vehicle?.title ?? "",
+        buyer?.full_name ?? "",
+        t.status,
+        t.transferType,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [searchTerm, transfers]);
+
+  const handleCreate = (payload: Omit<VehicleTransfer, "id" | "createdAt">) => {
+    const created: VehicleTransfer = {
+      id: `tr_${Math.random().toString(16).slice(2, 8)}`,
+      createdAt: new Date().toISOString(),
+      ...payload,
+    };
+    setTransfers((prev) => [created, ...prev]);
+    setCreateOpen(false);
+    toast({ title: "Transfer created", description: "" });
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const filteredTransfers = transfers.filter((transfer) => {
-    const vehicle = vehicles.find(v => v.id === transfer.vehicle_id);
-    const buyer = users.find(u => u.user_id === transfer.buyer_id);
-    
-    return (
-      vehicle?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      buyer?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transfer.status?.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleUpdate = (transferId: string, updates: Partial<VehicleTransfer>) => {
+    setTransfers((prev) =>
+      prev.map((t) => (t.id === transferId ? { ...t, ...updates } : t)),
     );
-  });
-
-  const handleUpdateTransfer = async (transferId, updates) => {
-    try {
-      await VehicleTransfer.update(transferId, updates);
-      
-      // Send notification to buyer
-      const transfer = transfers.find(t => t.id === transferId);
-      if (transfer?.buyer_id) {
-        await Notification.create({
-          recipient_id: transfer.buyer_id,
-          type: 'vehicle_edit_request',
-          content: `Your vehicle transfer status has been updated: Step ${updates.current_step || transfer.current_step} completed.`,
-          related_entity_type: 'VehicleTransfer',
-          related_entity_id: transferId,
-          icon: 'CheckCircle'
-        });
-      }
-
-      // Send notification to seller if managed sale
-      if (transfer?.seller_id) {
-        await Notification.create({
-          recipient_id: transfer.seller_id,
-          type: 'vehicle_edit_request',
-          content: `Transfer status updated for your managed vehicle.`,
-          related_entity_type: 'VehicleTransfer',
-          related_entity_id: transferId,
-          icon: 'CheckCircle'
-        });
-      }
-
-      toast({
-        title: 'Success',
-        description: 'Transfer status updated successfully'
-      });
-      
-      await loadData();
-      setShowEditModal(false);
-    } catch (error) {
-      console.error('Failed to update transfer:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update transfer status',
-        variant: 'destructive'
-      });
-    }
+    setEditOpenForId(null);
+    toast({ title: "Saved", description: "Transfer updated" });
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-800">Transfer Status Management</h2>
-        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Transfer
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white">
-            <CreateTransferModal 
-              vehicles={vehicles} 
-              users={users} 
-              onSuccess={() => {
-                setShowCreateModal(false);
-                loadData();
-              }} 
-            />
-          </DialogContent>
-        </Dialog>
+        <h2 className="text-2xl font-bold text-slate-800">
+          Transfer Status Management
+        </h2>
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create Transfer
+        </Button>
       </div>
 
-      {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
         <Input
           placeholder="Search by vehicle, buyer, or status..."
           value={searchTerm}
@@ -163,11 +181,8 @@ export default function TransferStatusManager() {
         />
       </div>
 
-      {/* Transfers List */}
       <div className="space-y-4">
-        {isLoading ? (
-          <p className="text-center text-slate-600 py-8">Loading transfers...</p>
-        ) : filteredTransfers.length === 0 ? (
+        {filteredTransfers.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -175,314 +190,372 @@ export default function TransferStatusManager() {
             </CardContent>
           </Card>
         ) : (
-          filteredTransfers.map((transfer) => {
-            const vehicle = vehicles.find(v => v.id === transfer.vehicle_id);
-            const buyer = users.find(u => u.user_id === transfer.buyer_id);
-            const seller = users.find(u => u.user_id === transfer.seller_id);
+          filteredTransfers.map((t) => {
+            const vehicle = MOCK_VEHICLES.find((v) => v.id === t.vehicleId);
+            const buyer = MOCK_USERS.find((u) => u.id === t.buyerId);
+            const seller = t.sellerId
+              ? MOCK_USERS.find((u) => u.id === t.sellerId)
+              : null;
+            const totalSteps = 6;
+            const pct = Math.round(((t.stepsCompleted.length || 0) / totalSteps) * 100);
 
             return (
-              <Card key={transfer.id} className="shadow-md hover:shadow-lg transition-shadow">
+              <Card key={t.id} className="shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-4 gap-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                        {vehicle?.title || 'Unknown Vehicle'}
+                        {vehicle?.title ?? "Unknown Vehicle"}
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant={transfer.status === 'completed' ? 'default' : 'secondary'} className="capitalize">
-                          {transfer.status === 'in_progress' ? 'In Progress' : transfer.status}
+                        <Badge
+                          variant={statusBadgeVariant(t.status)}
+                          className="capitalize"
+                        >
+                          {t.status === "in_progress" ? "In Progress" : t.status}
                         </Badge>
                         <Badge variant="outline" className="capitalize">
-                          {transfer.transfer_type === 'speedio_managed' ? 'Speedio-Managed' : 'Self-Service'}
+                          {t.transferType === "speedio_managed"
+                            ? "Speedio-Managed"
+                            : "Self-Service"}
                         </Badge>
                         <span className="text-sm text-slate-600">
-                          Step {transfer.current_step} of {transfer.transfer_type === 'speedio_managed' ? 6 : 6}
+                          Step {t.currentStep} of {totalSteps}
                         </span>
                       </div>
                     </div>
-                    <Dialog open={showEditModal && selectedTransfer?.id === transfer.id} onOpenChange={(open) => {
-                      setShowEditModal(open);
-                      if (!open) setSelectedTransfer(null);
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedTransfer(transfer)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Update
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white">
-                        <EditTransferModal
-                          transfer={transfer}
-                          vehicle={vehicle}
-                          onUpdate={handleUpdateTransfer}
-                        />
-                      </DialogContent>
-                    </Dialog>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditOpenForId(t.id)}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Update
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-slate-500">Buyer</p>
-                      <p className="font-medium text-slate-800">{buyer?.full_name || 'Unknown'}</p>
+                      <p className="font-medium text-slate-800">
+                        {buyer?.full_name ?? "Unknown"}
+                      </p>
                     </div>
                     {seller && (
                       <div>
                         <p className="text-slate-500">Seller</p>
-                        <p className="font-medium text-slate-800">{seller?.full_name}</p>
+                        <p className="font-medium text-slate-800">{seller.full_name}</p>
                       </div>
                     )}
                   </div>
 
-                  {/* Progress Bar */}
                   <div className="mt-4">
                     <div className="w-full bg-slate-200 rounded-full h-2">
                       <div
                         className="bg-gradient-to-r from-blue-500 to-emerald-500 h-2 rounded-full transition-all"
-                        style={{ width: `${((transfer.steps_completed?.length || 0) / 6) * 100}%` }}
+                        style={{ width: `${pct}%` }}
                       />
                     </div>
+                    <div className="mt-2 text-xs text-slate-500">{pct}% complete</div>
                   </div>
+
+                  {editOpenForId === t.id && (
+                    <EditTransferModal
+                      transfer={t}
+                      onClose={() => setEditOpenForId(null)}
+                      onSave={(updates) => handleUpdate(t.id, updates)}
+                    />
+                  )}
                 </CardContent>
               </Card>
             );
           })
         )}
       </div>
+
+      {createOpen && (
+        <CreateTransferModal
+          vehicles={MOCK_VEHICLES}
+          users={MOCK_USERS}
+          onClose={() => setCreateOpen(false)}
+          onCreate={handleCreate}
+        />
+      )}
     </div>
   );
 }
 
-function CreateTransferModal({ vehicles, users, onSuccess }) {
-  const [formData, setFormData] = useState({
-    vehicle_id: '',
-    transfer_type: 'speedio_managed',
-    buyer_id: '',
-    seller_id: '',
-    current_step: 1,
-    steps_completed: [],
-    status: 'in_progress',
-    user_facing_notes: '',
-    admin_notes: ''
-  });
-  const { toast } = useToast();
+function CreateTransferModal(props: {
+  vehicles: Vehicle[];
+  users: PublicUser[];
+  onClose: () => void;
+  onCreate: (payload: Omit<VehicleTransfer, "id" | "createdAt">) => void;
+}) {
+  const { vehicles, users, onClose, onCreate } = props;
 
-  const handleSubmit = async (e) => {
+  const [vehicleId, setVehicleId] = useState<string>(vehicles[0]?.id ?? "");
+  const [transferType, setTransferType] = useState<TransferType>("speedio_managed");
+  const [buyerId, setBuyerId] = useState<string>(users[0]?.id ?? "");
+  const [sellerId, setSellerId] = useState<string>("");
+  const [userFacingNotes, setUserFacingNotes] = useState("");
+  const [adminNotes, setAdminNotes] = useState("");
+
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await VehicleTransfer.create({
-        ...formData,
-        initiated_date: new Date().toISOString()
-      });
-
-      toast({
-        title: 'Success',
-        description: 'Transfer created successfully'
-      });
-      onSuccess();
-    } catch (error) {
-      console.error('Failed to create transfer:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create transfer',
-        variant: 'destructive'
-      });
+    if (!vehicleId || !buyerId) {
+      toast({ title: "Missing fields", variant: "destructive" });
+      return;
     }
-  };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <DialogHeader>
-        <DialogTitle>Create New Transfer</DialogTitle>
-      </DialogHeader>
-
-      <div className="space-y-4">
-        <div>
-          <Label>Vehicle</Label>
-          <Select value={formData.vehicle_id} onValueChange={(value) => setFormData({...formData, vehicle_id: value})}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select vehicle" />
-            </SelectTrigger>
-            <SelectContent>
-              {vehicles.map(vehicle => (
-                <SelectItem key={vehicle.id} value={vehicle.id}>{vehicle.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label>Transfer Type</Label>
-          <Select value={formData.transfer_type} onValueChange={(value) => setFormData({...formData, transfer_type: value})}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="speedio_managed">Speedio-Managed</SelectItem>
-              <SelectItem value="self_service">Self-Service</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label>Buyer</Label>
-          <Select value={formData.buyer_id} onValueChange={(value) => setFormData({...formData, buyer_id: value})}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select buyer" />
-            </SelectTrigger>
-            <SelectContent>
-              {users.map(user => (
-                <SelectItem key={user.user_id} value={user.user_id}>{user.full_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label>Seller (Optional)</Label>
-          <Select value={formData.seller_id} onValueChange={(value) => setFormData({...formData, seller_id: value})}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select seller (optional)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
-              {users.map(user => (
-                <SelectItem key={user.user_id} value={user.user_id}>{user.full_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label>User-Facing Notes</Label>
-          <Textarea
-            value={formData.user_facing_notes}
-            onChange={(e) => setFormData({...formData, user_facing_notes: e.target.value})}
-            placeholder="Notes visible to buyer and seller..."
-          />
-        </div>
-
-        <div>
-          <Label>Admin Notes</Label>
-          <Textarea
-            value={formData.admin_notes}
-            onChange={(e) => setFormData({...formData, admin_notes: e.target.value})}
-            placeholder="Internal notes..."
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button type="submit">Create Transfer</Button>
-      </div>
-    </form>
-  );
-}
-
-function EditTransferModal({ transfer, vehicle, onUpdate }) {
-  const [formData, setFormData] = useState({
-    current_step: transfer.current_step,
-    steps_completed: transfer.steps_completed || [],
-    status: transfer.status,
-    user_facing_notes: transfer.user_facing_notes || '',
-    admin_notes: transfer.admin_notes || ''
-  });
-
-  const steps = transfer.transfer_type === 'speedio_managed' ? SPEEDIO_MANAGED_STEPS : SELF_SERVICE_STEPS;
-
-  const handleStepToggle = (stepNumber) => {
-    const isCompleted = formData.steps_completed.includes(stepNumber);
-    const newStepsCompleted = isCompleted
-      ? formData.steps_completed.filter(s => s !== stepNumber)
-      : [...formData.steps_completed, stepNumber].sort((a, b) => a - b);
-
-    // Auto-update current_step to the next incomplete step
-    const nextStep = steps.find(s => !newStepsCompleted.includes(s.number));
-    
-    setFormData({
-      ...formData,
-      steps_completed: newStepsCompleted,
-      current_step: nextStep ? nextStep.number : steps.length,
-      status: newStepsCompleted.length === steps.length ? 'completed' : formData.status,
-      completed_date: newStepsCompleted.length === steps.length ? new Date().toISOString() : null
+    onCreate({
+      vehicleId,
+      transferType,
+      buyerId,
+      sellerId: sellerId || null,
+      currentStep: 1,
+      stepsCompleted: [],
+      status: "in_progress",
+      userFacingNotes,
+      adminNotes,
     });
   };
 
-  const handleSubmit = (e) => {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 p-4 flex items-center justify-center">
+      <div className="w-full max-w-2xl rounded-lg bg-white border shadow-xl">
+        <div className="p-6 border-b flex items-center justify-between">
+          <div className="text-lg font-semibold">Create New Transfer</div>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+        <form onSubmit={submit} className="p-6 space-y-4">
+          <div className="space-y-2">
+            <Label>Vehicle</Label>
+            <Select value={vehicleId} onValueChange={setVehicleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select vehicle" />
+              </SelectTrigger>
+              <SelectContent>
+                {vehicles.map((v) => (
+                  <SelectItem key={v.id} value={v.id}>
+                    {v.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Transfer Type</Label>
+            <Select value={transferType} onValueChange={(v) => setTransferType(v as TransferType)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="speedio_managed">Speedio-Managed</SelectItem>
+                <SelectItem value="self_service">Self-Service</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Buyer</Label>
+            <Select value={buyerId} onValueChange={setBuyerId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select buyer" />
+              </SelectTrigger>
+              <SelectContent>
+                {users.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Seller (Optional)</Label>
+            <Select value={sellerId} onValueChange={setSellerId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select seller (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                {users.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>User-Facing Notes</Label>
+            <Textarea
+              value={userFacingNotes}
+              onChange={(e) => setUserFacingNotes(e.target.value)}
+              placeholder="Notes visible to buyer and seller..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Admin Notes</Label>
+            <Textarea
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              placeholder="Internal notes..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">Create Transfer</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditTransferModal(props: {
+  transfer: VehicleTransfer;
+  onClose: () => void;
+  onSave: (updates: Partial<VehicleTransfer>) => void;
+}) {
+  const { transfer, onClose, onSave } = props;
+
+  const steps =
+    transfer.transferType === "speedio_managed"
+      ? SPEEDIO_MANAGED_STEPS
+      : SELF_SERVICE_STEPS;
+
+  const [stepsCompleted, setStepsCompleted] = useState<number[]>(
+    transfer.stepsCompleted ?? [],
+  );
+  const [status, setStatus] = useState<TransferStatus>(transfer.status);
+  const [userFacingNotes, setUserFacingNotes] = useState(transfer.userFacingNotes ?? "");
+  const [adminNotes, setAdminNotes] = useState(transfer.adminNotes ?? "");
+
+  const toggleStep = (stepNumber: number, checked: boolean) => {
+    const updated = checked
+      ? Array.from(new Set([...stepsCompleted, stepNumber])).sort((a, b) => a - b)
+      : stepsCompleted.filter((s) => s !== stepNumber);
+    setStepsCompleted(updated);
+
+    const next = steps.find((s) => !updated.includes(s.number));
+    const nextCurrentStep = next ? next.number : steps.length;
+
+    const isComplete = updated.length === steps.length;
+    setStatus(isComplete ? "completed" : status);
+
+    onSave({
+      stepsCompleted: updated,
+      currentStep: nextCurrentStep,
+      status: isComplete ? "completed" : status,
+    });
+  };
+
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdate(transfer.id, formData);
+    onSave({
+      status,
+      userFacingNotes,
+      adminNotes,
+      stepsCompleted,
+    });
+    toast({ title: "Saved", description: "" });
+    onClose();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <DialogHeader>
-        <DialogTitle>Update Transfer Status</DialogTitle>
-        <p className="text-sm text-slate-600">{vehicle?.title}</p>
-      </DialogHeader>
-
-      <div className="space-y-4">
-        <div>
-          <Label className="mb-3 block">Completed Steps</Label>
-          <div className="space-y-2">
-            {steps.map((step) => (
-              <div key={step.number} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`step-${step.number}`}
-                  checked={formData.steps_completed.includes(step.number)}
-                  onCheckedChange={() => handleStepToggle(step.number)}
-                />
-                <label
-                  htmlFor={`step-${step.number}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  Step {step.number}: {step.title}
-                </label>
-              </div>
-            ))}
+    <div className="fixed inset-0 z-50 bg-black/60 p-4 flex items-center justify-center">
+      <div className="w-full max-w-2xl rounded-lg bg-white border shadow-xl">
+        <div className="p-6 border-b flex items-center justify-between">
+          <div>
+            <div className="text-lg font-semibold">Update Transfer Status</div>
+            <div className="text-sm text-slate-600">Transfer #{transfer.id}</div>
           </div>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </div>
 
-        <div>
-          <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="on_hold">On Hold</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <form onSubmit={submit} className="p-6 space-y-6">
+          <div className="space-y-2">
+            <Label className="mb-2 block">Completed Steps</Label>
+            <div className="space-y-2">
+              {steps.map((s) => {
+                const checked = stepsCompleted.includes(s.number);
+                return (
+                  <div key={s.number} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`step-${transfer.id}-${s.number}`}
+                      checked={checked}
+                      onCheckedChange={(v) => toggleStep(s.number, Boolean(v))}
+                    />
+                    <label
+                      htmlFor={`step-${transfer.id}-${s.number}`}
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      Step {s.number}: {s.title}
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-        <div>
-          <Label>User-Facing Notes</Label>
-          <Textarea
-            value={formData.user_facing_notes}
-            onChange={(e) => setFormData({...formData, user_facing_notes: e.target.value})}
-            placeholder="Notes visible to buyer and seller..."
-            rows={3}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as TransferStatus)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div>
-          <Label>Admin Notes (Internal)</Label>
-          <Textarea
-            value={formData.admin_notes}
-            onChange={(e) => setFormData({...formData, admin_notes: e.target.value})}
-            placeholder="Internal notes..."
-            rows={3}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label>User-Facing Notes</Label>
+            <Textarea
+              value={userFacingNotes}
+              onChange={(e) => setUserFacingNotes(e.target.value)}
+              placeholder="Notes visible to buyer and seller..."
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Admin Notes (Internal)</Label>
+            <Textarea
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              placeholder="Internal notes..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit">Save Changes</Button>
+          </div>
+        </form>
       </div>
-
-      <div className="flex justify-end gap-2">
-        <Button type="submit">Save Changes</Button>
-      </div>
-    </form>
+    </div>
   );
 }
+

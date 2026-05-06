@@ -1,308 +1,308 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { LiaisonAgreement } from '@/entities/LiaisonAgreement';
-import { LiaisonApplication } from '@/entities/LiaisonApplication';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+"use client";
+
+import React, { useMemo, useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import {
+  Copy,
+  Download,
+  Eye,
+  Loader2,
+  Plus,
+  Send,
+  UserCheck,
+  XCircle,
+} from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/TextArea";
+import { Badge } from "@/components/ui/Badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
-import {
-  FileText,
-  Plus,
-  Download,
-  Eye,
-  Send,
-  XCircle,
-  Loader2,
-  Copy, // Keep ExternalLink in imports in case it's used elsewhere or for future features
-  UserCheck
-} from 'lucide-react';
-import { createPageUrl } from '@/utils';
-import { invokeFunction } from '@/api/entities';
-import { format } from 'date-fns';
+  DialogTrigger,
+} from "@/components/ui/Dialog";
+import { useToast } from "@/components/ui/UseToast";
 
-export default function LiaisonAgreementManager() {
-  const [agreements, setAgreements] = useState([]);
-  const [applications, setApplications] = useState([]); // New state for applications
-  const [isLoading, setIsLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedAgreement, setSelectedAgreement] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+type LiaisonAgreementStatus = "pending_signature" | "signed" | "terminated" | "draft";
 
-  const [formData, setFormData] = useState({
-    agreement_title: 'Speedio Dealership Partnership Liaison Agreement',
-    position_title: 'Liaison Agent',
+type LiaisonApplicationStatus =
+  | "submitted"
+  | "under_review"
+  | "approved"
+  | "rejected";
+
+type LiaisonApplication = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  address?: string | null;
+  language_proficiency?: string | null;
+  previous_experience?: string | null;
+  automotive_knowledge?: string | null;
+  availability?: string | null;
+  motivation?: string | null;
+  resume_url?: string | null;
+  status: LiaisonApplicationStatus;
+};
+
+type LiaisonAgreement = {
+  id: string;
+  agreement_title: string;
+  position_title: string;
+
+  fixed_fee_percentage: number;
+  residual_pay_percentage: number;
+
+  agreement_start_date?: string | null; // YYYY-MM-DD
+  agreement_end_date?: string | null; // YYYY-MM-DD
+  termination_notice_days: number;
+
+  admin_notes?: string | null;
+
+  status: LiaisonAgreementStatus;
+  agreement_url?: string | null;
+
+  created_date: string; // ISO
+  application_id?: string | null;
+};
+
+type FormState = {
+  agreement_title: string;
+  position_title: string;
+  fixed_fee_percentage: string;
+  residual_pay_percentage: string;
+  agreement_start_date: string;
+  agreement_end_date: string;
+  termination_notice_days: string;
+  admin_notes: string;
+};
+
+const MOCK_APPLICATIONS: LiaisonApplication[] = [
+  {
+    id: "app_001",
+    full_name: "Yuki Tanaka",
+    email: "yuki@example.com",
+    phone: "+81-90-0000-1111",
+    address: "Meguro, Tokyo",
+    language_proficiency: "native_japanese_fluent_english",
+    previous_experience: "Worked at a dealership for 2 years.",
+    automotive_knowledge: "Comfortable with inspections and basic diagnostics.",
+    availability: "Weekends + weekday evenings",
+    motivation: "Want to help expats buy cars in Japan.",
+    resume_url: "https://example.com/resume.pdf",
+    status: "submitted",
+  },
+];
+
+const MOCK_AGREEMENTS: LiaisonAgreement[] = [
+  {
+    id: "lia_001",
+    agreement_title: "Speedio Dealership Partnership Liaison Agreement",
+    position_title: "Liaison Agent",
     fixed_fee_percentage: 10,
     residual_pay_percentage: 3,
-    agreement_start_date: new Date().toISOString().split('T')[0],
-    agreement_end_date: '',
+    agreement_start_date: new Date().toISOString().slice(0, 10),
+    agreement_end_date: "",
     termination_notice_days: 30,
-    admin_notes: ''
+    admin_notes: "Good candidate pool expected.",
+    status: "signed",
+    agreement_url: "/LiaisonAgreement?id=lia_001",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
+    application_id: "app_001",
+  },
+  {
+    id: "lia_002",
+    agreement_title: "Speedio Dealership Partnership Liaison Agreement",
+    position_title: "Liaison Agent (Osaka)",
+    fixed_fee_percentage: 12,
+    residual_pay_percentage: 2,
+    agreement_start_date: new Date().toISOString().slice(0, 10),
+    agreement_end_date: "",
+    termination_notice_days: 30,
+    admin_notes: "",
+    status: "pending_signature",
+    agreement_url: "/LiaisonAgreement?id=lia_002",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    application_id: null,
+  },
+];
+
+function badgeClass(status: LiaisonAgreementStatus) {
+  if (status === "signed") return "bg-green-100 text-green-800";
+  if (status === "pending_signature") return "bg-amber-100 text-amber-800";
+  if (status === "terminated") return "bg-red-100 text-red-800";
+  return "bg-slate-100 text-slate-800";
+}
+
+function makeId(prefix: string) {
+  return `${prefix}_${Math.random().toString(16).slice(2, 10)}`;
+}
+
+export default function LiaisonAgreementManagerUI() {
+  const { toast } = useToast();
+
+  const [isLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const [agreements, setAgreements] = useState<LiaisonAgreement[]>(MOCK_AGREEMENTS);
+  const [applications] = useState<LiaisonApplication[]>(MOCK_APPLICATIONS);
+
+  const [selected, setSelected] = useState<{
+    agreement: LiaisonAgreement;
+    application: LiaisonApplication;
+  } | null>(null);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const [formData, setFormData] = useState<FormState>({
+    agreement_title: "Speedio Dealership Partnership Liaison Agreement",
+    position_title: "Liaison Agent",
+    fixed_fee_percentage: "10",
+    residual_pay_percentage: "3",
+    agreement_start_date: today,
+    agreement_end_date: "",
+    termination_notice_days: "30",
+    admin_notes: "",
   });
 
-  useEffect(() => {
-    fetchAgreementsAndApplications(); // Modified to fetch both
-  }, []);
+  const canCreate = useMemo(() => {
+    return (
+      formData.agreement_title.trim().length > 0 &&
+      formData.position_title.trim().length > 0 &&
+      Number(formData.fixed_fee_percentage) >= 0 &&
+      Number(formData.residual_pay_percentage) >= 0 &&
+      Number(formData.termination_notice_days) > 0
+    );
+  }, [formData]);
 
-  const fetchAgreementsAndApplications = async () => { // Renamed function
-    try {
-      const agreementsData = await LiaisonAgreement.list('-created_date');
-      const applicationsData = await LiaisonApplication.list(); // Fetch all applications
-
-      const updatedAgreements = await Promise.all(
-        agreementsData.map(async (agreement) => {
-          if (agreement.agreement_url && agreement.agreement_url.includes('SignLiaisonAgreement')) {
-            const newUrl = agreement.agreement_url.replace('SignLiaisonAgreement', 'LiaisonAgreement');
-            try {
-              await LiaisonAgreement.update(agreement.id, { agreement_url: newUrl });
-              return { ...agreement, agreement_url: newUrl };
-            } catch (error) {
-              console.error(`Failed to update agreement URL for ${agreement.id}:`, error);
-              return agreement;
-            }
-          }
-          return agreement;
-        })
-      );
-      
-      setAgreements(updatedAgreements);
-      setApplications(applicationsData); // Set applications state
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
+  function onChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }
 
-  const resetForm = () => {
+  function resetForm() {
     setFormData({
-      agreement_title: 'Speedio Dealership Partnership Liaison Agreement',
-      position_title: 'Liaison Agent',
-      fixed_fee_percentage: 10,
-      residual_pay_percentage: 3,
-      agreement_start_date: new Date().toISOString().split('T')[0],
-      agreement_end_date: '',
-      termination_notice_days: 30,
-      admin_notes: ''
+      agreement_title: "Speedio Dealership Partnership Liaison Agreement",
+      position_title: "Liaison Agent",
+      fixed_fee_percentage: "10",
+      residual_pay_percentage: "3",
+      agreement_start_date: today,
+      agreement_end_date: "",
+      termination_notice_days: "30",
+      admin_notes: "",
     });
-  };
+  }
 
-  const handleCreateAgreement = async (e) => {
+  async function handleCreateAgreement(e: React.FormEvent) {
     e.preventDefault();
+    if (!canCreate) return;
+
     setIsSubmitting(true);
-
     try {
-      const currentUser = await base44.auth.me();
-      
-      const newAgreement = await LiaisonAgreement.create({
-        ...formData,
-        created_by_admin_id: currentUser.id,
-        status: 'pending_signature'
-      });
+      const id = makeId("lia");
+      const created: LiaisonAgreement = {
+        id,
+        agreement_title: formData.agreement_title.trim(),
+        position_title: formData.position_title.trim(),
+        fixed_fee_percentage: Number(formData.fixed_fee_percentage) || 0,
+        residual_pay_percentage: Number(formData.residual_pay_percentage) || 0,
+        agreement_start_date: formData.agreement_start_date || null,
+        agreement_end_date: formData.agreement_end_date || null,
+        termination_notice_days: Number(formData.termination_notice_days) || 30,
+        admin_notes: formData.admin_notes.trim() || null,
+        status: "pending_signature",
+        agreement_url: `/LiaisonAgreement?id=${id}`,
+        created_date: new Date().toISOString(),
+        application_id: null,
+      };
 
-      const signingUrl = createPageUrl(`LiaisonAgreement?id=${newAgreement.id}`);
-
-      await LiaisonAgreement.update(newAgreement.id, {
-        agreement_url: signingUrl
-      });
-
-      await fetchAgreementsAndApplications(); // Refetch all data after creation
+      setAgreements((prev) => [created, ...prev]);
       setShowCreateModal(false);
       resetForm();
-      alert('Agreement created successfully! Share the link with potential liaisons.');
-    } catch (error) {
-      console.error('Failed to create agreement:', error);
-      alert('Failed to create agreement. Please try again.');
+
+      toast({
+        title: "Agreement created ",
+        description: "Share the link ",
+      });
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
-  const copyAgreementLink = (agreement) => {
-    const fullUrl = `https://speedio.app${createPageUrl(`LiaisonAgreement?id=${agreement.id}`)}`;
-    navigator.clipboard.writeText(fullUrl);
-    alert('Agreement link copied to clipboard!');
-  };
+  async function copyAgreementLink(a: LiaisonAgreement) {
+    const href = `/LiaisonAgreement?id=${a.id}`;
+    const fullUrl = `${window.location.origin}${href}`;
+    await navigator.clipboard.writeText(fullUrl);
+    toast({ title: "Copied", description: "Agreement link copied." });
+  }
 
-  const handleDownloadPDF = async (agreement) => {
+  async function handleDownloadPDF(a: LiaisonAgreement) {
+    setIsSubmitting(true);
     try {
-      const response = await invokeFunction<{ url?: string }>('generateLiaisonAgreementPDF', {
-        agreementId: agreement.id
+      toast({
+        title: "Download PDF ",
+        description: "PDF generation wiring pending.",
       });
-      
-      if (response?.url) {
-        window.open(response.url, "_blank", "noopener,noreferrer");
-        return;
-      }
-      alert("PDF generation is not configured yet.");
-    } catch (error) {
-      console.error('Failed to download PDF:', error);
-      alert('Failed to download PDF. Please try again.');
-    }
-  };
-
-  const viewApplication = async (applicationId) => {
-    try {
-      // Use the already fetched applications list first, then fall back to API if not found
-      const appFromState = applications.find(app => app.id === applicationId);
-      let foundApplication = appFromState;
-
-      if (!foundApplication) {
-        const apps = await LiaisonApplication.filter({ id: applicationId });
-        if (apps && apps.length > 0) {
-          foundApplication = apps[0];
-          // Optionally update applications state if a new one was fetched
-          setApplications(prev => {
-            if (!prev.some(app => app.id === foundApplication.id)) {
-              return [...prev, foundApplication];
-            }
-            return prev;
-          });
-        }
-      }
-
-      if (foundApplication) {
-        const associatedAgreement = agreements.find(ag => ag.application_id === applicationId);
-        if (associatedAgreement) {
-          setSelectedAgreement({ ...associatedAgreement, application: foundApplication });
-        } else {
-          console.warn('Associated agreement not found for application ID:', applicationId);
-          alert('Associated agreement not found for this application.');
-        }
-      } else {
-        alert('Application details not found.');
-      }
-    } catch (error) {
-      console.error('Failed to load application:', error);
-      alert('Failed to load application details.');
-    }
-  };
-
-  const handleSendApplicationEmail = async (agreement) => {
-    try {
-      setIsSubmitting(true);
-      
-      // Fetch the application
-      if (!agreement.application_id) {
-        alert('No application found for this agreement.');
-        return;
-      }
-
-      const application = await LiaisonApplication.get(agreement.application_id);
-      
-      if (!application) {
-        alert('Application not found.');
-        return;
-      }
-
-      // Generate the correct URL - always use LiaisonAgreement page
-      const viewUrl = `https://speedio.app/LiaisonAgreement?id=${agreement.id}`;
-      
-      await invokeFunction('sendEmail', {
-        to: application.email,
-        subject: 'Your Speedio Liaison Agreement & Application',
-        fromName: 'Speedio Team',
-        fromAddress: 'hello@speedio.app',
-        html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);">
-              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png" alt="Speedio" style="width: 140px; filter: brightness(0) invert(1);">
-            </div>
-            
-            <div style="padding: 30px; background: #ffffff;">
-              <h2 style="color: #1e293b; margin-bottom: 20px;">Your Liaison Agreement & Application</h2>
-              
-              <p style="color: #475569; margin-bottom: 20px;">
-                Hello ${application.full_name},
-              </p>
-              
-              <p style="color: #475569; margin-bottom: 20px;">
-                Thank you for your interest in becoming a Speedio Liaison Agent. This email contains a summary of your agreement and application.
-              </p>
-              
-              <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #1e293b; margin-top: 0;">Agreement Details:</h3>
-                <p style="margin: 8px 0;"><strong>Position:</strong> ${agreement.position_title}</p>
-                <p style="margin: 8px 0;"><strong>Fixed Fee:</strong> ${agreement.fixed_fee_percentage}% of service fee</p>
-                <p style="margin: 8px 0;"><strong>Residual Pay:</strong> ${agreement.residual_pay_percentage}% for subsequent sales</p>
-                <p style="margin: 8px 0;"><strong>Status:</strong> ${agreement.status.replace('_', ' ').toUpperCase()}</p>
-              </div>
-              
-              <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="color: #1e293b; margin-top: 0;">Your Application:</h3>
-                <p style="margin: 8px 0;"><strong>Name:</strong> ${application.full_name}</p>
-                <p style="margin: 8px 0;"><strong>Email:</strong> ${application.email}</p>
-                <p style="margin: 8px 0;"><strong>Phone:</strong> ${application.phone}</p>
-                <p style="margin: 8px 0;"><strong>Language Proficiency:</strong> ${application.language_proficiency}</p>
-                <p style="margin: 8px 0;"><strong>Application Status:</strong> ${application.status.replace('_', ' ').toUpperCase()}</p>
-              </div>
-              
-              <p style="color: #475569; margin-bottom: 20px;">
-                You can view your agreement and application at any time by clicking the button below:
-              </p>
-              
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${viewUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                  View Agreement
-                </a>
-              </div>
-              
-              <p style="color: #475569; margin-top: 30px;">
-                If you have any questions, please don't hesitate to reach out.
-              </p>
-              
-              <p style="color: #475569; margin-top: 20px;">
-                Best regards,<br>
-                <strong>The Speedio Team</strong>
-              </p>
-            </div>
-            
-            <div style="padding: 20px; background: #f1f5f9; text-align: center; color: #64748b; font-size: 14px;">
-              <p style="margin: 0;">© 2025 Speedio. All rights reserved.</p>
-            </div>
-          </div>
-        `
-      });
-
-      alert('Application email sent successfully!');
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      alert('Failed to send email. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
-  const handleDelete = async (agreementId) => {
-    if (window.confirm('Are you sure you want to delete this agreement? This action cannot be undone.')) {
-      try {
-        await LiaisonAgreement.delete(agreementId);
-        await fetchAgreementsAndApplications(); // Use the combined fetch function
-        alert('Agreement deleted successfully!');
-      } catch (error) {
-        console.error('Failed to delete agreement:', error);
-        alert('Failed to delete agreement. Please try again.');
-      }
+  function viewApplication(applicationId: string) {
+    const app = applications.find((x) => x.id === applicationId);
+    const ag = agreements.find((x) => x.application_id === applicationId);
+
+    if (!app) {
+      toast({ title: "Not found", description: "Application details missing." });
+      return;
     }
-  };
+    if (!ag) {
+      toast({
+        title: "Not found",
+        description: "Associated agreement not found for this application.",
+      });
+      return;
+    }
+
+    setSelected({ agreement: ag, application: app });
+  }
+
+  async function handleSendApplicationEmail(a: LiaisonAgreement) {
+    setIsSubmitting(true);
+    try {
+      toast({
+        title: "Send email",
+        description: "Would email the liaison the agreement + application summary.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const ok = window.confirm(
+      "Are you sure you want to delete this agreement? This action cannot be undone.",
+    );
+    if (!ok) return;
+
+    setIsSubmitting(true);
+    try {
+      setAgreements((prev) => prev.filter((x) => x.id !== id));
+      toast({ title: "Deleted", description: "Removed locally." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -317,8 +317,11 @@ export default function LiaisonAgreementManager() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Liaison Agreements</h2>
-          <p className="text-slate-600">Manage partnership agreements with dealership liaisons</p>
+          <p className="text-slate-600">
+            Manage partnership agreements with dealership liaisons
+          </p>
         </div>
+
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
@@ -326,10 +329,12 @@ export default function LiaisonAgreementManager() {
               Create Agreement
             </Button>
           </DialogTrigger>
+
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Liaison Agreement</DialogTitle>
             </DialogHeader>
+
             <form onSubmit={handleCreateAgreement} className="space-y-4">
               <div className="space-y-4">
                 <div>
@@ -338,18 +343,20 @@ export default function LiaisonAgreementManager() {
                     id="agreement_title"
                     name="agreement_title"
                     value={formData.agreement_title}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                   />
                 </div>
+
                 <div>
                   <Label htmlFor="position_title">Position Title</Label>
                   <Input
                     id="position_title"
                     name="position_title"
                     value={formData.position_title}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="fixed_fee_percentage">Fixed Fee Percentage (%)</Label>
@@ -358,20 +365,24 @@ export default function LiaisonAgreementManager() {
                       name="fixed_fee_percentage"
                       type="number"
                       value={formData.fixed_fee_percentage}
-                      onChange={handleInputChange}
+                      onChange={onChange}
                     />
                   </div>
+
                   <div>
-                    <Label htmlFor="residual_pay_percentage">Residual Pay Percentage (%)</Label>
+                    <Label htmlFor="residual_pay_percentage">
+                      Residual Pay Percentage (%)
+                    </Label>
                     <Input
                       id="residual_pay_percentage"
                       name="residual_pay_percentage"
                       type="number"
                       value={formData.residual_pay_percentage}
-                      onChange={handleInputChange}
+                      onChange={onChange}
                     />
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="agreement_start_date">Agreement Start Date</Label>
@@ -380,9 +391,10 @@ export default function LiaisonAgreementManager() {
                       name="agreement_start_date"
                       type="date"
                       value={formData.agreement_start_date}
-                      onChange={handleInputChange}
+                      onChange={onChange}
                     />
                   </div>
+
                   <div>
                     <Label htmlFor="agreement_end_date">Agreement End Date</Label>
                     <Input
@@ -390,10 +402,11 @@ export default function LiaisonAgreementManager() {
                       name="agreement_end_date"
                       type="date"
                       value={formData.agreement_end_date}
-                      onChange={handleInputChange}
+                      onChange={onChange}
                     />
                   </div>
                 </div>
+
                 <div>
                   <Label htmlFor="termination_notice_days">Termination Notice (Days)</Label>
                   <Input
@@ -401,32 +414,34 @@ export default function LiaisonAgreementManager() {
                     name="termination_notice_days"
                     type="number"
                     value={formData.termination_notice_days}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                   />
                 </div>
+
                 <div>
                   <Label htmlFor="admin_notes">Admin Notes</Label>
                   <Textarea
                     id="admin_notes"
                     name="admin_notes"
                     value={formData.admin_notes}
-                    onChange={handleInputChange}
+                    onChange={onChange}
                     rows={3}
                   />
                 </div>
               </div>
+
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={!canCreate || isSubmitting}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating...
                     </>
                   ) : (
-                    'Create Agreement'
+                    "Create Agreement"
                   )}
                 </Button>
               </div>
@@ -445,31 +460,24 @@ export default function LiaisonAgreementManager() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {agreements.map((agreement) => {
-            const associatedApplication = applications.find(app => app.id === agreement.application_id);
-            
+          {agreements.map((a) => {
+            const associatedApplication = a.application_id
+              ? applications.find((x) => x.id === a.application_id)
+              : undefined;
+
             return (
-              <Card key={agreement.id} className="hover:shadow-lg transition-all duration-200">
+              <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-slate-800">{agreement.position_title}</h3>
+                      <h3 className="font-semibold text-lg text-slate-800">{a.position_title}</h3>
                       <p className="text-sm text-slate-600 mt-1">
-                        Fixed Fee: {agreement.fixed_fee_percentage}% | Residual: {agreement.residual_pay_percentage}%
+                        Fixed Fee: {a.fixed_fee_percentage}% | Residual: {a.residual_pay_percentage}%
                       </p>
                     </div>
-                    <Badge
-                      className={
-                        agreement.status === 'signed'
-                          ? 'bg-green-100 text-green-800'
-                          : agreement.status === 'pending_signature'
-                          ? 'bg-amber-100 text-amber-800'
-                          : agreement.status === 'terminated'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-slate-100 text-slate-800'
-                      }
-                    >
-                      {agreement.status.replace('_', ' ').toUpperCase()}
+
+                    <Badge className={badgeClass(a.status)}>
+                      {a.status.replace("_", " ").toUpperCase()}
                     </Badge>
                   </div>
 
@@ -477,59 +485,57 @@ export default function LiaisonAgreementManager() {
                     <div>
                       <span className="text-slate-500">Start Date:</span>
                       <p className="text-slate-700">
-                        {agreement.agreement_start_date
-                          ? format(new Date(agreement.agreement_start_date), 'MMM d, yyyy')
-                          : 'Not set'}
+                        {a.agreement_start_date
+                          ? format(new Date(a.agreement_start_date), "MMM d, yyyy")
+                          : "Not set"}
                       </p>
                     </div>
+
                     <div>
                       <span className="text-slate-500">Created:</span>
-                      <p className="text-slate-700">{format(new Date(agreement.created_date), 'MMM d, yyyy')}</p>
+                      <p className="text-slate-700">
+                        {format(new Date(a.created_date), "MMM d, yyyy")}
+                      </p>
                     </div>
-                    {agreement.application_id && (
+
+                    {a.application_id ? (
                       <div className="col-span-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => viewApplication(agreement.application_id)}
+                          onClick={() => viewApplication(a.application_id as string)}
                           className="w-full"
                         >
                           <UserCheck className="w-4 h-4 mr-2" />
                           View Submitted Application
                         </Button>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {agreement.agreement_url && (
+                    {a.agreement_url ? (
                       <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyAgreementLink(agreement)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => copyAgreementLink(a)}>
                           <Copy className="w-4 h-4 mr-2" />
                           Copy Link
                         </Button>
-                        <Link to={createPageUrl(`LiaisonAgreement?id=${agreement.id}`)}>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                          >
+
+                        <Link href={`/ViewLiaisonAgreement/${a.id}`}>
+                          <Button size="sm" variant="outline">
                             <Eye className="w-4 h-4 mr-2" />
                             View Agreement
                           </Button>
                         </Link>
                       </>
-                    )}
-                    
-                    {agreement.status === 'signed' && agreement.application_id && associatedApplication && (
+                    ) : null}
+
+                    {a.status === "signed" && a.application_id && associatedApplication ? (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleSendApplicationEmail(agreement)}
-                        disabled={isSubmitting} // Use the general isSubmitting state
+                        onClick={() => handleSendApplicationEmail(a)}
+                        disabled={isSubmitting}
                       >
                         {isSubmitting ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -538,24 +544,21 @@ export default function LiaisonAgreementManager() {
                         )}
                         Send Email
                       </Button>
-                    )}
+                    ) : null}
 
-                    {agreement.status === 'signed' && (
+                    {a.status === "signed" ? (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDownloadPDF(agreement)}
+                        onClick={() => handleDownloadPDF(a)}
+                        disabled={isSubmitting}
                       >
                         <Download className="w-4 h-4 mr-2" />
                         Download PDF
                       </Button>
-                    )}
+                    ) : null}
 
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDelete(agreement.id)}
-                    >
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)}>
                       <XCircle className="w-4 h-4 mr-2" />
                       Delete
                     </Button>
@@ -567,79 +570,96 @@ export default function LiaisonAgreementManager() {
         </div>
       )}
 
-      {selectedAgreement && selectedAgreement.application && (
-        <Dialog open={!!selectedAgreement} onOpenChange={() => setSelectedAgreement(null)}>
+      {selected ? (
+        <Dialog open={true} onOpenChange={() => setSelected(null)}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Liaison Application Details</DialogTitle>
             </DialogHeader>
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-slate-600">Full Name</Label>
-                  <p className="font-medium">{selectedAgreement.application.full_name}</p>
+                  <p className="font-medium">{selected.application.full_name}</p>
                 </div>
                 <div>
                   <Label className="text-slate-600">Email</Label>
-                  <p className="font-medium">{selectedAgreement.application.email}</p>
+                  <p className="font-medium">{selected.application.email}</p>
                 </div>
                 <div>
                   <Label className="text-slate-600">Phone</Label>
-                  <p className="font-medium">{selectedAgreement.application.phone}</p>
+                  <p className="font-medium">{selected.application.phone}</p>
                 </div>
                 <div>
                   <Label className="text-slate-600">Language Proficiency</Label>
-                  <p className="font-medium">{selectedAgreement.application.language_proficiency?.replace('_', ' ')}</p>
+                  <p className="font-medium">
+                    {(selected.application.language_proficiency ?? "").replaceAll("_", " ")}
+                  </p>
                 </div>
               </div>
-              {selectedAgreement.application.address && (
+
+              {selected.application.address ? (
                 <div>
                   <Label className="text-slate-600">Address</Label>
-                  <p className="font-medium">{selectedAgreement.application.address}</p>
+                  <p className="font-medium">{selected.application.address}</p>
                 </div>
-              )}
-              {selectedAgreement.application.previous_experience && (
+              ) : null}
+
+              {selected.application.previous_experience ? (
                 <div>
                   <Label className="text-slate-600">Previous Experience</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.previous_experience}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.previous_experience}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.automotive_knowledge && (
+              ) : null}
+
+              {selected.application.automotive_knowledge ? (
                 <div>
                   <Label className="text-slate-600">Automotive Knowledge</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.automotive_knowledge}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.automotive_knowledge}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.availability && (
+              ) : null}
+
+              {selected.application.availability ? (
                 <div>
                   <Label className="text-slate-600">Availability</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.availability}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.availability}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.motivation && (
+              ) : null}
+
+              {selected.application.motivation ? (
                 <div>
                   <Label className="text-slate-600">Motivation</Label>
-                  <p className="text-slate-700 whitespace-pre-wrap">{selectedAgreement.application.motivation}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">
+                    {selected.application.motivation}
+                  </p>
                 </div>
-              )}
-              {selectedAgreement.application.resume_url && (
+              ) : null}
+
+              {selected.application.resume_url ? (
                 <div>
                   <Label className="text-slate-600">Resume/CV</Label>
                   <a
-                    href={selectedAgreement.application.resume_url}
+                    href={selected.application.resume_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline flex items-center gap-2"
                   >
-                    <FileText className="w-4 h-4" />
+                    <UserCheck className="w-4 h-4" />
                     View Resume
                   </a>
                 </div>
-              )}
+              ) : null}
             </div>
           </DialogContent>
         </Dialog>
-      )}
+      ) : null}
     </div>
   );
 }

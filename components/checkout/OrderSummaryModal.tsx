@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { X, ShoppingCart, ArrowRight, Minus, Plus, Tag, Check, AlertCircle } from 'lucide-react';
 
-export default function OrderSummaryModal({ plan, onClose }) {
+export default function OrderSummaryModal({ plan, onClose }: { plan: any, onClose: () => void }) {
   const [quantity, setQuantity] = useState(1);
   const [promoCode, setPromoCode] = useState('');
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);

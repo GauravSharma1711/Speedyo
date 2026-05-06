@@ -68,8 +68,6 @@ export default function DealershipManagedSales() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with your real API call (email + CRM logging)
-      // await fetch("/api/dealership-managed-sales", { ... })
       console.log("[dealership-managed-sales] submitting (dummy):", formData);
       await new Promise((r) => setTimeout(r, 900));
 

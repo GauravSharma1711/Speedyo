@@ -1,319 +1,349 @@
-"use client"
-import React, { useState, useEffect } from "react";
-import { VehicleInspectionChecklist, ManagedSaleRequest } from "@/entities/all";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClipboardCheck, Plus, Eye, Trash2, Loader2, Link as LinkIcon } from "lucide-react";
+"use client";
+
+import React, { useMemo, useState } from "react";
 import { format } from "date-fns";
-import VehicleInspectionChecklistModal from "./VehicleInspectionChecklistModal";
-import { useToast } from "@/components/ui/use-toast";
+import { Eye, Plus, Trash2, Link as LinkIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Badge } from "@/components/ui/Badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/Table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/Dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/Select";
 
-export default function InspectionChecklistManagement() {
-  const [checklists, setChecklists] = useState([]);
-  const [managedSaleRequests, setManagedSaleRequests] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showChecklistModal, setShowChecklistModal] = useState(false);
-  const [selectedChecklist, setSelectedChecklist] = useState(null);
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [checklistToLink, setChecklistToLink] = useState(null);
-  const [selectedMSRId, setSelectedMSRId] = useState("");
-  const { toast } = useToast();
+import VehicleInspectionChecklistModalUI, {
+    VehicleInspectionChecklistData,
+} from "@/components/admin/VehicleInspectionChecklistModal";
 
-  useEffect(() => {
-    loadData();
-  }, []);
+type ChecklistRow = VehicleInspectionChecklistData & {
+    id: string;
+    createdAt: string; // ISO
+    linkedMSR: boolean;
+};
+type ManagedSaleRequestRow = { id: string; title: string };
+const managedSaleRequests: ManagedSaleRequestRow[] = [
+    { id: "msr_001", title: "2011 Daihatsu Move" },
+    { id: "msr_002", title: "2012 Suzuki Solio" },
+];
+const MOCK: ChecklistRow[] = [
+    {
+        id: "chk_001",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
+        linkedMSR: true,
+        managed_sale_request_id: "msr_001",
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [checklistsData, msrData] = await Promise.all([
-        VehicleInspectionChecklist.list("-created_date", 100),
-        ManagedSaleRequest.list("-created_date", 100)
-      ]);
-      setChecklists(checklistsData);
-      setManagedSaleRequests(msrData);
-    } catch (error) {
-      console.error("Failed to load checklists:", error);
-      toast({
-        title: "Loading Failed",
-        description: "Could not load inspection checklists.",
-        variant: "destructive",
-      });
-    }
-    setIsLoading(false);
-  };
+        date_of_inspection: "2025-11-05",
+        inspector_name: "Kevin Phillips",
+        dealership_name: "Taka Cars",
+        warranty: "",
+        repair_service_details: "",
+        vehicle_info: {
+            make: "Daihatsu",
+            model: "Move",
+            year: 2011,
+            vin: "L465S-0018288",
+            mileage: 0,
+            license_plate: "",
+            transmission: "automatic",
+            fuel_type: "gasoline",
+            drivetrain: "fwd",
+        },
+        exterior_condition: [],
+        interior_condition: [],
+        engine_mechanical: [],
+        documentation: [],
+        photos_media: [],
+        overall_condition: "",
+        recommended_sale_price: "",
+        verified_by_speedio: "",
+        dealership_representative: "",
+        inspection_notes: "",
+    },
+];
 
-  const handleCreateNew = () => {
-    setSelectedChecklist(null);
-    setShowChecklistModal(true);
-  };
+function newId() {
+    return `chk_${Math.random().toString(16).slice(2, 10)}`;
+}
 
-  const handleView = (checklist) => {
-    setSelectedChecklist(checklist);
-    setShowChecklistModal(true);
-  };
+export default function InspectionChecklistManagementUI() {
+    const [query, setQuery] = useState("");
+    const [rows, setRows] = useState<ChecklistRow[]>(MOCK);
 
-  const handleDelete = async (checklistId) => {
-    if (window.confirm("Are you sure you want to delete this checklist?")) {
-      try {
-        await VehicleInspectionChecklist.delete(checklistId);
-        toast({
-          title: "Checklist Deleted",
-          description: "Inspection checklist has been deleted.",
-          variant: "success",
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editing, setEditing] = useState<ChecklistRow | null>(null);
+    const [showLinkModal, setShowLinkModal] = useState(false);
+    const [checklistToLink, setChecklistToLink] = useState<ChecklistRow | null>(null);
+    const [selectedMSRId, setSelectedMSRId] = useState<string>("");
+
+    const openLink = (row: ChecklistRow) => {
+        setChecklistToLink(row);
+        setSelectedMSRId(row.managed_sale_request_id ?? "");
+        setShowLinkModal(true);
+    };
+
+
+    const saveLink = () => {
+        if (!checklistToLink) return;
+        setRows((prev) =>
+            prev.map((r) =>
+                r.id === checklistToLink.id
+                    ? {
+                        ...r,
+                        managed_sale_request_id: selectedMSRId || "",
+                        linkedMSR: Boolean(selectedMSRId),
+                    }
+                    : r,
+            ),
+        );
+        setShowLinkModal(false);
+        setChecklistToLink(null);
+        setSelectedMSRId("");
+    };
+
+    const filtered = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (!q) return rows;
+
+        return rows.filter((r) => {
+            const vehicle = `${r.vehicle_info.year} ${r.vehicle_info.make} ${r.vehicle_info.model}`.toLowerCase();
+            return (
+                vehicle.includes(q) ||
+                (r.dealership_name ?? "").toLowerCase().includes(q) ||
+                (r.vehicle_info.vin ?? "").toLowerCase().includes(q) ||
+                (r.inspector_name ?? "").toLowerCase().includes(q)
+            );
         });
-        loadData();
-      } catch (error) {
-        console.error("Failed to delete checklist:", error);
-        toast({
-          title: "Delete Failed",
-          description: "Could not delete the checklist.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
+    }, [rows, query]);
 
-  const handleLinkToMSR = (checklist) => {
-    setChecklistToLink(checklist);
-    setSelectedMSRId(checklist.managed_sale_request_id || "");
-    setShowLinkModal(true);
-  };
+    const openCreate = () => {
+        setEditing(null);
+        setModalOpen(true);
+    };
 
-  const handleSaveLink = async () => {
-    if (!checklistToLink || !selectedMSRId) return;
+    const openEdit = (row: ChecklistRow) => {
+        setEditing(row);
+        setModalOpen(true);
+    };
 
-    try {
-      await VehicleInspectionChecklist.update(checklistToLink.id, {
-        managed_sale_request_id: selectedMSRId
-      });
+    const removeRow = (id: string) => {
+        if (!window.confirm("Delete this checklist?")) return;
+        setRows((prev) => prev.filter((r) => r.id !== id));
+    };
 
-      toast({
-        title: "Link Updated",
-        description: "Checklist has been linked to the managed sale request.",
-        variant: "success",
-      });
+    const handleSave = (data: VehicleInspectionChecklistData) => {
+        if (editing) {
+            setRows((prev) =>
+                prev.map((r) => (r.id === editing.id ? { ...r, ...data } : r)),
+            );
+            return;
+        }
 
-      setShowLinkModal(false);
-      setChecklistToLink(null);
-      setSelectedMSRId("");
-      loadData();
-    } catch (error) {
-      console.error("Failed to link checklist:", error);
-      toast({
-        title: "Link Failed",
-        description: "Could not link the checklist to MSR.",
-        variant: "destructive",
-      });
-    }
-  };
+        const created: ChecklistRow = {
+            id: newId(),
+            createdAt: new Date().toISOString(),
+            linkedMSR: Boolean(data.managed_sale_request_id),
+            ...data,
+        };
 
-  const handleChecklistSave = () => {
-    toast({
-      title: "Checklist Saved",
-      description: "Vehicle inspection checklist has been saved successfully.",
-      variant: "success",
-    });
-    setShowChecklistModal(false);
-    setSelectedChecklist(null);
-    loadData();
-  };
+        setRows((prev) => [created, ...prev]);
+    };
 
-  const getLinkedMSR = (checklistId) => {
-    const checklist = checklists.find(c => c.id === checklistId);
-    if (!checklist || !checklist.managed_sale_request_id) return null;
-    return managedSaleRequests.find(msr => msr.id === checklist.managed_sale_request_id);
-  };
+    return (
+        <>
+            <Card className="bg-white shadow-md">
+                <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <CardTitle>Vehicle Inspection Checklists</CardTitle>
+                        <div className="text-sm text-slate-600">
+                            Review and manage inspection checklists
+                        </div>
+                    </div>
 
-  const filteredChecklists = checklists.filter(checklist =>
-    checklist.vehicle_info?.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    checklist.vehicle_info?.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    checklist.dealership_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    checklist.vehicle_info?.vin?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+                    <Button onClick={openCreate} className="md:self-end">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create New Checklist
+                    </Button>
+                </CardHeader>
 
-  return (
-    <div className="space-y-6">
-      <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardCheck className="w-5 h-5 text-blue-500" />
-              Vehicle Inspection Checklists
-            </CardTitle>
-            <Button onClick={handleCreateNew}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Checklist
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <Input
-              placeholder="Search by make, model, dealership, or VIN..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+                <CardContent>
+                    <div className="mb-4">
+                        <Input
+                            placeholder="Search by make, model, dealership, or VIN..."
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="border rounded-lg overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Vehicle</TableHead>
+                                    <TableHead>Dealership</TableHead>
+                                    <TableHead>Inspection Date</TableHead>
+                                    <TableHead>Inspector</TableHead>
+                                    <TableHead>Linked MSR</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+
+                            <TableBody>
+                                {filtered.map((r) => {
+                                    const linked = r.linkedMSR || Boolean(r.managed_sale_request_id);
+
+                                    return (
+                                        <TableRow key={r.id}>
+                                            <TableCell>
+                                                <div className="font-medium">
+                                                    {r.vehicle_info.year || "—"} {r.vehicle_info.make || "—"} {r.vehicle_info.model || "—"}
+                                                </div>
+                                                <div className="text-xs text-slate-500">
+                                                    VIN: {r.vehicle_info.vin || "—"}
+                                                </div>
+                                            </TableCell>
+
+                                            <TableCell>{r.dealership_name || "—"}</TableCell>
+
+                                            <TableCell>
+                                                {r.date_of_inspection
+                                                    ? format(new Date(r.date_of_inspection), "MMM d, yyyy")
+                                                    : "—"}
+                                            </TableCell>
+
+                                            <TableCell>{r.inspector_name || "—"}</TableCell>
+
+                                            <TableCell>
+                                                {linked ? (
+                                                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                                   Linked
+                                                 </Badge>
+                                                ) : (
+                                                    <Badge variant="outline">Unlinked</Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => openEdit(r)}
+                                                        title="View Checklist"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => openLink(r)}
+                                                        title="Link to MSR"
+                                                    >
+                                                        <LinkIcon className="w-4 h-4" />
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => removeRow(r.id)}
+                                                        className="text-red-500 hover:text-red-700"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+
+                                {filtered.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="py-10 text-center text-slate-500">
+                                            No checklists found.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : null}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <VehicleInspectionChecklistModalUI
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                managedSaleRequest={null}
+                existingChecklist={editing}
+                onSave={handleSave}
             />
-          </div>
 
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-slate-500" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Vehicle</TableHead>
-                  <TableHead>Dealership</TableHead>
-                  <TableHead>Inspection Date</TableHead>
-                  <TableHead>Inspector</TableHead>
-                  <TableHead>Linked MSR</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredChecklists.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-slate-500">
-                      No checklists found. Create your first inspection checklist.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredChecklists.map((checklist) => {
-                    const linkedMSR = getLinkedMSR(checklist.id);
-                    return (
-                      <TableRow key={checklist.id}>
-                        <TableCell>
-                          <div className="font-medium">
-                            {checklist.vehicle_info?.year} {checklist.vehicle_info?.make} {checklist.vehicle_info?.model}
-                          </div>
-                          {checklist.vehicle_info?.vin && (
-                            <div className="text-xs text-slate-500">VIN: {checklist.vehicle_info.vin}</div>
-                          )}
-                        </TableCell>
-                        <TableCell>{checklist.dealership_name || 'N/A'}</TableCell>
-                        <TableCell>
-                          {checklist.date_of_inspection ? format(new Date(checklist.date_of_inspection), 'MMM d, yyyy') : 'N/A'}
-                        </TableCell>
-                        <TableCell>{checklist.inspector_name}</TableCell>
-                        <TableCell>
-                          {linkedMSR ? (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              Linked
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-slate-50 text-slate-600">
-                              Unlinked
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleView(checklist)}
-                              title="View Checklist"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleLinkToMSR(checklist)}
-                              title="Link to MSR"
-                            >
-                              <LinkIcon className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(checklist.id)}
-                              className="text-red-500 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+            <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Link Checklist to Managed Sale Request</DialogTitle>
+                    </DialogHeader>
 
-      {/* Checklist Modal */}
-      {showChecklistModal && (
-        <VehicleInspectionChecklistModal
-          isOpen={showChecklistModal}
-          onClose={() => {
-            setShowChecklistModal(false);
-            setSelectedChecklist(null);
-          }}
-          managedSaleRequest={null}
-          existingChecklist={selectedChecklist}
-          onSave={handleChecklistSave}
-        />
-      )}
+                    <div className="space-y-4">
+                        <div>
+                            <p className="text-sm text-slate-600 mb-2">
+                                Select a managed sale request to link this checklist to:
+                            </p>
 
-      {/* Link to MSR Modal */}
-      <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Link Checklist to Managed Sale Request</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-slate-600 mb-2">
-                Select a managed sale request to link this checklist to:
-              </p>
-              <Select value={selectedMSRId} onValueChange={setSelectedMSRId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select managed sale request" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>None (Unlink)</SelectItem>
-                  {managedSaleRequests.map((msr) => (
-                    <SelectItem key={msr.id} value={msr.id}>
-                      {msr.vehicle_details.title} - {msr.vehicle_details.make} {msr.vehicle_details.model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowLinkModal(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveLink}>
-                Save Link
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+                            <Select
+                                value={selectedMSRId || "__none__"}
+                                onValueChange={(v) => setSelectedMSRId(v === "__none__" ? "" : v)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select managed sale request" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    <SelectItem value="__none__">None (Unlink)</SelectItem>
+                                    {managedSaleRequests.map((msr) => (
+                                        <SelectItem key={msr.id} value={msr.id}>
+                                            {msr.title}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowLinkModal(false);
+                                    setChecklistToLink(null);
+                                    setSelectedMSRId("");
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button onClick={saveLink} disabled={!checklistToLink}>
+                                Save Link
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
 }

@@ -13,21 +13,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: st
 
     const { postId } = await ctx.params;
 
-    const post = await prisma.post.findUnique({
-      where: { id: postId },
-      select: {
-        id: true,
-        likes: true,
-        user_reactions: true,
-        reactions: true,
-        authorId: true,
-      },
-    });
-
-    if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
-    }
-
     const userId = session.user.id;
     const userEmail = session.user.email;
 
@@ -36,30 +21,46 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: st
     }
 
     type UserReaction = { user_email: string; reaction: string };
-    const userReactions = post.user_reactions as UserReaction[];
+    const result = await prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<Array<{ reactions: unknown; user_reactions: unknown; author_id: string }>>`
+        SELECT reactions, user_reactions, author_id
+        FROM posts
+        WHERE id = ${postId}
+        FOR UPDATE
+      `;
 
-    const alreadyLiked = userReactions.some(
-      (r) => r.user_email === userEmail && r.reaction === "like"
-    );
+      const row = rows[0];
+      if (!row) {
+        throw Object.assign(new Error("Post not found"), { code: "POST_NOT_FOUND" });
+      }
 
-    let updatedLikes: number;
-    let updatedUserReactions: UserReaction[];
+      const updatedReactions = { ...(row.reactions as Record<string, number> | null | undefined) } as Record<
+        string,
+        number
+      >;
+      const updatedUserReactions = [
+        ...((row.user_reactions as UserReaction[] | null | undefined) ?? []),
+      ] as UserReaction[];
 
-    if (alreadyLiked) {
-      updatedLikes = Math.max(0, post.likes - 1);
-      updatedUserReactions = userReactions.filter(
-        (r) => !(r.user_email === userEmail && r.reaction === "like")
-      );
-    } else {
-      updatedLikes = post.likes + 1;
-      updatedUserReactions = [...userReactions, { user_email: userEmail, reaction: "like" }];
-    }
+      const existingIdx = updatedUserReactions.findIndex((r) => r.user_email === userEmail);
+      const previousReaction = existingIdx > -1 ? updatedUserReactions[existingIdx].reaction : null;
 
-    const [updatedPost] = await prisma.$transaction([
-      prisma.post.update({
+      if (existingIdx > -1 && previousReaction) {
+        updatedReactions[previousReaction] = Math.max(0, (updatedReactions[previousReaction] || 0) - 1);
+        updatedUserReactions.splice(existingIdx, 1);
+      }
+
+      const willLike = previousReaction !== "like";
+      if (willLike) {
+        updatedReactions.like = (updatedReactions.like || 0) + 1;
+        updatedUserReactions.push({ user_email: userEmail, reaction: "like" });
+      }
+
+      const updatedPost = await tx.post.update({
         where: { id: postId },
         data: {
-          likes: updatedLikes,
+          likes: updatedReactions.like ?? 0,
+          reactions: updatedReactions,
           user_reactions: updatedUserReactions,
         },
         select: {
@@ -69,32 +70,40 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: st
           reactions: true,
           authorId: true,
         },
-      }),
+      });
 
-      ...(post.authorId && post.authorId !== userId
-        ? [
-            prisma.notification.create({
-              data: {
-                recipientId: post.authorId,
-                senderId: userId,
-                type: "post_like",
-                content: `${session.user.full_name ?? "Someone"} liked your post`,
-                url: `/feed`,
-                icon: "Heart",
-                read: false,
-              },
-            }),
-          ]
-        : []),
-    ]);
+      if (willLike && row.author_id && row.author_id !== userId) {
+        await tx.notification.create({
+          data: {
+            recipientId: row.author_id,
+            senderId: userId,
+            type: "post_like",
+            content: `${session.user.full_name ?? "Someone"} liked your post`,
+            url: `/feed`,
+            icon: "Heart",
+            read: false,
+          },
+        });
+      }
+
+      return { updatedPost, willLike };
+    });
 
     return NextResponse.json({
       success: true,
-      liked: !alreadyLiked,
-      likes: updatedPost.likes,
-      user_reactions: updatedPost.user_reactions,
+      liked: result.willLike,
+      likes: result.updatedPost.likes,
+      user_reactions: result.updatedPost.user_reactions,
     });
   } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "POST_NOT_FOUND"
+    ) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
     const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
     if (code === "P2025") {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });

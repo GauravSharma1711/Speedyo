@@ -509,7 +509,7 @@ export default function GuestDashboard({ user }) {
                 <strong>Application Declined:</strong> {user.admin_verification_notes || "Please review your information and try again."}
               </span>
             </div>
-           <Link href="/dealership-registration">
+           <Link href="/DealershipRegistration">
               <Button variant="destructive_outline" size="sm">Resubmit Application</Button>
             </Link>
           </AlertDescription>

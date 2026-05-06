@@ -1,238 +1,313 @@
-"use client"
-import React, { useState, useEffect } from "react";
-import { Vehicle, PublicUser, Notification, User } from "@/entities/all";
-import { DealershipVehicleAgreement } from '@/entities/DealershipVehicleAgreement';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Car, Star, Calendar, DollarSign, Building, XCircle, CheckCircle } from "lucide-react";
-import CreateVehicleModal from "../dashboard/CreateVehicleModal";
-import AdminAvailabilityManager from "./AdminAvailabilityManager";
-import { createPageUrl } from "@/utils";
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Building,
+  Calendar,
+  Car,
+  CheckCircle,
+  DollarSign,
+  Edit,
+  Star,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Label } from "@/components/ui/Label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
-} from
-"@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+  DialogTitle,
+} from "@/components/ui/Dialog";
+import { Textarea } from "@/components/ui/TextArea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from
-"@/components/ui/select";
+  SelectValue,
+} from "@/components/ui/Select";
+import CreateVehicleModalUI from "../dashboard/CreateVehicleModalUI";
 
-export default function ListingManagement({ initialEditVehicleId }) {
-  const [vehicles, setVehicles] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+type VehicleStatus = "available" | "sold";
+
+type DayOfWeek =
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday"
+  | "Sunday";
+
+type AvailabilitySlot = {
+  id: string;
+  dayOfWeek: DayOfWeek;
+  startTime: string; // "09:00"
+  endTime: string; // "18:00"
+  meetingAddress: string;
+};
+
+type VehicleRow = {
+  id: string;
+  title: string;
+  year: number;
+  make: string;
+  model: string;
+  price: number;
+
+  status: VehicleStatus;
+  featured: boolean;
+
+  website_managed: boolean;
+  created_by: string;
+
+  primary_image_small?: string | null;
+  primary_image?: string | null;
+
+  recurring_availability?: AvailabilitySlot[];
+
+  dealership_name?: string | null;
+  dealership_agreement_id?: string | null;
+};
+
+type DealershipAgreementLite = {
+  id: string;
+  dealership_name: string;
+  status: "signed";
+};
+
+const MOCK_DEALERSHIPS: DealershipAgreementLite[] = [
+  { id: "d_001", dealership_name: "Taka Cars", status: "signed" },
+  { id: "d_002", dealership_name: "Ok Motors", status: "signed" },
+];
+
+function makeSlot(): AvailabilitySlot {
+  return {
+    id: `slot_${Math.random().toString(16).slice(2, 10)}`,
+    dayOfWeek: "Monday",
+    startTime: "09:00",
+    endTime: "18:00",
+    meetingAddress: "",
+  };
+}
+
+const MOCK_VEHICLES: VehicleRow[] = [
+  {
+    id: "v_001",
+    title: "2018 Toyota Aqua (Hybrid) — Clean",
+    year: 2018,
+    make: "Toyota",
+    model: "Aqua",
+    price: 9500,
+    status: "available",
+    featured: true,
+    website_managed: true,
+    created_by: "admin@speedyo.local",
+    primary_image:
+      "https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=1200&q=70",
+    recurring_availability: [
+      {
+        id: "slot_a",
+        dayOfWeek: "Monday",
+        startTime: "09:00",
+        endTime: "18:00",
+        meetingAddress: "Urumu, Okinawa",
+      },
+    ],
+    dealership_name: "Taka Cars",
+    dealership_agreement_id: "d_001",
+  },
+  {
+    id: "v_002",
+    title: "2020 Honda Fit — Great City Car",
+    year: 2020,
+    make: "Honda",
+    model: "Fit",
+    price: 11200,
+    status: "available",
+    featured: false,
+    website_managed: false,
+    created_by: "seller@local.dev",
+    primary_image:
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=70",
+    recurring_availability: [],
+  },
+  {
+    id: "v_003",
+    title: "2016 Nissan Note — Budget Friendly",
+    year: 2016,
+    make: "Nissan",
+    model: "Note",
+    price: 6200,
+    status: "sold",
+    featured: false,
+    website_managed: true,
+    created_by: "admin@speedyo.local",
+    primary_image: null,
+    recurring_availability: [],
+    dealership_name: null,
+    dealership_agreement_id: null,
+  },
+];
+
+export default function ListingManagementUI(props: {
+  initialEditVehicleId?: string | null;
+}) {
+  const [vehicles, setVehicles] = useState<VehicleRow[]>(MOCK_VEHICLES);
+  const [dealerships] = useState<DealershipAgreementLite[]>(MOCK_DEALERSHIPS);
   const [searchTerm, setSearchTerm] = useState("");
+
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<VehicleRow | null>(null);
+
+  const [showAssociateDealershipModal, setShowAssociateDealershipModal] =
+    useState(false);
+  const [selectedVehicleForAssociation, setSelectedVehicleForAssociation] =
+    useState<VehicleRow | null>(null);
+  const [selectedDealershipId, setSelectedDealershipId] = useState("");
+
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState(null);
-  const [managingAvailabilityVehicle, setManagingAvailabilityVehicle] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [dealerships, setDealerships] = useState([]);
-  const [showAssociateDealershipModal, setShowAssociateDealershipModal] = useState(false);
-  const [selectedVehicleForAssociation, setSelectedVehicleForAssociation] = useState(null);
-  const [selectedDealershipId, setSelectedDealershipId] = useState('');
+  const [managingAvailabilityVehicle, setManagingAvailabilityVehicle] =
+    useState<VehicleRow | null>(null);
 
+  // auto-open edit modal if passed via query param
   useEffect(() => {
-    loadVehicles();
-    loadCurrentUser();
-    loadDealerships();
-  }, []);
+    if (!props.initialEditVehicleId) return;
+    const v = vehicles.find((x) => x.id === props.initialEditVehicleId);
+    if (v) handleEditVehicle(v);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.initialEditVehicleId, vehicles.length]);
 
-  const loadCurrentUser = async () => {
-    try {
-      const user = await User.me();
-      setCurrentUser(user);
-    } catch (error) {
-      console.error("Failed to load current user:", error);
+  const filteredVehicles = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return vehicles;
+
+    return vehicles.filter(
+      (v) =>
+        v.title.toLowerCase().includes(q) ||
+        v.make.toLowerCase().includes(q) ||
+        v.model.toLowerCase().includes(q),
+    );
+  }, [vehicles, searchTerm]);
+
+  const handleDelete = (id: string) => {
+    if (
+      !window.confirm("Are you sure you want to delete this listing permanently?")
+    ) {
+      return;
     }
+    setVehicles((prev) => prev.filter((v) => v.id !== id));
   };
 
-  // Handle initial edit request from URL parameter
-  useEffect(() => {
-    if (initialEditVehicleId && vehicles.length > 0) {
-      const vehicleToEdit = vehicles.find((v) => v.id === initialEditVehicleId);
-      if (vehicleToEdit) {
-        handleEditVehicle(vehicleToEdit);
-      }
-    }
-  }, [initialEditVehicleId, vehicles]);
-
-  const loadVehicles = async () => {
-    setIsLoading(true);
-    try {
-      const allVehicles = await Vehicle.list("-created_date", 100);
-      setVehicles(allVehicles);
-    } catch (error) {
-      console.error("Failed to load vehicles:", error);
-    }
-    setIsLoading(false);
-  };
-
-  const loadDealerships = async () => {
-    try {
-      const agreements = await DealershipVehicleAgreement.filter({ status: 'signed' });
-      setDealerships(agreements);
-    } catch (error) {
-      console.error('Failed to load dealerships:', error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this listing permanently?")) {
-      try {
-        await Vehicle.delete(id);
-        loadVehicles();
-      } catch (e) {
-        alert("Failed to delete listing.");
-      }
-    }
-  };
-
-  const handleEditVehicle = (vehicle) => {
+  const handleEditVehicle = (vehicle: VehicleRow) => {
     setEditingVehicle(vehicle);
     setShowEditModal(true);
   };
 
-  const handleManageAvailability = (vehicle) => {
+  const handleUpdateVehicle = (patch: Partial<VehicleRow>) => {
+    if (!editingVehicle) return;
+
+    setVehicles((prev) =>
+      prev.map((v) =>
+        v.id === editingVehicle.id
+          ? {
+            ...v,
+            ...patch,
+            price: typeof patch.price === "number" ? patch.price : v.price,
+          }
+          : v,
+      ),
+    );
+
+    setShowEditModal(false);
+    setEditingVehicle(null);
+  };
+
+  const handleToggleFeatured = (vehicleId: string) => {
+    setVehicles((prev) =>
+      prev.map((v) =>
+        v.id === vehicleId ? { ...v, featured: !v.featured } : v,
+      ),
+    );
+  };
+
+  const handleMarkAsSold = (vehicleId: string) => {
+    if (!window.confirm("Are you sure you want to mark this vehicle as sold?"))
+      return;
+    setVehicles((prev) =>
+      prev.map((v) => (v.id === vehicleId ? { ...v, status: "sold" } : v)),
+    );
+  };
+
+  const handleAssociateDealership = (vehicle: VehicleRow) => {
+    setSelectedVehicleForAssociation(vehicle);
+    setSelectedDealershipId(vehicle.dealership_agreement_id ?? "");
+    setShowAssociateDealershipModal(true);
+  };
+
+  const handleSaveAssociation = () => {
+    if (!selectedVehicleForAssociation) return;
+    if (!selectedDealershipId) return;
+
+    const dealership = dealerships.find((d) => d.id === selectedDealershipId);
+    if (!dealership) return;
+
+    setVehicles((prev) =>
+      prev.map((v) =>
+        v.id === selectedVehicleForAssociation.id
+          ? {
+            ...v,
+            dealership_name: dealership.dealership_name,
+            dealership_agreement_id: dealership.id,
+          }
+          : v,
+      ),
+    );
+
+    setShowAssociateDealershipModal(false);
+    setSelectedVehicleForAssociation(null);
+    setSelectedDealershipId("");
+  };
+
+  const handleRemoveAssociation = (vehicle: VehicleRow) => {
+    if (!window.confirm("Remove dealership association from this vehicle?"))
+      return;
+
+    setVehicles((prev) =>
+      prev.map((v) =>
+        v.id === vehicle.id
+          ? { ...v, dealership_name: null, dealership_agreement_id: null }
+          : v,
+      ),
+    );
+  };
+
+  const handleManageAvailability = (vehicle: VehicleRow) => {
     setManagingAvailabilityVehicle(vehicle);
     setShowAvailabilityModal(true);
   };
 
-  const handleUpdateVehicle = async (vehicleData) => {
-    try {
-      await Vehicle.update(editingVehicle.id, vehicleData);
-      setShowEditModal(false);
-      setEditingVehicle(null);
-      loadVehicles();
-
-      // Notify the original owner if this is a managed sale
-      if (editingVehicle.website_managed && editingVehicle.original_owner_id) {
-        try {
-          const ownerProfiles = await PublicUser.filter({ user_id: editingVehicle.original_owner_id });
-
-          if (ownerProfiles && ownerProfiles.length > 0) {
-            await Notification.create({
-              recipient_id: editingVehicle.original_owner_id,
-              sender_id: currentUser?.id || 'admin',
-              type: "managed_sale_status",
-              content: `Your managed sale listing "${editingVehicle.title}" has been updated by our team.`,
-              related_entity_type: "Vehicle",
-              related_entity_id: editingVehicle.id,
-              url: createPageUrl(`Vehicle?id=${editingVehicle.id}`),
-              icon: "Edit"
-            });
-          }
-        } catch (notificationError) {
-          console.error("Failed to send notification to owner:", notificationError);
-        }
-      }
-
-      alert("Vehicle listing updated successfully!");
-    } catch (error) {
-      console.error("Failed to update vehicle:", error);
-      alert("Failed to update vehicle listing. Please try again.");
-    }
+  const handleSaveAvailability = (vehicleId: string, slots: AvailabilitySlot[]) => {
+    setVehicles((prev) =>
+      prev.map((v) => (v.id === vehicleId ? { ...v, recurring_availability: slots } : v)),
+    );
   };
-
-  const handleToggleFeatured = async (vehicleId) => {
-    try {
-      const vehicle = vehicles.find((v) => v.id === vehicleId);
-      if (vehicle) {
-        await Vehicle.update(vehicleId, { featured: !vehicle.featured });
-
-        // Show confirmation message
-        const action = vehicle.featured ? 'removed from' : 'added to';
-        alert(`Vehicle ${action} featured listings successfully!`);
-
-        loadVehicles(); // Reload to see changes
-      }
-    } catch (error) {
-      console.error("Failed to toggle featured status:", error);
-      alert("Failed to update featured status. Please try again.");
-    }
-  };
-
-  const handleMarkAsSold = async (vehicleId) => {
-    if (window.confirm("Are you sure you want to mark this vehicle as sold?")) {
-      try {
-        await Vehicle.update(vehicleId, { status: 'sold' });
-        alert("Vehicle marked as sold successfully!");
-        loadVehicles();
-      } catch (error) {
-        console.error("Failed to mark as sold:", error);
-        alert("Failed to mark vehicle as sold. Please try again.");
-      }
-    }
-  };
-
-  const handleAssociateDealership = (vehicle) => {
-    setSelectedVehicleForAssociation(vehicle);
-    setSelectedDealershipId(vehicle.dealership_agreement_id || '');
-    setShowAssociateDealershipModal(true);
-  };
-
-  const handleSaveAssociation = async () => {
-    if (!selectedVehicleForAssociation || !selectedDealershipId) return;
-
-    try {
-      const dealership = dealerships.find((d) => d.id === selectedDealershipId);
-
-      await Vehicle.update(selectedVehicleForAssociation.id, {
-        dealership_name: dealership.dealership_name,
-        dealership_agreement_id: dealership.id
-      });
-
-      await loadVehicles();
-      setShowAssociateDealershipModal(false);
-      setSelectedVehicleForAssociation(null);
-      setSelectedDealershipId('');
-      alert('Vehicle successfully associated with dealership!');
-    } catch (error) {
-      console.error('Failed to associate vehicle:', error);
-      alert('Failed to associate vehicle. Please try again.');
-    }
-  };
-
-  const handleRemoveAssociation = async (vehicle) => {
-    if (!window.confirm('Remove dealership association from this vehicle?')) return;
-
-    try {
-      await Vehicle.update(vehicle.id, {
-        dealership_name: null,
-        dealership_agreement_id: null
-      });
-
-      await loadVehicles();
-      alert('Dealership association removed!');
-    } catch (error) {
-      console.error('Failed to remove association:', error);
-      alert('Failed to remove association. Please try again.');
-    }
-  };
-
-  const filteredVehicles = vehicles.filter((v) =>
-    v.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.model?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <>
-      <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+      <Card className="bg-white shadow-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Car className="w-5 h-5 text-blue-500" />
             Vehicle Listings Management
           </CardTitle>
+
           <div className="mt-4">
             <Input
               placeholder="Search by title, make, or model..."
@@ -241,17 +316,20 @@ export default function ListingManagement({ initialEditVehicleId }) {
             />
           </div>
         </CardHeader>
+
         <CardContent>
           <div className="space-y-4 mt-4">
             {filteredVehicles.map((vehicle) => (
-              <Card key={vehicle.id} className="border border-slate-200 hover:shadow-lg transition-shadow duration-200">
+              <Card
+                key={vehicle.id}
+                className="border border-slate-200 hover:shadow-md transition-shadow duration-200"
+              >
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row items-start gap-4">
-                    {/* Vehicle Image */}
                     <div className="w-full sm:w-32 h-32 rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center flex-shrink-0">
                       {vehicle.primary_image_small || vehicle.primary_image ? (
                         <img
-                          src={vehicle.primary_image_small || vehicle.primary_image}
+                          src={vehicle.primary_image_small ?? vehicle.primary_image ?? ""}
                           alt={vehicle.title}
                           className="w-full h-full object-cover"
                         />
@@ -260,63 +338,82 @@ export default function ListingManagement({ initialEditVehicleId }) {
                       )}
                     </div>
 
-                    {/* Vehicle display info */}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-lg text-slate-900">{vehicle.title}</div>
-                      <div className="text-sm text-slate-500">{`${vehicle.year} ${vehicle.make} ${vehicle.model}`}</div>
-                      {/* Price updated to USD format */}
+                      <div className="font-medium text-lg text-slate-900">
+                        {vehicle.title}
+                      </div>
+                      <div className="text-sm text-slate-500">
+                        {vehicle.year} {vehicle.make} {vehicle.model}
+                      </div>
+
                       <div className="mt-2 text-xl font-bold text-slate-900">
                         {new Intl.NumberFormat("en-US", {
                           style: "currency",
-                          currency: "USD"
-                        }).format(parseFloat(vehicle.price || 0))}
+                          currency: "USD",
+                        }).format(vehicle.price)}
                       </div>
+
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <Badge 
-                          variant="outline" 
-                          className={`capitalize ${
-                            vehicle.status === 'sold' 
-                              ? 'bg-green-100 text-green-800 border-green-300' 
-                              : 'text-slate-700 border-slate-300'
-                          }`}
+                        <Badge
+                          variant="outline"
+                          className={`capitalize ${vehicle.status === "sold"
+                              ? "bg-green-100 text-green-800 border-green-300"
+                              : "text-slate-700 border-slate-300"
+                            }`}
                         >
-                          {vehicle.status === 'sold' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {vehicle.status === "sold" ? (
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                          ) : null}
                           {vehicle.status}
                         </Badge>
-                        <Badge variant="outline" className="text-slate-700 border-slate-300">
+
+                        <Badge
+                          variant="outline"
+                          className="text-slate-700 border-slate-300"
+                        >
                           {vehicle.website_managed ? "Speedio Managed" : "Self Listed"}
                         </Badge>
-                        {vehicle.featured && (
+
+                        {vehicle.featured ? (
                           <Badge className="bg-amber-500 text-white border-0">
                             <Star className="w-3 h-3 mr-1" />
                             Featured
                           </Badge>
-                        )}
-                        <span className="text-sm text-slate-600 whitespace-nowrap">Listed by: {vehicle.created_by}</span>
+                        ) : null}
+
+                        <span className="text-sm text-slate-600 whitespace-nowrap">
+                          Listed by: {vehicle.created_by}
+                        </span>
                       </div>
 
-                      {/* Dealership Association Badge */}
-                      {vehicle.dealership_name && (
-                        <Badge variant="outline" className="mt-2 text-slate-700 border-slate-300">
+                      {vehicle.dealership_name ? (
+                        <Badge
+                          variant="outline"
+                          className="mt-2 text-slate-700 border-slate-300"
+                        >
                           <Building className="w-3 h-3 mr-1" />
                           {vehicle.dealership_name}
                         </Badge>
-                      )}
+                      ) : null}
 
-                      {/* Availability Status for Managed Vehicles */}
-                      {vehicle.website_managed && (
+                      {vehicle.website_managed ? (
                         <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-medium text-slate-800">Test Drive Availability</h4>
-                              {vehicle.recurring_availability && vehicle.recurring_availability.length > 0 ? (
+                              <h4 className="font-medium text-slate-800">
+                                Test Drive Availability
+                              </h4>
+                              {vehicle.recurring_availability?.length ? (
                                 <p className="text-sm text-slate-600">
                                   {vehicle.recurring_availability.length} time slots configured
                                 </p>
                               ) : (
-                                <p className="text-sm text-slate-600">No availability set - manual coordination required</p>
+                                <p className="text-sm text-slate-600">
+                                  No availability set - manual coordination required
+                                </p>
                               )}
                             </div>
+
                             <Button
                               variant="outline"
                               size="sm"
@@ -328,10 +425,9 @@ export default function ListingManagement({ initialEditVehicleId }) {
                             </Button>
                           </div>
                         </div>
-                      )}
+                      ) : null}
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex flex-col gap-2 min-w-fit mt-4 sm:mt-0">
                       <Button
                         variant="outline"
@@ -342,8 +438,7 @@ export default function ListingManagement({ initialEditVehicleId }) {
                         Edit Listing
                       </Button>
 
-                      {/* Mark as Sold Button */}
-                      {vehicle.status === 'available' && (
+                      {vehicle.status === "available" ? (
                         <Button
                           variant="outline"
                           size="sm"
@@ -353,20 +448,22 @@ export default function ListingManagement({ initialEditVehicleId }) {
                           <DollarSign className="w-4 h-4 mr-2" />
                           Mark as Sold
                         </Button>
-                      )}
+                      ) : null}
 
-                      {/* Featured Toggle Button */}
                       <Button
                         variant={vehicle.featured ? "default" : "outline"}
                         size="sm"
                         onClick={() => handleToggleFeatured(vehicle.id)}
-                        className={vehicle.featured ? "bg-amber-500 hover:bg-amber-600 text-white" : "text-slate-700 border-slate-300 hover:bg-slate-100"}
+                        className={
+                          vehicle.featured
+                            ? "bg-amber-500 hover:bg-amber-600 text-white"
+                            : "text-slate-700 border-slate-300 hover:bg-slate-100"
+                        }
                       >
                         <Star className="w-4 h-4 mr-2" />
                         {vehicle.featured ? "Remove Featured" : "Make Featured"}
                       </Button>
 
-                      {/* Associate with Dealership Button */}
                       <Button
                         size="sm"
                         variant="outline"
@@ -374,10 +471,10 @@ export default function ListingManagement({ initialEditVehicleId }) {
                         className="text-slate-700 border-slate-300 hover:bg-slate-100"
                       >
                         <Building className="w-4 h-4 mr-2" />
-                        {vehicle.dealership_name ? 'Change Dealership' : 'Associate Dealership'}
+                        {vehicle.dealership_name ? "Change Dealership" : "Associate Dealership"}
                       </Button>
 
-                      {vehicle.dealership_name && (
+                      {vehicle.dealership_name ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -387,7 +484,7 @@ export default function ListingManagement({ initialEditVehicleId }) {
                           <XCircle className="w-4 h-4 mr-2" />
                           Remove Association
                         </Button>
-                      )}
+                      ) : null}
 
                       <Button
                         variant="destructive"
@@ -402,48 +499,54 @@ export default function ListingManagement({ initialEditVehicleId }) {
                 </CardContent>
               </Card>
             ))}
+
+            {filteredVehicles.length === 0 ? (
+              <div className="text-sm text-slate-600">No vehicles match your search.</div>
+            ) : null}
           </div>
         </CardContent>
       </Card>
 
-      {/* Edit Vehicle Modal */}
       {showEditModal && editingVehicle && (
-        <CreateVehicleModal
+        <CreateVehicleModalUI
           isOpen={showEditModal}
           vehicleToEdit={editingVehicle}
-          user={currentUser}
-          onVehicleCreated={handleUpdateVehicle}
           onClose={() => {
+            setShowEditModal(false);
+            setEditingVehicle(null);
+          }}
+          onSave={(patch) => {
+            setVehicles((prev) =>
+              prev.map((v) => (v.id === editingVehicle.id ? { ...v, ...patch } : v)),
+            );
             setShowEditModal(false);
             setEditingVehicle(null);
           }}
         />
       )}
-
-      {/* Admin Availability Management Modal */}
-      {showAvailabilityModal && managingAvailabilityVehicle && (
-        <AdminAvailabilityManager
-          isOpen={showAvailabilityModal}
-          onClose={() => {
-            setShowAvailabilityModal(false);
-            setManagingAvailabilityVehicle(null);
+      {showAvailabilityModal && managingAvailabilityVehicle ? (
+        <AvailabilityManagerModal
+          open={showAvailabilityModal}
+          onOpenChange={(open) => {
+            setShowAvailabilityModal(open);
+            if (!open) setManagingAvailabilityVehicle(null);
           }}
           vehicle={managingAvailabilityVehicle}
-          onUpdate={() => {
-            loadVehicles();
-            setShowAvailabilityModal(false);
-            setManagingAvailabilityVehicle(null);
-          }}
+          onSave={(slots) => handleSaveAvailability(managingAvailabilityVehicle.id, slots)}
         />
-      )}
+      ) : null}
 
       {/* Associate Dealership Modal */}
-      {showAssociateDealershipModal &&
-        <Dialog open={showAssociateDealershipModal} onOpenChange={setShowAssociateDealershipModal}>
+      {showAssociateDealershipModal ? (
+        <Dialog
+          open={showAssociateDealershipModal}
+          onOpenChange={setShowAssociateDealershipModal}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Associate Vehicle with Dealership</DialogTitle>
             </DialogHeader>
+
             <div className="space-y-4">
               <div>
                 <Label>Vehicle</Label>
@@ -459,43 +562,244 @@ export default function ListingManagement({ initialEditVehicleId }) {
                     <SelectValue placeholder="Choose a dealership..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {dealerships.length > 0 ?
-                      dealerships.map((dealership) =>
-                        <SelectItem key={dealership.id} value={dealership.id}>
-                          {dealership.dealership_name} - {dealership.vehicle_year} {dealership.vehicle_make} {dealership.vehicle_model}
+                    {dealerships.length ? (
+                      dealerships.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.dealership_name}
                         </SelectItem>
-                      ) :
-
-                      <SelectItem value="no-dealerships" disabled>No signed dealership agreements found.</SelectItem>
-                    }
+                      ))
+                    ) : (
+                      <SelectItem value="no-dealerships" disabled>
+                        No signed dealership agreements found.
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
-                {dealerships.length === 0 &&
+
+                {!dealerships.length ? (
                   <p className="text-sm text-amber-600 mt-2">
                     No signed dealership agreements found. Create and sign an agreement first.
                   </p>
-                }
+                ) : null}
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
                 <Button
                   variant="outline"
-                  onClick={() => setShowAssociateDealershipModal(false)}>
-
+                  onClick={() => setShowAssociateDealershipModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSaveAssociation}
                   disabled={!selectedDealershipId}
-                  className="bg-gradient-to-r from-blue-500 to-emerald-500">
-
+                  className="bg-gradient-to-r from-blue-500 to-emerald-500"
+                >
                   Associate
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
-      }
+      ) : null}
     </>
+  );
+}
+
+function EditVehicleForm(props: {
+  vehicle: VehicleRow;
+  onCancel: () => void;
+  onSave: (patch: Partial<VehicleRow>) => void;
+}) {
+  const [title, setTitle] = useState(props.vehicle.title);
+  const [price, setPrice] = useState(String(props.vehicle.price));
+  const [status, setStatus] = useState<VehicleStatus>(props.vehicle.status);
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="title">Title</Label>
+        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label htmlFor="price">Price (USD)</Label>
+          <Input
+            id="price"
+            inputMode="numeric"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="status">Status</Label>
+          <Select value={status} onValueChange={(v) => setStatus(v as VehicleStatus)}>
+            <SelectTrigger id="status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="available">available</SelectItem>
+              <SelectItem value="sold">sold</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 pt-2">
+        <Button variant="outline" onClick={props.onCancel}>
+          Cancel
+        </Button>
+        <Button
+          onClick={() => {
+            const numeric = Number(price);
+            props.onSave({
+              title: title.trim() || props.vehicle.title,
+              price: Number.isFinite(numeric) ? numeric : props.vehicle.price,
+              status,
+            });
+          }}
+        >
+          Save
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AvailabilityManagerModal(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  vehicle: VehicleRow;
+  onSave: (slots: AvailabilitySlot[]) => void;
+}) {
+  const [slots, setSlots] = useState<AvailabilitySlot[]>(() => {
+    const existing = props.vehicle.recurring_availability ?? [];
+    return existing.length ? existing : [makeSlot()];
+  });
+
+  useEffect(() => {
+    const existing = props.vehicle.recurring_availability ?? [];
+    setSlots(existing.length ? existing : [makeSlot()]);
+  }, [props.vehicle.id]);
+
+  const setSlot = (id: string, patch: Partial<AvailabilitySlot>) => {
+    setSlots((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  };
+
+  const removeSlot = (id: string) => {
+    setSlots((prev) => (prev.length <= 1 ? prev : prev.filter((s) => s.id !== id)));
+  };
+
+  return (
+    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>
+            Set Test Drive Availability
+            <div className="mt-1 text-sm font-normal text-slate-500">
+              {props.vehicle.title}
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="text-sm text-slate-600">
+          Configure recurring weekly availability for test drives. Current availability is loaded automatically.
+        </div>
+
+        <div className="mt-4 space-y-4">
+          {slots.map((slot, idx) => (
+            <Card key={slot.id} className="border border-slate-200">
+              <CardContent className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium text-slate-800">Time Slot #{idx + 1}</div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeSlot(slot.id)}
+                    className="text-slate-500"
+                  >
+                    Remove
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <Label>Day of Week</Label>
+                    <Select
+                      value={slot.dayOfWeek}
+                      onValueChange={(v) => setSlot(slot.id, { dayOfWeek: v as DayOfWeek })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[
+                          "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+                        ].map((d) => (
+                          <SelectItem key={d} value={d}>
+                            {d}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Start Time</Label>
+                    <Input
+                      type="time"
+                      value={slot.startTime}
+                      onChange={(e) => setSlot(slot.id, { startTime: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>End Time</Label>
+                    <Input
+                      type="time"
+                      value={slot.endTime}
+                      onChange={(e) => setSlot(slot.id, { endTime: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Meeting Address for Test Drive</Label>
+                  <Textarea
+                    value={slot.meetingAddress}
+                    onChange={(e) => setSlot(slot.id, { meetingAddress: e.target.value })}
+                    rows={2}
+                    placeholder="e.g. Urumu, Okinawa"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          <div className="flex justify-center">
+            <Button variant="outline" onClick={() => setSlots((p) => [...p, makeSlot()])}>
+              + Add Another Time Slot
+            </Button>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={() => props.onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                props.onSave(slots);
+                props.onOpenChange(false);
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Save Availability
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
