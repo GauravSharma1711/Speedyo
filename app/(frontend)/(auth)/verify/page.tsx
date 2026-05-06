@@ -4,6 +4,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState, useEffect, KeyboardEvent, ClipboardEvent } from "react";
 import { toast } from "sonner"; // or your toast lib
+  import { useAuthStore } from "@/store/auth";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -15,6 +16,8 @@ export default function VerifyEmailPage() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+const { verifyOtp, resendOtp, isLoading, error } = useAuthStore();
 
   // Countdown timer for resend
   useEffect(() => {
@@ -61,65 +64,37 @@ export default function VerifyEmailPage() {
     focusInput(Math.min(pasted.length, 5));
   };
 
-  const handleVerify = async () => {
-    const otpString = otp.join("");
-    if (otpString.length < 6) {
-      toast.error("Please enter the complete 6-digit code");
-      return;
-    }
+const handleVerify = async () => {
+  const otpString = otp.join("");
+  if (otpString.length < 6) {
+    toast.error("Please enter the complete 6-digit code");
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/verifyOtp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: otpString }),
-      });
+  try {
+    await verifyOtp({ otp: otpString });
+    toast.success("Email verified successfully!");
+    router.push("/signIn");
+  } catch {
+    toast.error(error ?? "Verification failed");
+    setOtp(Array(6).fill(""));
+    focusInput(0);
+  }
+};
 
-      const data = await res.json();
+const handleResend = async () => {
+  if (resendTimer > 0) return;
 
-      if (data.success) {
-        toast.success("Email verified successfully!");
-        router.push("/signIn");
-      } else {
-        toast.error(data.message || "Verification failed");
-        // Clear OTP on error
-        setOtp(Array(6).fill(""));
-        focusInput(0);
-      }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (resendTimer > 0) return;
-    setResendLoading(true);
-    try {
-      const res = await fetch("/api/auth/resend-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        toast.success("New code sent to your email!");
-        setResendTimer(30);
-        setOtp(Array(6).fill(""));
-        focusInput(0);
-      } else {
-        toast.error(data.message || "Failed to resend code");
-      }
-    } catch {
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setResendLoading(false);
-    }
-  };
+  try {
+    await resendOtp();
+    toast.success("New code sent to your email!");
+    setResendTimer(30);
+    setOtp(Array(6).fill(""));
+    focusInput(0);
+  } catch {
+    toast.error(error ?? "Failed to resend code");
+  }
+};
 
   const isComplete = otp.every((d) => d !== "");
 

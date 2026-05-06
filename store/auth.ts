@@ -29,8 +29,7 @@ export type ForgotPasswordData = {
   email: string;
 };
 
-// LoginData and logoutUser are NOT here — NextAuth handles login/logout.
-// Use signIn("Credentials", { email, password }) and signOut() in your components.
+
 
 interface AuthState {
   authUser: User | null;
@@ -69,8 +68,6 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const res = await authService.signUp(data);
-          // After sign up, user typically needs to verify OTP before login.
-          // So we don't set authUser here — just stop loading.
           set({ isLoading: false });
           return res;
         } catch (error: any) {
@@ -79,22 +76,24 @@ export const useAuthStore = create<AuthState>()(
             error: error?.response?.data?.message ?? "Sign up failed",
           });
           throw error;
+        }finally{
+            set({isLoading:false})
         }
       },
 
-      async getUserProfile() {
-        set({ isLoading: true, error: null });
-        try {
-          const res = await authService.getUserProfile();
-          set({ authUser: res.user, isLoading: false });
-        } catch (error: any) {
-          set({
-            isLoading: false,
-            error: error?.response?.data?.message ?? "Failed to fetch profile",
-          });
-          throw error;
-        }
-      },
+   async getUserProfile() {
+  set({ isLoading: true, error: null });
+  try {
+    const res = await authService.getUserProfile();
+    set({ authUser: res.user, isLoading: false });
+  } catch (error: any) {
+    set({
+      isLoading: false,
+      error: error?.response?.data?.message ?? "Failed to fetch profile",
+    });
+    throw error;
+  }
+},
 
       async forgotPassword(data: ForgotPasswordData) {
         set({ isLoading: true, error: null });
@@ -107,6 +106,8 @@ export const useAuthStore = create<AuthState>()(
             error: error?.response?.data?.message ?? "Failed to send reset email",
           });
           throw error;
+        }finally{
+            set({isLoading:false})
         }
       },
 

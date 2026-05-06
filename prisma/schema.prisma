@@ -79,7 +79,9 @@ model User {
   verificationCodeExpiry           DateTime
   isVerified                       Boolean                      @default(false)
   password                         String
-  verification_status              VerificationStatus           @default(prnding_review)
+  verification_status              VerificationStatus           @default(pending_review)
+  passwordResetTokenHash           String?
+  passwordResetTokenExpiry         DateTime?
   comments                         Comment[]
   conversations1                   Conversation[]               @relation("ConversationUser1")
   conversations2                   Conversation[]               @relation("ConversationUser2")
@@ -104,12 +106,12 @@ model User {
   seller_subscription              SellerSubscription?
   testDriveRequests                TestDriveRequest[]
   vehicleEditRequests              VehicleEditRequest[]         @relation("UserVehicleEditRequests")
+  vehicleLikes                     VehicleLike[]
+  vehicleSaves                     VehicleSave[]
   buyerTransfers                   VehicleTransfer[]            @relation("BuyerTransfers")
   createdTransfers                 VehicleTransfer[]            @relation("CreatedTransfers")
   sellerTransfers                  VehicleTransfer[]            @relation("SellerTransfers")
   vehicleViews                     VehicleView[]
-  vehicleLikes                     VehicleLike[]
-  vehicleSaves                     VehicleSave[]
   vehicles                         Vehicle[]
   verificationRequests             VerificationRequest[]        @relation("UserVerificationRequests")
 
@@ -239,23 +241,23 @@ model Vehicle {
   website_managed         Boolean                     @default(false)
   status                  VehicleStatus               @default(available)
   views                   Int                         @default(0)
-  shares                  Int                         @default(0)
   authorId                String?                     @map("author_id")
   original_owner_id       String?
   dealership_name         String?
   recurring_availability  Json                        @default("[]")
   booked_slots            Json                        @default("[]")
   dealershipAgreementId   String?                     @map("dealership_agreement_id")
+  shares                  Int                         @default(0)
   conversations           Conversation[]
   managedSaleRequest      ManagedSaleRequest?         @relation("ManagedSaleVehicle")
   messages                Message[]
   posts                   Post[]
   testDriveRequests       TestDriveRequest[]
   editRequests            VehicleEditRequest[]
-  transfers               VehicleTransfer[]
-  vehicleViews            VehicleView[]
   vehicleLikes            VehicleLike[]
   vehicleSaves            VehicleSave[]
+  transfers               VehicleTransfer[]
+  vehicleViews            VehicleView[]
   author                  User?                       @relation(fields: [authorId], references: [id])
   dealershipAgreement     DealershipVehicleAgreement? @relation(fields: [dealershipAgreementId], references: [id])
   verificationRequests    VerificationRequest[]
@@ -858,7 +860,7 @@ enum UserType {
 }
 
 enum VerificationStatus {
-  prnding_review
+  pending_review
   not_submitted
   approved
   declined

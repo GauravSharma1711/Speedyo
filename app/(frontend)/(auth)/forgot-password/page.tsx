@@ -2,16 +2,24 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/store/auth"
+import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    setLoading(true)
-    console.log("Forgot password submit:", { email })
-    setTimeout(() => setLoading(false), 800)
+  const {forgotPassword,isLoading} = useAuthStore();
+
+   const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault() // fix: was missing
+    try {
+      await forgotPassword({ email }); 
+    } catch {
+      // error is already set in the store
+      toast.error("Error while sending verify email");
+    }
   }
 
   return (
@@ -57,6 +65,8 @@ export default function ForgotPasswordPage() {
                       password
                     </p>
                   </div>
+
+               
 
                   <form
                     onSubmit={handleSubmit}

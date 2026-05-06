@@ -90,6 +90,7 @@ export async function POST(
       photography_experience_years,
       motivation,
       address,
+      
       automotive_photography_experience,
       portfolio_url,
       equipment,
@@ -110,7 +111,7 @@ export async function POST(
         full_name,
         email,
         phone,
-        photography_experience_years,
+     photography_experience_years: Number(photography_experience_years),
         motivation,
         address: address ?? null,
         automotive_photography_experience: automotive_photography_experience ?? null,

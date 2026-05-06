@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   Calendar,
@@ -29,28 +29,11 @@ import { Textarea } from "@/components/ui/TextArea";
 import { toast } from "@/components/ui/UseToast";
 import TestDriveActivityModalUI from "./TestDriveActivityModal";
 import TestDriveReportModalUI from "./TestDriveReportModal";
-
+import { useTestDriveStore } from "@/store/admin/testDrive";
+import type { TestDrive } from "@/store/admin/testDrive";
 type Status = "pending" | "approved" | "completed" | "declined" | "no_show";
 
-type TestDrive = {
-  id: string;
-  vehicle_id: string;
-  sender_id: string; // buyer
-  recipient_id: string; // seller
-  created_date: string; // ISO
-  test_drive_details: {
-    status: Status;
-    preferred_date?: string; // ISO or yyyy-mm-dd
-    preferred_time?: string;
-    notes?: string;
-    report?: string;
-  };
-  buyer_interest_level?: string;
-  buyer_feedback?: string;
-  speedio_report?: string;
-  next_steps?: string;
-  admin_notes?: string;
-};
+
 
 type Vehicle = {
   id: string;
@@ -149,9 +132,15 @@ function getActiveCount(list: TestDrive[]) {
 }
 
 export default function TestDriveManagementUI() {
-  const [testDrives, setTestDrives] = useState<TestDrive[]>(MOCK_TEST_DRIVES);
-  const [vehicles] = useState<Vehicle[]>(MOCK_VEHICLES);
-  const [users] = useState<PublicUser[]>(MOCK_USERS);
+  // const [testDrives, setTestDrives] = useState<TestDrive[]>(MOCK_TEST_DRIVES);
+  // const [vehicles] = useState<Vehicle[]>(MOCK_VEHICLES);
+  // const [users] = useState<PublicUser[]>(MOCK_USERS);
+
+  const { testDrives, isLoading, error, getAll, update, createReport, updateReport } = useTestDriveStore();
+
+    useEffect(() => { getAll(); }, []);
+
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
@@ -349,10 +338,21 @@ export default function TestDriveManagementUI() {
         testDriveRequest={selected}
         buyer={selected ? { user_id: selected.sender_id, full_name: getUserById(selected.sender_id).full_name } : null}
         vehicle={selected ? { id: selected.vehicle_id, title: getVehicleById(selected.vehicle_id).title } : null}
-        onSave={(updated) => {
-          setTestDrives((prev) => prev.map((t) => (t.id === updated.id ? (updated as any) : t)));
-          toast({ title: "Saved", description: "Test drive updated." });
-        }}
+        // onSave={(updated) => {
+        //   setTestDrives((prev) => prev.map((t) => (t.id === updated.id ? (updated as any) : t)));
+        //   toast({ title: "Saved", description: "Test drive updated." });
+        // }
+      onSave={async (updated) => {
+  await update(updated.id, {
+    status: updated.test_drive_details?.status,
+    confirmed_date: updated.test_drive_details?.preferred_date,
+    confirmed_time: updated.test_drive_details?.preferred_time,
+    additional_notes: updated.test_drive_details?.notes,
+  });
+  await getAll();
+  toast({ title: "Saved", description: "Test drive updated." });
+}}
+      
       />
       <TestDriveReportModalUI
         isOpen={showReport}
