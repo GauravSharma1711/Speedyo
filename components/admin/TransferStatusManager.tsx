@@ -1,4 +1,6 @@
 "use client";
+import { useVehicleListingStore } from "@/store/admin/vehicleListing";
+import { useUserStore } from "@/store/admin/user"; 
 
 import React, { useMemo, useState } from "react";
 import { AlertCircle, Edit, Plus, Search } from "lucide-react";
@@ -137,22 +139,21 @@ export default function TransferStatusManagerUI() {
  
 
   const filteredTransfers = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    if (!q) return transfers;
-    return transfers.filter((t) => {
-      const vehicle = MOCK_VEHICLES.find((v) => v.id === t.vehicleId);
-      const buyer = MOCK_USERS.find((u) => u.id === t.buyerId);
-      const hay = [
-        vehicle?.title ?? "",
-        buyer?.full_name ?? "",
-        t.status,
-        t.transfer_type,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(q);
-    });
-  }, [searchTerm, transfers]);
+  const q = searchTerm.trim().toLowerCase();
+  if (!q) return transfers;
+  return transfers.filter((t) => {
+    const hay = [
+      t.vehicle?.title ?? "",
+      t.buyer?.full_name ?? "",
+      t.buyer?.email ?? "",
+      t.status,
+      t.transfer_type,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(q);
+  });
+}, [searchTerm, transfers]);
 
   const handleCreate = async(payload: Omit<VehicleTransfer, "id" | "createdAt">) => {
     // const created: VehicleTransfer = {
@@ -260,11 +261,11 @@ export default function TransferStatusManagerUI() {
           </Card>
         ) : (
           filteredTransfers?.map((t) => {
-            const vehicle = MOCK_VEHICLES.find((v) => v.id === t.vehicleId);
-            const buyer = MOCK_USERS.find((u) => u.id === t.buyerId);
-            const seller = t.sellerId
-              ? MOCK_USERS.find((u) => u.id === t.sellerId)
-              : null;
+            // const vehicle = MOCK_VEHICLES.find((v) => v.id === t.vehicleId);
+            // const buyer = MOCK_USERS.find((u) => u.id === t.buyerId);
+            // const seller = t.sellerId
+            //   ? MOCK_USERS.find((u) => u.id === t.sellerId)
+            //   : null;
             const totalSteps = 6;
             const pct = Math.round(((t?.steps_completed?.length || 0) / totalSteps) * 100);
 
@@ -274,11 +275,11 @@ export default function TransferStatusManagerUI() {
                   <div className="flex items-start justify-between mb-4 gap-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                        {vehicle?.title ?? "Unknown Vehicle"}
+                        {t.vehicle?.title ?? "Unknown Vehicle"}
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge
-                          variant={statusBadgeVariant(t?.status)}
+                          variant={statusBadgeVariant(t?.status as TransferStatus)}
                           className="capitalize"
                         >
                           {t.status === "in_progress" ? "In Progress" : t.status}
@@ -308,13 +309,13 @@ export default function TransferStatusManagerUI() {
                     <div>
                       <p className="text-slate-500">Buyer</p>
                       <p className="font-medium text-slate-800">
-                        {buyer?.full_name ?? "Unknown"}
+                        {t.buyer?.full_name ?? "Unknown"}
                       </p>
                     </div>
-                    {seller && (
+                    {t.seller && (
                       <div>
                         <p className="text-slate-500">Seller</p>
-                        <p className="font-medium text-slate-800">{seller.full_name}</p>
+                        <p className="font-medium text-slate-800">{t.seller?.full_name ?? "Unknown"}</p>
                       </div>
                     )}
                   </div>
@@ -348,8 +349,6 @@ export default function TransferStatusManagerUI() {
 
       {createOpen && (
         <CreateTransferModal
-          vehicles={MOCK_VEHICLES}
-          users={MOCK_USERS}
           onClose={() => setCreateOpen(false)}
           onCreate={handleCreate}
         />
@@ -359,12 +358,20 @@ export default function TransferStatusManagerUI() {
 }
 
 function CreateTransferModal(props: {
-  vehicles: Vehicle[];
-  users: PublicUser[];
+  // vehicles: Vehicle[];
+  // users: PublicUser[];
   onClose: () => void;
   onCreate: (payload: Omit<VehicleTransfer, "id" | "createdAt">) => void;
 }) {
-  const { vehicles, users, onClose, onCreate } = props;
+  const {  onClose, onCreate } = props;
+
+const { vehicles, getAll: getVehicles } = useVehicleListingStore();
+const { users, getAll: getUsers } = useUserStore();
+
+useEffect(() => {
+  getVehicles();
+  getUsers();
+}, []);
 
   const [vehicleId, setVehicleId] = useState<string>(vehicles[0]?.id ?? "");
   const [transferType, setTransferType] = useState<TransferType>("speedio_managed");

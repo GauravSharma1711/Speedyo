@@ -5,7 +5,7 @@ import dealershipAgreementService, {
   UpdateDealershipAgreementData,
 } from "@/services/admin/dealership";
 
-// ── Types matching Prisma schema ───────────────────────────────────────────────
+
 export type DealershipAgreement = {
   id: string;
   createdAt: string;
@@ -26,7 +26,7 @@ export type DealershipAgreement = {
   admin_notes: string | null;
 };
 
-// ── Store interface ────────────────────────────────────────────────────────────
+
 interface DealershipAgreementState {
   agreements: DealershipAgreement[];
   isLoading: boolean;
@@ -39,7 +39,7 @@ interface DealershipAgreementState {
   delete: (agreementId: string) => Promise<void>;
 }
 
-// ── Store ──────────────────────────────────────────────────────────────────────
+
 export const useDealershipAgreementStore = create<DealershipAgreementState>()(
   immer((set) => ({
     agreements: [],
