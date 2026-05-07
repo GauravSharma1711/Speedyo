@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-
+import testDriveService from "@/services/admin/testDrive";
 
 export type TestDrive = {
   id: string;
@@ -12,6 +12,7 @@ export type TestDrive = {
   requester_phone?: string;
   requested_date: string;
   requested_time: string;
+  admin_note?:string;
   confirmed_date?: string;
   confirmed_time?: string;
   status: string;
@@ -34,11 +35,12 @@ export type TestDrive = {
 };
 
 export type UpdateTestDriveData = {
+  id?:string;
   status?: string;
   confirmed_date?: string;
   confirmed_time?: string;
   location?: string;
-  additional_notes?: string;
+  admin_note?: string;
   cancellation_reason?: string;
   seller_notes?: string;
 };
@@ -78,39 +80,40 @@ export const useTestDriveStore = create<TestDriveState>()(
       set({ error: null });
     },
 
-    async getAll() {
-      set({ isLoading: true, error: null });
-      try {
-        const res = await testDriveService.getAll();
-        set({ testDrives: res.testDrives, isLoading: false });
-      } catch (error: any) {
-        set({
-          isLoading: false,
-          error:
-            error?.response?.data?.message ?? "Failed to fetch test drives",
-        });
-        throw error;
-      }
-    },
+   // store/admin/testDrive.ts
 
-    async update(testDriveId, data) {
-      set({ isLoading: true, error: null });
-      try {
-        const res = await testDriveService.update(testDriveId, data);
-        set((state) => {
-          const index = state.testDrives.findIndex((t) => t.id === testDriveId);
-          if (index !== -1) state.testDrives[index] = res.testDrive;
-        });
-        set({ isLoading: false });
-      } catch (error: any) {
-        set({
-          isLoading: false,
-          error:
-            error?.response?.data?.message ?? "Failed to update test drive",
-        });
-        throw error;
-      }
-    },
+async getAll() {
+  set({ isLoading: true, error: null });
+  try {
+    const res = await testDriveService.getAll();
+    // ✅ already correct key, add fallback for safety
+    set({ testDrives: res.testDriveRequests ?? [], isLoading: false });
+  } catch (error: any) {
+    set({
+      isLoading: false,
+      error: error?.response?.data?.message ?? "Failed to fetch test drives",
+    });
+    throw error;
+  }
+},
+
+async update(testDriveId, data) {
+  set({ isLoading: true, error: null });
+  try {
+    const res = await testDriveService.update(testDriveId, data);
+    set((state) => {
+      const index = state.testDrives.findIndex((t) => t.id === testDriveId);
+      if (index !== -1) state.testDrives[index] = res.testDriveRequest; // ✅ was res.testDrive
+    });
+    set({ isLoading: false });
+  } catch (error: any) {
+    set({
+      isLoading: false,
+      error: error?.response?.data?.message ?? "Failed to update test drive",
+    });
+    throw error;
+  }
+},
 
     async createReport(testDriveId, data) {
       set({ isLoading: true, error: null });

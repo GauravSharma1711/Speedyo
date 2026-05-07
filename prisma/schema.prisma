@@ -22,7 +22,7 @@ model TestDriveRequest {
   status              TestDriveStatus  @default(pending)
   additional_notes    String?
   cancellation_reason String?
-  seller_notes        String?
+  admin_note        String?
   userId              String?          @map("user_id")
   location            String?
   report              TestDriveReport?
@@ -79,7 +79,7 @@ model User {
   verificationCodeExpiry           DateTime
   isVerified                       Boolean                      @default(false)
   password                         String
-  verification_status              VerificationStatus           @default(pending_review)
+  verification_status              VerificationStatus           @default(prnding_review)
   passwordResetTokenHash           String?
   passwordResetTokenExpiry         DateTime?
   comments                         Comment[]
@@ -860,7 +860,7 @@ enum UserType {
 }
 
 enum VerificationStatus {
-  pending_review
+  prnding_review
   not_submitted
   approved
   declined
@@ -1038,8 +1038,8 @@ enum VerificationRequestStatus {
 
 enum TestDriveStatus {
   pending
-  confirmed
-  cancelled
+  approved
+  declined
   completed
-  rescheduled
+  no_Show
 }

@@ -30,7 +30,8 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, confirmed_date, confirmed_time, location, additional_notes } = body;
+    console.log("body",body);
+    const { status, confirmed_date, confirmed_time, location, admin_note } = body;
 
     // ── Update the test drive request ──
     const testDriveRequest = await prisma.testDriveRequest.update({
@@ -40,7 +41,7 @@ export async function PATCH(
         ...(confirmed_date !== undefined && { confirmed_date }),
         ...(confirmed_time !== undefined && { confirmed_time }),
         ...(location !== undefined && { location }),
-        ...(additional_notes !== undefined && { additional_notes }),
+        ...(admin_note !== undefined && { admin_note }),
       },
       include: {
         vehicle: { select: { id: true, title: true, make: true, model: true, year: true, price: true, location: true } },
@@ -73,7 +74,14 @@ export async function PATCH(
         });
 
         if (existingMessage) {
-          const existingCard = JSON.parse(existingMessage.content);
+     let existingCard: Record<string, any> = {};
+try {
+  existingCard = existingMessage.content
+    ? JSON.parse(existingMessage.content)
+    : {};
+} catch {
+  existingCard = {};
+}
 
           await prisma.message.update({
             where: { id: existingMessage.id },

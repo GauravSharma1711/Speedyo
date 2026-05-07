@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
             profile_image: true,
           },
         },
+           report: true,
       },
       orderBy: { createdAt: "desc" },
     });
