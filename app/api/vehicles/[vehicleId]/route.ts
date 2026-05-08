@@ -75,7 +75,7 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ vehicl
 
     return NextResponse.json({ success: true, vehicle });
   } catch (error) {
-    console.error("GET /api/vehicles/[id] failed:", error);
+    console.error("failed to get vehicle by id", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

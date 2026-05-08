@@ -8,10 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/TextArea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { Skeleton } from "@/components/ui/Skeleton";
-
-// Replace with your actual entity stubs/implementations
-import { Comment, Notification,PublicUser } from "@/api/entities";
-
+import { useFeedStore } from "@/store/feed";
+import { Notification, PublicUser } from "@/api/entities";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,11 +30,11 @@ interface CommentAuthor {
 
 interface CommentData {
   id: string;
-  post_id: string;
+  postId: string;           // fixed: was post_id
   content: string;
-  author_id: string;
-  parent_comment_id?: string | null;
-  created_date: string;
+  authorId: string;         // fixed: was author_id
+  parent_comment_id?: string | null;  // fixed: was parent_comment_id
+  createdAt: string;        // fixed: was created_date
   reactions?: Record<string, number>;
   user_reactions?: { user_email: string; reaction: string }[];
   replies?: CommentData[];
@@ -56,8 +54,6 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyContent, setReplyContent]     = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
-
-  const handleLike = () => onReact(comment.id, "like");
 
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,12 +75,12 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
   );
   const likesCount = comment.reactions?.like ?? 0;
 
-  const commentUser = commentAuthors[comment.author_id] ?? {
+  const commentUser = commentAuthors[comment.authorId] ?? {
     full_name: "Unknown User",
     user_type: "guest",
     profile_image: null,
     verified: false,
-    user_id: comment.author_id,
+    user_id: comment.authorId,
   };
 
   return (
@@ -98,16 +94,15 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
 
       <div className="flex-1">
         <div className="bg-slate-100 rounded-lg p-3">
-          {/* Next.js Link — path replaces createPageUrl */}
-          <Link href={`/profile?id=${comment.author_id}`} className="font-semibold text-sm hover:underline">
+          <Link href={`/profile?id=${comment.authorId}`} className="font-semibold text-sm hover:underline">
             {commentUser.full_name}
           </Link>
-          <p className="text-sm text-slate-800 whitespace-pre-wrap">{comment.content}</p>
+          <p className="text-sm text-slate-800 whitespace-pre-wrap mt-1">{comment.content}</p>
         </div>
 
         <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 pl-1">
           <button
-            onClick={handleLike}
+            onClick={() => onReact(comment.id, "like")}
             className={`font-semibold ${userHasLiked ? "text-blue-600" : "hover:underline"}`}
             disabled={!currentUser}
           >
@@ -121,7 +116,8 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
             Reply
           </button>
           <span>·</span>
-          <span>{format(new Date(comment.created_date), "MMM d, h:mm a")}</span>
+          {/* fixed: was comment.created_date */}
+          <span>{format(new Date(comment.createdAt), "MMM d, h:mm a")}</span>
         </div>
 
         {showReplyInput && (
@@ -143,10 +139,13 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
                   disabled={isSubmittingReply}
                 />
                 <div className="flex justify-end mt-2 gap-2">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowReplyInput(false)} disabled={isSubmittingReply}>
+                  <Button type="button" variant="ghost" size="sm"
+                    onClick={() => setShowReplyInput(false)}
+                    disabled={isSubmittingReply}>
                     Cancel
                   </Button>
-                  <Button type="submit" size="sm" disabled={!replyContent.trim() || isSubmittingReply}>
+                  <Button type="submit" size="sm"
+                    disabled={!replyContent.trim() || isSubmittingReply}>
                     {isSubmittingReply ? "Replying..." : "Reply"}
                   </Button>
                 </div>
@@ -156,7 +155,7 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
         )}
 
         {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-3 space-y-3 pl-4 border-l-2">
+          <div className="mt-3 space-y-3 pl-4 border-l-2 border-slate-200">
             {comment.replies.map(reply => (
               <CommentItem
                 key={reply.id}
@@ -183,20 +182,30 @@ interface CommentSectionProps {
   onCommentAdded?: () => void;
 }
 
-export default function CommentSection({ postId, postCreatorId, currentUser, onCommentAdded }: CommentSectionProps) {
-  const [comments, setComments]           = useState<CommentData[]>([]);
-  const [newComment, setNewComment]       = useState("");
+export default function CommentSection({
+  postId,
+  postCreatorId,
+  currentUser,
+  onCommentAdded,
+}: CommentSectionProps) {
+  const { commentPost } = useFeedStore();
+
+  const [comments, setComments]             = useState<CommentData[]>([]);
+  const [newComment, setNewComment]         = useState("");
   const [commentAuthors, setCommentAuthors] = useState<Record<string, CommentAuthor>>({});
   const [isLoadingComments, setIsLoadingComments] = useState(true);
-  const [isSubmitting, setIsSubmitting]   = useState(false);
+  const [isSubmitting, setIsSubmitting]     = useState(false);
 
   const loadComments = useCallback(async () => {
     setIsLoadingComments(true);
     try {
-      const fetched: CommentData[] = await Comment.filter({ post_id: postId }, "-created_date");
+      // Your API endpoint — adjust to match your actual route
+      const res = await fetch(`/api/posts/${postId}/comments`);
+      const data = await res.json();
+      const fetched: CommentData[] = data.comments ?? [];
 
       // Collect unique author IDs
-      const authorIds = new Set<string>(fetched.map(c => c.author_id));
+      const authorIds = new Set<string>(fetched.map(c => c.authorId));
       if (currentUser?.id) authorIds.add(currentUser.id);
 
       // Fetch all author profiles in parallel
@@ -219,20 +228,24 @@ export default function CommentSection({ postId, postCreatorId, currentUser, onC
       );
       setCommentAuthors(authorsMap);
 
-      // Build hierarchical tree
+      // Build hierarchical tree using camelCase fields
       const byId = new Map(fetched.map(c => [c.id, { ...c, replies: [] as CommentData[] }]));
       const roots: CommentData[] = [];
 
       fetched.forEach(c => {
-        if (c.parent_comment_id) {
+        if (c.parent_comment_id) {          // fixed: was parent_comment_id
           byId.get(c.parent_comment_id)?.replies?.push(byId.get(c.id)!);
         } else {
           roots.push(byId.get(c.id)!);
         }
       });
 
-      roots.forEach(c => c.replies?.sort((a, b) => +new Date(a.created_date) - +new Date(b.created_date)));
-      roots.sort((a, b) => +new Date(a.created_date) - +new Date(b.created_date));
+      // Sort replies oldest-first, roots oldest-first
+      roots.forEach(c => c.replies?.sort(
+        (a, b) => +new Date(a.createdAt) - +new Date(b.createdAt)  // fixed: was created_date
+      ));
+      roots.sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));
+
       setComments(roots);
     } catch (e) {
       console.error("Failed to load comments:", e);
@@ -254,32 +267,36 @@ export default function CommentSection({ postId, postCreatorId, currentUser, onC
     if (!parentId) setIsSubmitting(true);
 
     try {
-      await Comment.create({ post_id: postId, content, parent_comment_id: parentId, author_id: currentUser.id });
+      // Use the store action — it handles the API call and updates posts[].comments_count
+      await commentPost(postId, {
+        content,
+        parent_comment_id: parentId ?? undefined,  // fixed: was parent_comment_id
+      });
 
-      // Determine notification recipient
-      let recipientId = postCreatorId;
-      let notifType   = "new_comment";
+      // Send notification
+      let recipientId  = postCreatorId;
       let notifContent = `${currentUser.full_name} commented on your post.`;
+      let notifType    = "comment_reply" as const;
 
       if (parentId) {
         const flat: CommentData[] = [];
-        const collect = (cmts: CommentData[]) => cmts.forEach(c => { flat.push(c); if (c.replies) collect(c.replies); });
+        const collect = (cmts: CommentData[]) =>
+          cmts.forEach(c => { flat.push(c); if (c.replies) collect(c.replies); });
         collect(comments);
         const parent = flat.find(c => c.id === parentId);
-        if (parent?.author_id) recipientId = parent.author_id;
-        notifType    = "new_reply";
+        if (parent?.authorId) recipientId = parent.authorId;  // fixed: was author_id
         notifContent = `${currentUser.full_name} replied to your comment.`;
       }
 
       if (currentUser.id !== recipientId) {
         await Notification.create({
           recipient_id: recipientId,
-          sender_id: currentUser.id,
-          type: notifType,
-          content: notifContent,
+          sender_id:    currentUser.id,
+          type:         notifType,
+          content:      notifContent,
           related_entity_type: "Post",
-          related_entity_id: postId,
-          url: `/feed#comment-${parentId ?? "new"}`,  // plain path, no createPageUrl
+          related_entity_id:   postId,
+          url:  `/feed`,
           icon: "MessageCircle",
         });
       }
@@ -299,12 +316,13 @@ export default function CommentSection({ postId, postCreatorId, currentUser, onC
     if (!currentUser) return;
 
     const flat: CommentData[] = [];
-    const collect = (cmts: CommentData[]) => cmts.forEach(c => { flat.push(c); if (c.replies) collect(c.replies); });
+    const collect = (cmts: CommentData[]) =>
+      cmts.forEach(c => { flat.push(c); if (c.replies) collect(c.replies); });
     collect(comments);
     const target = flat.find(c => c.id === commentId);
     if (!target) return;
 
-    const currentReactions    = { ...(target.reactions ?? {}) };
+    const currentReactions     = { ...(target.reactions ?? {}) };
     const currentUserReactions = [...(target.user_reactions ?? [])];
     const existingIdx = currentUserReactions.findIndex(r => r.user_email === currentUser.email);
     const existing    = existingIdx > -1 ? currentUserReactions[existingIdx] : null;
@@ -322,7 +340,11 @@ export default function CommentSection({ postId, postCreatorId, currentUser, onC
     }
 
     try {
-      await Comment.update(commentId, { reactions: currentReactions, user_reactions: currentUserReactions });
+      await fetch(`/api/comments/${commentId}/react`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reactions: currentReactions, user_reactions: currentUserReactions }),
+      });
       await loadComments();
     } catch {
       alert("Failed to react. Please try again.");
@@ -330,7 +352,8 @@ export default function CommentSection({ postId, postCreatorId, currentUser, onC
   };
 
   return (
-    <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+    <div className="px-6 py-4 bg-slate-50/50">
+      {/* New comment form */}
       <form onSubmit={handleCommentSubmit} className="mb-4">
         <div className="flex gap-3">
           {currentUser && (
@@ -345,9 +368,9 @@ export default function CommentSection({ postId, postCreatorId, currentUser, onC
             <Textarea
               value={newComment}
               onChange={e => setNewComment(e.target.value)}
-              placeholder="Write a comment..."
+              placeholder={currentUser ? "Write a comment..." : "Log in to comment"}
               className="min-h-[50px] border-slate-200 resize-none"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !currentUser}
             />
             <div className="flex justify-end mt-2">
               <Button
@@ -364,6 +387,7 @@ export default function CommentSection({ postId, postCreatorId, currentUser, onC
         </div>
       </form>
 
+      {/* Comment list */}
       {isLoadingComments ? (
         <div className="space-y-4">
           <Skeleton className="h-20 w-full" />

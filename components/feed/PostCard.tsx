@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { MessageCircle, Share2, Eye, Car, Shield, Image as ImageIcon, MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import Link from "next/navigation";
+import Link from "next/link";
 
 import {
   DropdownMenu,
@@ -221,7 +221,7 @@ export default function PostCard({ post, onReact, onComment, onShare, onEdit }) 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       {/* Use postAuthor.user_id (the user ID) for profile navigation */}
-                     <Link href={`/profile?id=${postAuthor?.user_id}`} className="hover:underline">
+                     <Link href={`/profile?id=${postAuthor?.id}`} className="hover:underline">
 
                         <h3 className="font-semibold text-slate-800">
                           {postAuthor?.full_name || "Unknown User"}
@@ -246,7 +246,7 @@ export default function PostCard({ post, onReact, onComment, onShare, onEdit }) 
                       <PostTypeBadge type={post.post_type} />
                     </div>
                     <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
-                      <span>{format(new Date(post.created_date), 'MMM d, h:mm a')}</span>
+                      <span>{format(new Date(post.createdAt), 'MMM d, h:mm a')}</span>
                       <div className="flex items-center gap-1">
                         <Eye className="w-3 h-3" />
                         <span>{viewCount}</span>
