@@ -11,22 +11,22 @@ function validateTicketBody(body: Record<string, unknown>): string | null {
     return "name is required";
 
   if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    return "a valid email is required";
+    return "A valid email is required";
 
   if (!subject || typeof subject !== "string" || subject.trim().length === 0)
-    return "subject is required";
+    return "Subject is required";
 
  
 
   if (!message || typeof message !== "string" || message.trim().length === 0)
-    return "message is required";
+    return "Message is required";
 
 
   if (ticket_type && !VALID_TICKET_TYPES.includes(ticket_type as typeof VALID_TICKET_TYPES[number]))
-    return `ticket_type must be one of: ${VALID_TICKET_TYPES.join(", ")}`;
+    return `Ticket_type must be one of: ${VALID_TICKET_TYPES.join(", ")}`;
 
   if (priority && !VALID_PRIORITIES.includes(priority as typeof VALID_PRIORITIES[number]))
-    return `priority must be one of: ${VALID_PRIORITIES.join(", ")}`;
+    return `Priority must be one of: ${VALID_PRIORITIES.join(", ")}`;
 
   return null;
 }

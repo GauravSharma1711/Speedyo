@@ -1,23 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, code, newPassword } = await req.json();
+    const { token, newPassword } = await req.json();
 
-    if (!email || !code || !newPassword) {
+    if (!token || !newPassword) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await prisma.user.findFirst({
+      where: { passwordResetTokenHash: tokenHash },
+    });
 
     if (
       !user ||
-      user.verificationCode !== code ||
-      user.verificationCodeExpiry < new Date()
+      !user.passwordResetTokenExpiry ||
+      user.passwordResetTokenExpiry < new Date()
     ) {
-      return NextResponse.json({ error: "Invalid or expired code" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 400 });
     }
 
     const sameAsCurrent = await bcrypt.compare(newPassword, user.password);
@@ -31,11 +36,11 @@ export async function POST(req: NextRequest) {
     const hashed = await bcrypt.hash(newPassword, 10);
 
     await prisma.user.update({
-      where: { email },
+      where: { id: user.id },
       data: {
         password: hashed,
-        verificationCode: "",
-        verificationCodeExpiry: new Date(0), 
+        passwordResetTokenHash: null,
+        passwordResetTokenExpiry: null,
       },
     });
 

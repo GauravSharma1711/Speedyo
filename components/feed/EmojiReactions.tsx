@@ -1,109 +1,191 @@
-"use client"
+"use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { ThumbsUp, Heart, Laugh, Sparkles, Angry, Flame } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Defines the emoji icon, color, and label for each reaction type
-const emojiMap = {
-  like: { icon: ThumbsUp, color: "text-blue-500", label: "Like", bgColor: "bg-blue-500", iconColor: "text-white" },
-  love: { icon: Heart, color: "text-red-500", label: "Love", bgColor: "bg-red-500", iconColor: "text-white" },
-  laugh: { icon: Laugh, color: "text-yellow-500", label: "Haha", bgColor: "bg-yellow-400", iconColor: "text-white" },
-  wow: { icon: Sparkles, color: "text-sky-500", label: "Wow", bgColor: "bg-sky-400", iconColor: "text-white" },
-  fire: { icon: Flame, color: "text-orange-500", label: "Fire", bgColor: "bg-orange-500", iconColor: "text-white" },
-  angry: { icon: Angry, color: "text-red-700", label: "Angry", bgColor: "bg-red-600", iconColor: "text-white" },
+type ReactionType = "like" | "love" | "laugh" | "wow" | "fire" | "angry";
+
+type UserReaction = { user_email: string; reaction: ReactionType };
+
+type EmojiMap = Record<
+  ReactionType,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    label: string;
+    bgColor: string;
+    iconColor: string;
+  }
+>;
+
+const emojiMap: EmojiMap = {
+  like: {
+    icon: ThumbsUp,
+    color: "text-blue-500",
+    label: "Like",
+    bgColor: "bg-blue-500",
+    iconColor: "text-white",
+  },
+  love: {
+    icon: Heart,
+    color: "text-red-500",
+    label: "Love",
+    bgColor: "bg-red-500",
+    iconColor: "text-white",
+  },
+  laugh: {
+    icon: Laugh,
+    color: "text-yellow-500",
+    label: "Haha",
+    bgColor: "bg-yellow-400",
+    iconColor: "text-white",
+  },
+  wow: {
+    icon: Sparkles,
+    color: "text-sky-500",
+    label: "Wow",
+    bgColor: "bg-sky-400",
+    iconColor: "text-white",
+  },
+  fire: {
+    icon: Flame,
+    color: "text-orange-500",
+    label: "Fire",
+    bgColor: "bg-orange-500",
+    iconColor: "text-white",
+  },
+  angry: {
+    icon: Angry,
+    color: "text-red-700",
+    label: "Angry",
+    bgColor: "bg-red-600",
+    iconColor: "text-white",
+  },
 };
 
-export default function EmojiReactions({ post, onReact, currentUser, interactive = false, compact = false, totalReactions = 0, showCount = false }) {
+type EmojiReactionsProps = {
+  post: {
+    reactions?: Partial<Record<ReactionType, number>> | Record<string, number> | null;
+    user_reactions?: Array<{ user_email?: string; reaction?: string }> | null;
+  };
+  onReact: (reactionType: ReactionType | null) => void | Promise<void>;
+  currentUser: { email?: string | null } | null;
+  interactive?: boolean;
+  compact?: boolean;
+  totalReactions?: number;
+  showCount?: boolean;
+};
+
+export default function EmojiReactions({
+  post,
+  onReact,
+  currentUser,
+  interactive = false,
+  compact = false,
+  totalReactions = 0,
+  showCount = false,
+}: EmojiReactionsProps) {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Determine the user's current reaction for this post
-  const currentUserReaction = post?.user_reactions?.find(
-    (ur) => ur.user_email === currentUser?.email
-  )?.reaction;
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Handler for quick-clicking the main reaction button
-  const handleQuickClick = () => {
-    if (!currentUser) {
-      alert("Please log in to react to posts.");
-      return;
+  const cancelClose = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
     }
-    // If user has a reaction, clicking again removes it. Otherwise, it defaults to 'like'.
-    const reactionToSend = currentUserReaction ? null : 'like';
-    onReact(reactionToSend);
   };
 
-  // Handle mouse enter with delay
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimerRef.current = setTimeout(() => {
+      setShowReactionPicker(false);
+    }, 250);
+  };
+
+  const currentUserReaction = (post?.user_reactions ?? [])
+    .find((ur) => ur?.user_email && ur.user_email === currentUser?.email)
+    ?.reaction as ReactionType | undefined;
+
   const handleMouseEnter = () => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
+    cancelClose();
+
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
-    const timeout = setTimeout(() => {
-      if(currentUser) { // Only show picker if logged in
-        setShowReactionPicker(true);
-      }
-    }, 500); // 500ms delay before showing picker
-    setHoverTimeout(timeout);
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (currentUser) setShowReactionPicker(true);
+    }, 350);
   };
 
-  // Handle mouse leave
   const handleMouseLeave = () => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
-    setShowReactionPicker(false);
+    scheduleClose();
   };
 
-  // Handle reaction selection
-  const handleReactionSelect = (reactionType) => {
+  const handleReactionSelect = (reactionType: ReactionType) => {
     if (!currentUser) return;
     onReact(reactionType);
     setShowReactionPicker(false);
   };
 
-  // Renders the compact view showing all reaction types with counts
   if (compact) {
-    // Get all reactions with counts > 0, sorted by count (descending)
-    const activeReactions = Object.entries(post?.reactions || {})
-      .filter(([type, count]) => count > 0 && emojiMap[type])
-      .sort((a, b) => b[1] - a[1]); // Sort by count descending
+    const reactionsRaw = (post?.reactions ?? {}) as Record<string, unknown>;
 
-    if (activeReactions.length === 0) {
-      return null; // Don't show anything if no reactions
-    }
+    const activeReactions = Object.entries(reactionsRaw)
+      .map(([type, count]) => {
+        const n = typeof count === "number" ? count : Number(count);
+        return { type, count: Number.isFinite(n) ? n : 0 };
+      })
+      .filter((x) => x.count > 0 && (x.type in emojiMap))
+      .sort((a, b) => b.count - a.count);
+
+    if (activeReactions.length === 0) return null;
 
     return (
       <div className="flex items-center gap-2 flex-wrap">
-        {activeReactions.map(([type, count]) => {
-          const emojiConfig = emojiMap[type];
-          if (!emojiConfig) return null;
+        {activeReactions.map(({ type, count }) => {
+          const reactionType = type as ReactionType;
+          const emojiConfig = emojiMap[reactionType];
           const { icon: Icon, bgColor, iconColor } = emojiConfig;
-          
+
           return (
             <div key={type} className="flex items-center gap-1">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center ${bgColor} border-2 border-white shadow-sm`}>
+              <div
+                className={`w-5 h-5 rounded-full flex items-center justify-center ${bgColor} border-2 border-white shadow-sm`}
+              >
                 <Icon className={`w-3 h-3 ${iconColor}`} />
               </div>
               <span className="text-sm text-slate-600 font-medium">{count}</span>
             </div>
           );
         })}
+
+        {showCount && totalReactions > 0 ? (
+          <span className="text-sm text-slate-600 font-medium">{totalReactions}</span>
+        ) : null}
       </div>
     );
   }
 
-  // Renders the full interactive reaction button with hover-based picker
   if (interactive) {
-    const currentReactionConfig = currentUserReaction && emojiMap[currentUserReaction] 
-      ? emojiMap[currentUserReaction] 
-      : { icon: ThumbsUp, color: "text-slate-500", label: "Like" };
-    
+    const currentReactionConfig =
+      currentUserReaction && emojiMap[currentUserReaction]
+        ? emojiMap[currentUserReaction]
+        : { icon: ThumbsUp, color: "text-slate-500", label: "Like", bgColor: "", iconColor: "" };
+
     const { icon: CurrentIcon, color: currentColor, label: currentLabel } = currentReactionConfig;
 
     return (
-      <div 
+      <div
         className="relative inline-block"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -111,14 +193,20 @@ export default function EmojiReactions({ post, onReact, currentUser, interactive
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleQuickClick}
-          className={`font-semibold hover:bg-slate-100 ${currentUserReaction ? currentColor : "text-slate-500 hover:text-slate-600"}`}
+          onClick={() => {
+            if (!currentUser) {
+              alert("Please log in to react to posts.");
+              return;
+            }
+            setShowReactionPicker((v) => !v);
+          }}
+          className={`font-semibold hover:bg-slate-100 ${currentUserReaction ? currentColor : "text-slate-500 hover:text-slate-600"
+            }`}
         >
           <CurrentIcon className="w-5 h-5 mr-2" />
           {currentLabel}
         </Button>
 
-        {/* Hover-based Reaction Picker */}
         <AnimatePresence>
           {showReactionPicker && (
             <motion.div
@@ -127,22 +215,30 @@ export default function EmojiReactions({ post, onReact, currentUser, interactive
               exit={{ opacity: 0, y: 10, scale: 0.9 }}
               transition={{ duration: 0.15 }}
               className="absolute bottom-full left-0 mb-2 bg-white rounded-full shadow-lg border border-slate-200 p-1 z-50"
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
             >
               <div className="flex gap-1">
-                {Object.entries(emojiMap).map(([type, { icon: Icon, bgColor, label, iconColor }]) => (
-                  <motion.button
-                    key={type}
-                    whileHover={{ scale: 1.25, y: -2 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleReactionSelect(type)}
-                    className="rounded-full transition-colors"
-                    title={label}
-                  >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${bgColor} shadow-sm`}>
-                      <Icon className={`w-5 h-5 ${iconColor}`} />
-                    </div>
-                  </motion.button>
-                ))}
+                {(Object.keys(emojiMap) as ReactionType[]).map((type) => {
+                  const { icon: Icon, bgColor, label, iconColor } = emojiMap[type];
+                  return (
+                    <motion.button
+                      key={type}
+                      whileHover={{ scale: 1.25, y: -2 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleReactionSelect(type)}
+                      className="rounded-full transition-colors"
+                      title={label}
+                      type="button"
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${bgColor} shadow-sm`}
+                      >
+                        <Icon className={`w-5 h-5 ${iconColor}`} />
+                      </div>
+                    </motion.button>
+                  );
+                })}
               </div>
             </motion.div>
           )}

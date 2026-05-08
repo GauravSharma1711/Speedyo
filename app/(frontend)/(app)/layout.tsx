@@ -58,6 +58,7 @@ import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/ui/UseToast";
 import { Toaster } from "@/components/ui/Toaster";
 import FeedbackModal from "@/components/feedback/FeedbackModal";
+import SetupAccountDialog from "@/components/setup/SetupAccountDialog";
 
 // ─── Replace these with your actual API/entity imports ───────────────────────
 // import { UserEntity } from "@/entities/User";
@@ -253,14 +254,23 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
     setCurrentUser({
       id: session.user.id,
       email: session.user.email ?? "",
-      full_name: session.user.full_name,
-      // add other fields from your session
+      full_name: (session.user as any).full_name,
+      profile_image: (session.user as any).image ?? undefined,
+      user_type: (session.user as any).user_type,
+      verified: (session.user as any).isVerified,
+      role: (session.user as any).role,
+      bio: (session.user as any).bio,
+      location: (session.user as any).location ?? undefined,
+      setup_completed: (session.user as any).setup_completed ?? false,
     })
     setCurrentUserDisplay({
-      full_name: session.user.full_name,
-      profile_image: session.user.image ?? undefined,
-      user_type: session.user.user_type,
-      role: session.user.role,
+      full_name: (session.user as any).full_name,
+      profile_image: (session.user as any).image ?? undefined,
+      user_type: (session.user as any).user_type,
+      verified: (session.user as any).isVerified,
+      role: (session.user as any).role,
+      bio: (session.user as any).bio,
+      location: (session.user as any).location ?? undefined,
     })
   } else {
     setCurrentUser(null)
@@ -294,15 +304,9 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
     }
   }, [currentUser, currentUserDisplay, isAuthCheckComplete]);
 
-  const handleSetupUpdate = async () => {
-    try {
-      // TODO: re-fetch user after setup
-      // const user = await UserEntity.me();
-      // setCurrentUser(user);
-      // ...
-    } catch (error) {
-      console.error("Failed to refresh user data:", error);
-    }
+  const handleSetupClose = () => setShowSetupDialog(false);
+  const handleSetupUpdate = () => {
+    setShowSetupDialog(false);
   };
 
   // ── Notifications ─────────────────────────────────────────────────────────
@@ -601,8 +605,6 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
         {showSidebar ? (
           <>
             {/* ── Sidebar ───────────────────────────────────────────────── */}
-            {/* Let shadcn Sidebar manage its own layout classes.
-               Only add styling classes here to avoid breaking the built-in "gap" behavior. */}
             <Sidebar className="border-r border-slate-200/60 backdrop-blur-sm">
               <SidebarHeader className="border-b border-slate-200/60 pb-0 flex pl-10 pt-6">
                 <Link href={createPageUrl("Landing")}>
@@ -960,9 +962,12 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
       {/* Setup Account Dialog */}
       <AnimatePresence>
         {showSetupDialog && currentUser && currentUserDisplay && (
-          // TODO: Replace with your SetupAccountDialog component
-          // <SetupAccountDialog user={currentUser} userDisplay={currentUserDisplay} onClose={handleSetupClose} onUpdate={handleSetupUpdate} />
-          null
+          <SetupAccountDialog
+            user={currentUser}
+            userDisplay={currentUserDisplay}
+            onClose={handleSetupClose}
+            onUpdate={handleSetupUpdate}
+          />
         )}
       </AnimatePresence>
 

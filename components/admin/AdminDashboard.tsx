@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import {
   ArrowRightLeft,
   CalendarCheck,
@@ -10,6 +11,7 @@ import {
   FileText,
   Handshake,
   LifeBuoy,
+  Loader2,
   LogIn,
   Menu,
   MessageSquare,
@@ -83,14 +85,19 @@ function SectionPlaceholder(props: { title: string; description?: string }) {
 }
 
 export default function AdminDashboard() {
-  const [currentUser] = useState<AdminUser>({
-    id: "mock-admin",
-    full_name: "Admin",
-    email: "admin@local.dev",
-    role: "admin",
-  });
-  const [isLoading] = useState(false);
-  const [isAdmin] = useState(true);
+  const { data: session, status } = useSession();
+  const isLoading = status === "loading";
+
+  const currentUser: AdminUser | null = session?.user?.id
+    ? {
+        id: session.user.id,
+        full_name: session.user.full_name ?? session.user.email ?? "Admin",
+        email: session.user.email ?? "",
+        role: (session.user.role as AdminUser["role"]) ?? "user",
+      }
+    : null;
+
+  const isAdmin = currentUser?.role === "admin";
 
   const [activeTab, setActiveTab] =
     useState<(typeof NAV)[number]["key"]>("managed_sales");
@@ -145,7 +152,11 @@ export default function AdminDashboard() {
   }, [activeTab]);
 
   if (isLoading) {
-    return <div className="p-8">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
   }
 
   if (!isAdmin) {
@@ -180,7 +191,7 @@ export default function AdminDashboard() {
                 Admin Dashboard
               </h1>
               <p className="text-slate-600">
-                Welcome, {currentUser.full_name}. Manage all aspects of Speedyo
+                Welcome, {currentUser?.full_name ?? "Admin"}. Manage all aspects of Speedyo
                 from here.
               </p>
             </div>

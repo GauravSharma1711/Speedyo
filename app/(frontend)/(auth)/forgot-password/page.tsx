@@ -2,16 +2,19 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/store/auth"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
   const router = useRouter()
+  const { forgotPassword, isLoading, error, clearError } = useAuthStore()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    setLoading(true)
-    console.log("Forgot password submit:", { email })
-    setTimeout(() => setLoading(false), 800)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    clearError()
+    await forgotPassword({ email })
+    setSubmittedEmail(email)
   }
 
   return (
@@ -48,28 +51,115 @@ export default function ForgotPasswordPage() {
                     Back to sign in
                   </button>
 
-                  <div className="text-center space-y-2">
-                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-                      Reset your password
-                    </h2>
-                    <p className="text-slate-600 text-sm sm:text-base">
-                      Enter your email and we'll send you a link to reset your
-                      password
-                    </p>
-                  </div>
+                  {!submittedEmail ? (
+                    <>
+                      <div className="text-center space-y-2">
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+                          Reset your password
+                        </h2>
+                        <p className="text-slate-600 text-sm sm:text-base">
+                          Enter your email and we'll send you a link to reset your
+                          password
+                        </p>
+                      </div>
 
-                  <form
-                    onSubmit={handleSubmit}
-                    className="space-y-4 sm:space-y-5"
-                  >
-                    <div className="space-y-1.5">
-                      <label
-                        className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-sm font-medium text-slate-700"
-                        htmlFor="email"
+                      {error && (
+                        <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm text-left">
+                          {error}
+                        </div>
+                      )}
+
+                      <form
+                        onSubmit={handleSubmit}
+                        className="space-y-4 sm:space-y-5"
                       >
-                        Email
-                      </label>
-                      <div className="relative">
+                        <div className="space-y-1.5">
+                          <label
+                            className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-sm font-medium text-slate-700"
+                            htmlFor="email"
+                          >
+                            Email
+                          </label>
+                          <div className="relative">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="lucide lucide-mail absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"
+                              aria-hidden="true"
+                            >
+                              <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                            </svg>
+                            <input
+                              id="email"
+                              type="email"
+                              placeholder="you@example.com"
+                              required
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="flex w-full border px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-10 h-10 sm:h-11 bg-slate-50/50 border-slate-200 focus:border-slate-400 focus:ring-slate-400 rounded-xl placeholder:text-slate-400"
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          className="inline-flex items-center justify-center gap-1 whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 px-3 py-2 w-full h-10 sm:h-11 bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-sm rounded-xl transition-all duration-200"
+                          type="submit"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? "Sending..." : "Send reset link"}
+                        </button>
+                      </form>
+                    </>
+                  ) : (
+                    <div className="space-y-5">
+                      <div className="flex items-center justify-center">
+                        <div className="h-14 w-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="lucide lucide-mail h-6 w-6 text-slate-700"
+                            aria-hidden="true"
+                          >
+                            <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                          </svg>
+                        </div>
+                      </div>
+
+                      <div className="text-center space-y-2">
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+                          Check your email
+                        </h2>
+                        <p className="text-slate-600 text-sm sm:text-base">
+                          We've sent password reset instructions to{" "}
+                          <span className="font-medium text-slate-900">{submittedEmail}</span>
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 text-center">
+                        Please check your email for the password reset link. It may take a few minutes to arrive.
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => router.push("/signIn")}
+                        className="w-full flex items-center justify-center gap-2 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors"
+                      >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="24"
@@ -80,32 +170,16 @@ export default function ForgotPasswordPage() {
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="lucide lucide-mail absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400"
+                          className="lucide lucide-arrow-left h-4 w-4"
                           aria-hidden="true"
                         >
-                          <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                          <path d="m12 19-7-7 7-7"></path>
+                          <path d="M19 12H5"></path>
                         </svg>
-                        <input
-                          id="email"
-                          type="email"
-                          placeholder="you@example.com"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="flex w-full border px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pl-10 h-10 sm:h-11 bg-slate-50/50 border-slate-200 focus:border-slate-400 focus:ring-slate-400 rounded-xl placeholder:text-slate-400"
-                        />
-                      </div>
+                        Back to sign in
+                      </button>
                     </div>
-
-                    <button
-                      className="inline-flex items-center justify-center gap-1 whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 px-3 py-2 w-full h-10 sm:h-11 bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-sm rounded-xl transition-all duration-200"
-                      type="submit"
-                      disabled={loading}
-                    >
-                      Send reset link
-                    </button>
-                  </form>
+                  )}
                 </div>
               </div>
             </div>

@@ -63,7 +63,7 @@ const MOCK: DealershipAgreement[] = [
     service_fee_amount: null,
     admin_notes: "High volume partner.",
     status: "signed",
-    agreement_url: "/SignAgreement?id=agr_001",
+    agreement_url: "/SignAgreement/agr_001",
     created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40).toISOString(),
     signed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 35).toISOString(),
   },
@@ -78,7 +78,7 @@ const MOCK: DealershipAgreement[] = [
     service_fee_amount: 200,
     admin_notes: "",
     status: "pending_signature",
-    agreement_url: "/SignAgreement?id=agr_002",
+    agreement_url: "/SignAgreement/agr_002",
     created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
     signed_at: null,
   },
@@ -166,7 +166,7 @@ export default function DealershipAgreementManagerUI() {
         service_fee_amount: Number.isFinite(fee as number) ? fee : null,
         admin_notes: formData.admin_notes.trim() || null,
         status: "draft",
-        agreement_url: `/SignAgreement?id=${id}`,
+        agreement_url: `/SignAgreement/${id}`,
         created_date: new Date().toISOString(),
         signed_at: null,
       };
@@ -449,9 +449,9 @@ export default function DealershipAgreementManagerUI() {
         <div className="grid gap-4">
           {agreements.map((a) => {
             const viewHref =
-            a.status === "signed"
-              ? `/ViewDealershipAgreement/${a.id}`
-              : a.agreement_url ?? `/SignAgreement?id=${a.id}`;
+              a.status === "signed"
+                ? `/ViewDealershipAgreement/${a.id}`
+                : a.agreement_url ?? `/SignAgreement?id=${a.id}`;
 
             return (
               <Card key={a.id} className="hover:shadow-lg transition-all duration-200">

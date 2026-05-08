@@ -198,7 +198,7 @@ export default function VehicleInspectionChecklistModalUI(props: {
   onClose: () => void;
   managedSaleRequest?: ManagedSaleRequestLite | null;
   existingChecklist?: ExistingChecklist | null;
-  onSave?: (data: VehicleInspectionChecklistData) => void;
+  onSave?: (data: VehicleInspectionChecklistData) => Promise<void> | void;
 }) {
   const { isOpen, onClose, managedSaleRequest, existingChecklist, onSave } = props;
 
@@ -222,7 +222,7 @@ export default function VehicleInspectionChecklistModalUI(props: {
     setIsSubmitting(true);
     try {
       const checklistData: VehicleInspectionChecklistData = { ...formData };
-      onSave?.(checklistData);
+      await onSave?.(checklistData);
       onClose();
     } catch (e) {
       console.error("Failed to save checklist:", e);

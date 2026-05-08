@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   BarChart3,
@@ -61,6 +61,12 @@ import VehicleInspectionChecklistModalUI, {
 } from "@/components/admin/VehicleInspectionChecklistModal";
 import AdminAvailabilityManagerUI from "./AdminAvailabilityManager";
 import ManagedSalesRequestFormUI from "@/components/manageSales/RequestForm";
+import type { ManagedSaleRequestUpdatePayload } from "@/components/manageSales/RequestForm";
+import type { ManagedSaleRequestEditTarget } from "@/components/manageSales/RequestForm";
+import { useManagedSaleRequestsStore } from "@/store/admin/managedSaleRequests";
+import type { AvailabilitySlot } from "./AdminAvailabilityManager";
+import { useInspectionChecklistStore } from "@/store/admin/inspectionChecklist";
+import type { CreateChecklistBody } from "@/services/admin/inspectionChecklistService";
 
 type ManagedSaleStatus =
   | "pending_initial_review"
@@ -126,101 +132,6 @@ type ChecklistRow = VehicleInspectionChecklistData & {
   created_date: string; // ISO
   updated_date?: string | null;
 };
-
-const MOCK_USERS: UserRow[] = [
-  { id: "u_1", full_name: "Tushar Bisht", email: "tushar@example.com" },
-  { id: "u_2", full_name: "Kevin Phillips", email: "kevin@example.com" },
-];
-
-const MOCK_REQUESTS: ManagedSaleRequestRow[] = [
-  {
-    id: "msr_001",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    status: "pending_review",
-    submitted_by_user_id: "u_1",
-    created_vehicle_id: null,
-    vehicle_details: {
-      title: "2011 Daihatsu Move",
-      make: "Daihatsu",
-      model: "Move",
-      year: 2011,
-      seller_asking_price: 1200,
-      images_thumbnails: [],
-    },
-    access_arrangements: {
-      vehicle_location_address: "Camp Hansen Okinawa",
-      vehicle_access_availability: "Weekdays and weekends flexible.",
-      key_access_method: "direct_handover",
-      key_pickup_location: "Anywhere willing to meet",
-      key_pickup_availability: "All days at any time, I’m flexible.",
-      key_location_details: "",
-      emergency_contact_name: "Will",
-      emergency_contact_phone: "+14135056429",
-      power_of_attorney: true,
-      power_of_attorney_details: "Ready for pick up with keys",
-      special_instructions: "Title still has until March 4th, but will have 120 day waiver.",
-    },
-  },
-  {
-    id: "msr_002",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(),
-    status: "listed",
-    submitted_by_user_id: "u_2",
-    created_vehicle_id: "veh_123",
-    vehicle_details: {
-      title: "2012 Suzuki Solio",
-      make: "Suzuki",
-      model: "Solio",
-      year: 2012,
-      seller_asking_price: 1500,
-      images_thumbnails: [],
-    },
-    final_sale_price_for_buyer: 1800,
-    owner_receives_amount: 1500,
-    service_fee_amount: 300,
-  },
-];
-
-
-const MOCK_CHECKLISTS: ChecklistRow[] = [
-  {
-    id: "chk_001",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-    updated_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
-
-    date_of_inspection: "2025-11-05",
-    inspector_name: "Kevin Phillips",
-    dealership_name: "Taka Cars",
-    warranty: "",
-    repair_service_details: "",
-
-    managed_sale_request_id: "msr_002",
-
-    vehicle_info: {
-      make: "Daihatsu",
-      model: "Move",
-      year: 2011,
-      vin: "L465S-0018288",
-      mileage: 74000,
-      license_plate: "",
-      transmission: "automatic",
-      fuel_type: "gasoline",
-      drivetrain: "fwd",
-    },
-
-    exterior_condition: [],
-    interior_condition: [],
-    engine_mechanical: [],
-    documentation: [],
-    photos_media: [],
-
-    overall_condition: "",
-    recommended_sale_price: "",
-    verified_by_speedio: "",
-    dealership_representative: "",
-    inspection_notes: "",
-  },
-];
 
 function calculateServiceFeeAmount(price: number) {
   if (!price || price <= 0) return 0;
@@ -298,22 +209,49 @@ function getStatusBadge(status: ManagedSaleStatus) {
 export default function ManagedSalesAdminUI() {
   const { toast } = useToast();
 
-  const [users] = useState<UserRow[]>(MOCK_USERS);
-  const [requests, setRequests] = useState<ManagedSaleRequestRow[]>(MOCK_REQUESTS);
+  const {
+    items,
+    current,
+    isLoading,
+    error,
+    page,
+    limit,
+    search,
+    statusFilter,
+    fetch,
+    refresh,
+    setSearch,
+    getById,
+    adminPatch,
+    delete: deleteMsr,
+    approveAndList: approveAndListMsr,
+    patchStatus,
+    updateAvailability,
+    markSold: markSoldMsr,
+    approveCancellation,
+    declineCancellation,
+    approveEditRequest,
+    declineEditRequest,
+  } = useManagedSaleRequestsStore();
+
+  const {
+    items: checklistItems,
+    isLoading: isChecklistLoading,
+    error: checklistError,
+    fetch: fetchChecklists,
+    create: createChecklist,
+    update: updateChecklist,
+  } = useInspectionChecklistStore();
 
   const [activeTab, setActiveTab] = useState<"requests" | "checklists">("requests");
-  const [filter, setFilter] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState<string>("all"); // UI-only (supports "approved_and_listed")
+  const [searchTerm, setSearchTerm] = useState(search);
   const [showStats, setShowStats] = useState(false);
-
-  const [isLoading] = useState(false);
-  const [isLoadingChecklists] = useState(false);
 
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
   const [availabilityTarget, setAvailabilityTarget] = useState<ManagedSaleRequestRow | null>(null);
   const [availabilityDraft, setAvailabilityDraft] = useState<any[]>([]);
 
-  const [checklistsList, setChecklistsList] = useState<ChecklistRow[]>(MOCK_CHECKLISTS);
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [editingChecklist, setEditingChecklist] = useState<ChecklistRow | null>(null);
 
@@ -323,7 +261,7 @@ export default function ManagedSalesAdminUI() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [adminEditOpen, setAdminEditOpen] = useState(false);
-  const [adminEditTarget, setAdminEditTarget] = useState<ManagedSaleRequestRow | null>(null);
+  const [adminEditTarget, setAdminEditTarget] = useState<ManagedSaleRequestEditTarget | null>(null);
 
   const [checklistMsrContext, setChecklistMsrContext] = useState<{
     id: string;
@@ -339,6 +277,80 @@ export default function ManagedSalesAdminUI() {
     };
   } | null>(null);
 
+  useEffect(() => {
+    const t = window.setTimeout(() => setSearch(searchTerm), 350);
+    return () => window.clearTimeout(t);
+  }, [searchTerm, setSearch]);
+
+  useEffect(() => {
+    fetch({ page, limit, search, status: statusFilter });
+  }, [fetch, page, limit, search, statusFilter]);
+
+  useEffect(() => {
+    if (activeTab !== "checklists") return;
+    fetchChecklists();
+  }, [activeTab, fetchChecklists]);
+
+  const users = useMemo<UserRow[]>(() => {
+    const map = new Map<string, UserRow>();
+    for (const r of items ?? []) {
+      const u = (r as any).submittedByUser;
+      if (u?.id && !map.has(u.id)) {
+        map.set(u.id, {
+          id: String(u.id),
+          email: String(u.email ?? ""),
+          full_name: u.full_name ?? null,
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [items]);
+
+  const requests = useMemo<ManagedSaleRequestRow[]>(() => {
+    return (items ?? []).map((r) => {
+      const anyR = r as any;
+      const vehicleYear = anyR.vehicle_year;
+      const yearNum =
+        typeof vehicleYear === "number"
+          ? vehicleYear
+          : Number.isFinite(Number(vehicleYear))
+            ? Number(vehicleYear)
+            : new Date().getFullYear();
+
+      const thumbArr =
+        (Array.isArray(anyR.vehicle_images_thumbnails) ? anyR.vehicle_images_thumbnails : null) ??
+        (Array.isArray(anyR.vehicle_images_small) ? anyR.vehicle_images_small : null) ??
+        (Array.isArray(anyR.vehicle_images_medium) ? anyR.vehicle_images_medium : null) ??
+        [];
+
+      const titleFromParts = `${anyR.vehicle_year ?? ""} ${anyR.vehicle_make ?? ""} ${anyR.vehicle_model ?? ""}`
+        .replace(/\s+/g, " ")
+        .trim();
+      const title = (anyR.vehicle_title ?? "").trim() || titleFromParts || `MSR ${String(anyR.id).slice(0, 8)}`;
+
+      return {
+        id: String(anyR.id),
+        created_date: String(anyR.createdAt ?? new Date().toISOString()),
+        status: (anyR.status ?? "pending_review") as ManagedSaleStatus,
+        submitted_by_user_id: String(anyR.submitted_by_user_id ?? anyR.submittedByUser?.id ?? ""),
+        created_vehicle_id: anyR.created_vehicle_id ?? anyR.createdVehicle?.id ?? null,
+        vehicle_details: {
+          title,
+          make: String(anyR.vehicle_make ?? ""),
+          model: String(anyR.vehicle_model ?? ""),
+          year: yearNum,
+          seller_asking_price: anyR.seller_asking_price ?? null,
+          images_thumbnails: thumbArr,
+        },
+        access_arrangements: anyR.access_arrangements ?? undefined,
+        final_sale_price_for_buyer: anyR.final_sale_price_for_buyer ?? null,
+        owner_receives_amount: anyR.owner_receives_amount ?? null,
+        service_fee_amount: anyR.service_fee_amount ?? null,
+        calculated_buyer_price: anyR.calculated_buyer_price ?? null,
+      };
+    });
+  }, [items]);
+
   const openCreateChecklist = () => {
     setEditingChecklist(null);
     setChecklistMsrContext(null);
@@ -350,29 +362,126 @@ export default function ManagedSalesAdminUI() {
     setChecklistModalOpen(true);
   };
 
-  const handleChecklistSave = (data: VehicleInspectionChecklistData) => {
-    if (editingChecklist) {
-      setChecklistsList((prev) =>
-        prev.map((c) =>
-          c.id === editingChecklist.id
-            ? { ...c, ...data, updated_date: new Date().toISOString() }
-            : c,
-        ),
-      );
-      toast({ title: "Checklist updated", description: "Saved to local state." });
-      return;
-    }
+  const handleChecklistSave = async (data: VehicleInspectionChecklistData) => {
+    const rawPrice = (data.recommended_sale_price ?? "").toString().trim();
+    const priceNum = rawPrice ? Number(rawPrice) : null;
 
-    const created: ChecklistRow = {
-      id: `chk_${Math.random().toString(16).slice(2, 10)}`,
-      created_date: new Date().toISOString(),
-      updated_date: new Date().toISOString(),
-      ...data,
+    const body: CreateChecklistBody = {
+      date_of_inspection: data.date_of_inspection,
+      inspector_name: data.inspector_name,
+      dealership_name: data.dealership_name || undefined,
+      warranty: data.warranty || undefined,
+      repair_service_details: data.repair_service_details || undefined,
+      verified_by_speedio: data.verified_by_speedio || undefined,
+      dealership_representative: data.dealership_representative || undefined,
+      inspection_notes: data.inspection_notes || undefined,
+      overall_condition: data.overall_condition || undefined,
+      recommended_sale_price: Number.isFinite(priceNum as number) ? (priceNum as number) : null,
+      vehicle_info: (data.vehicle_info ?? {}) as Record<string, unknown>,
+      exterior_condition: data.exterior_condition ?? [],
+      interior_condition: data.interior_condition ?? [],
+      engine_mechanical: data.engine_mechanical ?? [],
+      documentation: data.documentation ?? [],
+      photos_media: data.photos_media ?? [],
+      managedSaleRequestId: (data.managed_sale_request_id || checklistMsrContext?.id || null) as
+        | string
+        | null,
     };
 
-    setChecklistsList((prev) => [created, ...prev]);
-    toast({ title: "Checklist created", description: "Saved to local state." });
+    try {
+      if (editingChecklist) {
+        await updateChecklist(editingChecklist.id, body);
+        toast({ title: "Checklist updated", description: "" });
+      } else {
+        await createChecklist(body);
+        toast({ title: "Checklist created", description: "" });
+      }
+    } catch (_e) {
+      toast({ title: "Failed", description: "Checklist save failed.", variant: "destructive" });
+      throw _e;
+    }
   };
+
+  const checklistRows = useMemo<ChecklistRow[]>(() => {
+    return (checklistItems ?? []).map((it: any) => {
+      const v = (it.vehicle_info ?? {}) as Record<string, unknown>;
+
+      const transmissionRaw = String(v.transmission ?? "automatic").toLowerCase();
+      const transmission = transmissionRaw === "manual" ? "manual" : "automatic";
+
+      const fuelRaw = String(v.fuel_type ?? "gasoline").toLowerCase();
+      const fuel_type =
+        fuelRaw === "diesel" || fuelRaw === "hybrid" || fuelRaw === "electric" ? fuelRaw : "gasoline";
+
+      const driveRaw = String(v.drivetrain ?? "fwd").toLowerCase();
+      const drivetrain = driveRaw === "rwd" || driveRaw === "awd" || driveRaw === "4wd" ? driveRaw : "fwd";
+
+      const normalizedVehicleInfo = {
+        ...v,
+        transmission,
+        fuel_type,
+        drivetrain,
+        year:
+          v.year === "" || v.year == null
+            ? ""
+            : Number.isFinite(Number(v.year))
+              ? Number(v.year)
+              : "",
+        mileage:
+          v.mileage === "" || v.mileage == null
+            ? ""
+            : Number.isFinite(Number(v.mileage))
+              ? Number(v.mileage)
+              : "",
+      } as ChecklistRow["vehicle_info"];
+
+      const docRaw = Array.isArray(it.documentation) ? it.documentation : [];
+      const photoRaw = Array.isArray(it.photos_media) ? it.photos_media : [];
+
+      const documentation = docRaw.map((d: any) =>
+        d && typeof d === "object"
+          ? { document: d.document ?? d.item ?? "", verified: Boolean(d.verified ?? d.present), notes: d.notes ?? "" }
+          : d,
+      );
+      const photos_media = photoRaw.map((p: any) =>
+        p && typeof p === "object"
+          ? { type: p.type ?? p.item ?? "", completed: Boolean(p.completed ?? p.present), notes: p.notes ?? "" }
+          : p,
+      );
+
+      const dateIso = String(it.date_of_inspection ?? "");
+      const dateOnly = dateIso ? dateIso.slice(0, 10) : "";
+      const rawSalePrice = it.recommended_sale_price;
+      const salePriceStr = rawSalePrice == null ? "" : typeof rawSalePrice === "number" ? String(rawSalePrice) : String(rawSalePrice).trim();
+
+      return {
+        id: String(it.id),
+        created_date: String(it.createdAt ?? new Date().toISOString()),
+        updated_date: String(it.updatedAt ?? it.createdAt ?? new Date().toISOString()),
+
+        date_of_inspection: dateOnly,
+        inspector_name: String(it.inspector_name ?? ""),
+        dealership_name: String(it.dealership_name ?? ""),
+        warranty: String(it.warranty ?? ""),
+        repair_service_details: String(it.repair_service_details ?? ""),
+
+        managed_sale_request_id: String(it.managedSaleRequestId ?? ""),
+
+        vehicle_info: normalizedVehicleInfo,
+        exterior_condition: Array.isArray(it.exterior_condition) ? it.exterior_condition : [],
+        interior_condition: Array.isArray(it.interior_condition) ? it.interior_condition : [],
+        engine_mechanical: Array.isArray(it.engine_mechanical) ? it.engine_mechanical : [],
+        documentation,
+        photos_media,
+
+        overall_condition: String(it.overall_condition ?? ""),
+        recommended_sale_price: salePriceStr,
+        verified_by_speedio: String(it.verified_by_speedio ?? ""),
+        dealership_representative: String(it.dealership_representative ?? ""),
+        inspection_notes: String(it.inspection_notes ?? ""),
+      };
+    });
+  }, [checklistItems]);
 
   const getUserName = useCallback(
     (userId: string) => {
@@ -440,49 +549,121 @@ export default function ManagedSalesAdminUI() {
   }, [requests]);
 
   const approveAndList = (id: string) => {
-    setRequests((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
-
-        const prices = calculatePrices(r);
-        const buyer = prices.buyerPrice ?? 0;
-        const fee = prices.serviceFee ?? 0;
-        const seller = prices.sellerReceives ?? 0;
-
-        return {
-          ...r,
-          status: "listed",
-          created_vehicle_id: r.created_vehicle_id || `veh_${Math.random().toString(16).slice(2, 8)}`,
-          final_sale_price_for_buyer: buyer,
-          owner_receives_amount: seller,
-          service_fee_amount: fee,
-        };
-      }),
-    );
-
-    toast({
-      title: "Listed",
-      description: "Vehicle listing created in UI state — API wiring pending.",
-    });
+    setIsProcessing(true);
+    Promise.resolve()
+      .then(() => approveAndListMsr(id, { adminNotes: adminNotes.trim() || null }))
+      .then(() => toast({ title: "Listed", description: "Vehicle listing created." }))
+      .catch(() => toast({ title: "Failed", description: "Could not approve & list.", variant: "destructive" }))
+      .finally(() => setIsProcessing(false));
   };
 
   const deleteRequest = (id: string) => {
     if (!window.confirm("Delete this managed sale request?")) return;
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-    toast({ title: "Deleted", description: "Removed from local state." });
+    setIsProcessing(true);
+    Promise.resolve()
+      .then(() => deleteMsr(id))
+      .then(() => toast({ title: "Deleted", description: "" }))
+      .catch(() => toast({ title: "Failed", description: "Delete failed.", variant: "destructive" }))
+      .finally(() => setIsProcessing(false));
   };
 
-  const markSold = (id: string) => {
-    setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status: "sold" } : r)));
-    toast({ title: "Marked Sold", description: "Updated local state." });
+  const markSold = (request: ManagedSaleRequestRow) => {
+    const title = request.vehicle_details?.title || "this vehicle";
+    const ok = window.confirm(
+      `Are you sure you want to mark "${title}" as sold?\n\nThis will update the request and the vehicle listing.`
+    );
+    if (!ok) return;
+
+    setIsProcessing(true);
+    Promise.resolve()
+      .then(() => markSoldMsr(request.id))
+      .then(() => toast({ title: "Marked Sold", description: "" }))
+      .catch(() => toast({ title: "Failed", description: "Mark sold failed.", variant: "destructive" }))
+      .finally(() => setIsProcessing(false));
   };
 
-  const viewDetails = (id: string) => {
-    const req = requests.find((r) => r.id === id) ?? null;
-    if (!req) return;
-    setSelectedRequest(req);
-    setAdminNotes("");
-    setDetailsOpen(true);
+  const viewDetails = async (id: string) => {
+    setIsProcessing(true);
+    try {
+      await getById(id);
+      const cur: any = useManagedSaleRequestsStore.getState().current;
+      if (!cur?.id) return;
+
+      const mapped: ManagedSaleRequestRow = {
+        id: String(cur.id),
+        created_date: String(cur.createdAt ?? new Date().toISOString()),
+        status: (cur.status ?? "pending_review") as ManagedSaleStatus,
+        submitted_by_user_id: String(cur.submitted_by_user_id ?? cur.submittedByUser?.id ?? ""),
+        created_vehicle_id: cur.created_vehicle_id ?? cur.createdVehicle?.id ?? null,
+        vehicle_details: {
+          title: String(cur.vehicle_title ?? ""),
+          make: String(cur.vehicle_make ?? ""),
+          model: String(cur.vehicle_model ?? ""),
+          year: Number(cur.vehicle_year ?? new Date().getFullYear()),
+          seller_asking_price: cur.seller_asking_price ?? null,
+          images_thumbnails: Array.isArray(cur.vehicle_images_thumbnails) ? cur.vehicle_images_thumbnails : [],
+        },
+        access_arrangements: cur.access_arrangements ?? undefined,
+        final_sale_price_for_buyer: cur.final_sale_price_for_buyer ?? null,
+        owner_receives_amount: cur.owner_receives_amount ?? null,
+        service_fee_amount: cur.service_fee_amount ?? null,
+        calculated_buyer_price: cur.calculated_buyer_price ?? null,
+      };
+
+      setSelectedRequest(mapped);
+      setAdminNotes("");
+      setDetailsOpen(true);
+    } catch (_e) {
+      toast({ title: "Failed", description: "Could not load details.", variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const openAdminEdit = async (id: string) => {
+    setIsProcessing(true);
+    try {
+      await getById(id);
+      const cur: any = useManagedSaleRequestsStore.getState().current;
+      if (!cur?.id) throw new Error("NOT_FOUND");
+
+      setAdminEditTarget({
+        id: String(cur.id),
+        submitted_by_user_id: String(cur.submitted_by_user_id ?? cur.submittedByUser?.id ?? ""),
+        requester_contact_info: {
+          full_name: String(cur.contact_full_name ?? ""),
+          email: String(cur.contact_email ?? ""),
+          phone: String(cur.contact_phone ?? ""),
+        },
+        vehicle_details: {
+          title: String(cur.vehicle_title ?? ""),
+          make: String(cur.vehicle_make ?? ""),
+          model: String(cur.vehicle_model ?? ""),
+          year: Number(cur.vehicle_year ?? new Date().getFullYear()),
+          mileage: cur.vehicle_mileage ?? "",
+          condition: String(cur.vehicle_condition ?? "good"),
+          description: String(cur.vehicle_description ?? ""),
+          fuel_type: String(cur.vehicle_fuel_type ?? "gasoline"),
+          transmission: String(cur.vehicle_transmission ?? "automatic"),
+          location: String(cur.vehicle_location ?? ""),
+          seller_asking_price: cur.seller_asking_price ?? "",
+          financing_available: String(cur.financing_available ?? ""),
+          warranty_available: String(cur.warranty_available ?? ""),
+          warranty_link: String(cur.warranty_link ?? ""),
+          images: Array.isArray(cur.vehicle_images) ? cur.vehicle_images : [],
+          images_thumbnails: Array.isArray(cur.vehicle_images_thumbnails) ? cur.vehicle_images_thumbnails : [],
+          images_small: Array.isArray(cur.vehicle_images_small) ? cur.vehicle_images_small : [],
+          images_medium: Array.isArray(cur.vehicle_images_medium) ? cur.vehicle_images_medium : [],
+        } as any,
+        access_arrangements: (cur.access_arrangements ?? {}) as any,
+        terms_agreed: Boolean(cur.terms_agreed),
+      });
+      setAdminEditOpen(true);
+    } catch (_e) {
+      toast({ title: "Failed", description: "Could not load admin edit form.", variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const setAvailability = (id: string) => {
@@ -494,22 +675,36 @@ export default function ManagedSalesAdminUI() {
     setAvailabilityOpen(true);
   };
 
-  const inspectionChecklist = (id: string) => {
-    const req = requests.find((r) => r.id === id);
-    if (!req) return;
+  const inspectionChecklist = (request: ManagedSaleRequestRow) => {
+    const list = checklistRows.filter((c) => c.managed_sale_request_id === request.id);
+    if (list.length > 0) {
+      const sorted = [...list].sort((a, b) => {
+        const ad = new Date(a.updated_date || a.created_date).getTime();
+        const bd = new Date(b.updated_date || b.created_date).getTime();
+        return bd - ad;
+      });
+      openEditChecklist(sorted[0]);
+      return;
+    }
 
+    const ok = window.confirm(
+      "No checklist found for this managed sale request. Would you like to go to the Checklists tab to create or link one?"
+    );
+    if (!ok) return;
+
+    setActiveTab("checklists");
     setEditingChecklist(null);
     setChecklistMsrContext({
-      id: req.id,
+      id: request.id,
       vehicle_details: {
-        title: req.vehicle_details.title,
-        dealership_name: (req as any).dealership_name,
-        make: req.vehicle_details.make,
-        model: req.vehicle_details.model,
-        year: req.vehicle_details.year,
+        title: request.vehicle_details.title,
+        dealership_name: (request as any).dealership_name,
+        make: request.vehicle_details.make,
+        model: request.vehicle_details.model,
+        year: request.vehicle_details.year,
         mileage: undefined,
         fuel_type: "gasoline",
-        seller_asking_price: req.vehicle_details.seller_asking_price ?? undefined,
+        seller_asking_price: request.vehicle_details.seller_asking_price ?? undefined,
       },
     });
     setChecklistModalOpen(true);
@@ -642,7 +837,18 @@ export default function ManagedSalesAdminUI() {
                     className="w-full sm:max-w-xs"
                   />
 
-                  <Select value={filter} onValueChange={setFilter}>
+                  <Select
+                    value={filter}
+                    onValueChange={(v) => {
+                      setFilter(v);
+                      if (v === "all" || v === "approved_and_listed") {
+                        // keep API unfiltered; apply local filter
+                        useManagedSaleRequestsStore.getState().setStatusFilter("");
+                        return;
+                      }
+                      useManagedSaleRequestsStore.getState().setStatusFilter(v as any);
+                    }}
+                  >
                     <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
@@ -678,11 +884,10 @@ export default function ManagedSalesAdminUI() {
                   </TableHeader>
 
                   <TableBody>
-                    {isLoading ? (
+                    {isLoading && filteredRequests.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8">
                           <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-500" />
-                          <p className="text-slate-500 mt-2">Loading requests...</p>
                         </TableCell>
                       </TableRow>
                     ) : filteredRequests.length === 0 ? (
@@ -769,7 +974,7 @@ export default function ManagedSalesAdminUI() {
                                     View Details
                                   </DropdownMenuItem>
 
-                                  {request.status === "pending_review" ? (
+                                  {request.status === "pending_review" && !request.created_vehicle_id ? (
                                     <DropdownMenuItem onClick={() => approveAndList(request.id)}>
                                       <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
                                       Approve & List
@@ -778,7 +983,7 @@ export default function ManagedSalesAdminUI() {
 
                                   {request.status === "approved" || request.status === "listed" ? (
                                     <>
-                                      <DropdownMenuItem onClick={() => markSold(request.id)}>
+                                      <DropdownMenuItem onClick={() => markSold(request)}>
                                         <DollarSign className="w-4 h-4 mr-2 text-emerald-500" />
                                         Mark as Sold
                                       </DropdownMenuItem>
@@ -786,14 +991,26 @@ export default function ManagedSalesAdminUI() {
                                         <Calendar className="w-4 h-4 mr-2 text-purple-500" />
                                         Set Availability
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => inspectionChecklist(request.id)}>
+                                      <DropdownMenuItem onClick={() => inspectionChecklist(request)}>
                                         <ClipboardCheck className="w-4 h-4 mr-2 text-blue-500" />
                                         Inspection Checklist
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => {
-                                          setAdminEditTarget(request);
-                                          setAdminEditOpen(true);
+                                          void openAdminEdit(request.id);
+                                        }}
+                                      >
+                                        <Edit className="w-4 h-4 mr-2 text-slate-500" />
+                                        Admin Edit
+                                      </DropdownMenuItem>
+                                    </>
+                                  ) : null}
+
+                                  {request.status === "sold" ? (
+                                    <>
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          void openAdminEdit(request.id);
                                         }}
                                       >
                                         <Edit className="w-4 h-4 mr-2 text-slate-500" />
@@ -823,10 +1040,9 @@ export default function ManagedSalesAdminUI() {
               </div>
 
               <div className="md:hidden p-4 space-y-4">
-                {isLoading ? (
+                {isLoading && filteredRequests.length === 0 ? (
                   <div className="text-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-500" />
-                    <p className="text-slate-500 mt-2">Loading requests...</p>
                   </div>
                 ) : filteredRequests.length === 0 ? (
                   <div className="text-center py-8 text-slate-500">
@@ -901,7 +1117,7 @@ export default function ManagedSalesAdminUI() {
                               View
                             </Button>
 
-                            {request.status === "pending_review" ? (
+                            {request.status === "pending_review" && !request.created_vehicle_id ? (
                               <Button
                                 size="sm"
                                 className="flex-1 bg-emerald-600 hover:bg-emerald-700"
@@ -924,7 +1140,7 @@ export default function ManagedSalesAdminUI() {
 
                                 {request.status === "approved" || request.status === "listed" ? (
                                   <>
-                                    <DropdownMenuItem onClick={() => markSold(request.id)}>
+                                    <DropdownMenuItem onClick={() => markSold(request)}>
                                       <DollarSign className="w-4 h-4 mr-2 text-emerald-500" />
                                       Mark as Sold
                                     </DropdownMenuItem>
@@ -932,14 +1148,26 @@ export default function ManagedSalesAdminUI() {
                                       <Calendar className="w-4 h-4 mr-2 text-purple-500" />
                                       Set Availability
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => inspectionChecklist(request.id)}>
+                                    <DropdownMenuItem onClick={() => inspectionChecklist(request)}>
                                       <ClipboardCheck className="w-4 h-4 mr-2 text-blue-500" />
                                       Inspection Checklist
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => {
-                                        setAdminEditTarget(request);
-                                        setAdminEditOpen(true);
+                                        void openAdminEdit(request.id);
+                                      }}
+                                    >
+                                      <Edit className="w-4 h-4 mr-2 text-slate-500" />
+                                      Admin Edit
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : null}
+
+                                {request.status === "sold" ? (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        void openAdminEdit(request.id);
                                       }}
                                     >
                                       <Edit className="w-4 h-4 mr-2 text-slate-500" />
@@ -977,12 +1205,13 @@ export default function ManagedSalesAdminUI() {
           </CardHeader>
 
           <CardContent>
-            {isLoadingChecklists ? (
+            {checklistError ? (
+              <p className="text-center py-8 text-red-600">{checklistError}</p>
+            ) : isChecklistLoading && checklistRows.length === 0 ? (
               <div className="text-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-500" />
-                <p className="text-slate-500 mt-2">Loading checklists...</p>
               </div>
-            ) : checklistsList.length === 0 ? (
+            ) : checklistRows.length === 0 ? (
               <p className="text-center py-8 text-slate-500">
                 No vehicle inspection checklists found.
               </p>
@@ -990,7 +1219,7 @@ export default function ManagedSalesAdminUI() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Vehicle</TableHead>
+                    <TableHead>Checklist Name</TableHead>
                     <TableHead>Linked MSR</TableHead>
                     <TableHead>Last Updated</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -998,24 +1227,18 @@ export default function ManagedSalesAdminUI() {
                 </TableHeader>
 
                 <TableBody>
-                  {checklistsList.map((checklist) => (
+                  {checklistRows.map((checklist) => (
                     <TableRow key={checklist.id}>
                       <TableCell>
-                        <div className="font-medium">
-                          {checklist.vehicle_info?.year || "—"}{" "}
-                          {checklist.vehicle_info?.make || "—"}{" "}
-                          {checklist.vehicle_info?.model || "—"}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          VIN: {checklist.vehicle_info?.vin || "—"}
+                        <div className="font-medium text-slate-900">
+                          Checklist {String(checklist.id).slice(0, 8)}
                         </div>
                       </TableCell>
 
                       <TableCell>
                         {checklist.managed_sale_request_id
-                          ? requests.find((r) => r.id === checklist.managed_sale_request_id)
-                            ?.vehicle_details?.title ||
-                          `MSR ID: ${checklist.managed_sale_request_id.substring(0, 8)}`
+                          ? requests.find((r) => r.id === checklist.managed_sale_request_id)?.vehicle_details
+                              ?.title || `MSR ID: ${checklist.managed_sale_request_id.substring(0, 8)}`
                           : "N/A"}
                       </TableCell>
 
@@ -1057,21 +1280,23 @@ export default function ManagedSalesAdminUI() {
         title={availabilityTarget?.vehicle_details?.title}
         initialAvailability={availabilityDraft}
         onSave={(newAvailability) => {
-          setRequests((prev) =>
-            prev.map((r) =>
-              r.id === availabilityTarget?.id
-                ? {
-                  ...r,
-                  access_arrangements: {
-                    ...(r as any).access_arrangements,
-                    recurring_availability: newAvailability,
-                  },
-                }
-                : r,
-            ),
-          );
-          toast({ title: "Availability updated", description: "" });
-          setAvailabilityOpen(false);
+          const msrId = availabilityTarget?.id;
+          if (!msrId) return;
+          setIsProcessing(true);
+          const slots = (newAvailability as AvailabilitySlot[]).map((s) => ({
+            dayOfWeek: String(s.day_of_week ?? "").replace(/^\w/, (c) => c.toUpperCase()),
+            startTime: s.start_time,
+            endTime: s.end_time,
+            address: s.meeting_address,
+          }));
+          Promise.resolve()
+            .then(() => updateAvailability(msrId, { recurringAvailability: slots }))
+            .then(() => toast({ title: "Availability updated", description: "" }))
+            .catch(() => toast({ title: "Failed", description: "Availability update failed.", variant: "destructive" }))
+            .finally(() => {
+              setIsProcessing(false);
+              setAvailabilityOpen(false);
+            });
         }}
       />
 
@@ -1088,64 +1313,150 @@ export default function ManagedSalesAdminUI() {
         isLoading={isProcessing}
         adminNotes={adminNotes}
         setAdminNotes={setAdminNotes}
-        loadRequests={() => { }}
+        loadRequests={() => refresh()}
         onEdit={(request: any) => {
-          setAdminEditTarget(request);
-          setAdminEditOpen(true);
+          if (!request?.id) return;
+          void openAdminEdit(String(request.id));
         }}
-        onCancel={() => toast({ title: "", description: "Cancel wiring pending." })}
+        onCancel={(req: any) => {
+          if (!req?.id) return;
+          const reason = window.prompt("Cancellation reason (required)?") ?? "";
+          if (!reason.trim()) return;
+          setIsProcessing(true);
+          Promise.resolve()
+            .then(() => declineCancellation(String(req.id), reason.trim()))
+            .then(() => toast({ title: "Cancellation declined", description: "" }))
+            .catch(() => toast({ title: "Failed", description: "Action failed.", variant: "destructive" }))
+            .finally(() => setIsProcessing(false));
+        }}
         onStatusChange={(requestId: string, newStatus: any) => {
           setIsProcessing(true);
-          try {
-            setRequests((prev) => prev.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r)));
-            toast({ title: "Status updated", description: "" });
-          } finally {
-            setIsProcessing(false);
-          }
+          Promise.resolve()
+            .then(() => patchStatus(requestId, { status: String(newStatus), adminNotes: adminNotes || null }))
+            .then(() => toast({ title: "Status updated", description: "" }))
+            .catch(() => toast({ title: "Failed", description: "Status update failed.", variant: "destructive" }))
+            .finally(() => setIsProcessing(false));
         }}
-        onApproveEditRequest={() => toast({ title: "" })}
-        onDeclineEditRequest={() => toast({ title: "" })}
-        onApproveCancellation={() => toast({ title: "" })}
-        onDeclineCancellation={() => toast({ title: "" })}
+        onApproveEditRequest={(req: any, editRequestIndex: number) => {
+          if (!req?.id) return;
+          setIsProcessing(true);
+          Promise.resolve()
+            .then(() => approveEditRequest(String(req.id), editRequestIndex, adminNotes || null))
+            .then(() => toast({ title: "Edit request approved", description: "" }))
+            .catch(() => toast({ title: "Failed", description: "Action failed.", variant: "destructive" }))
+            .finally(() => setIsProcessing(false));
+        }}
+        onDeclineEditRequest={(req: any, editRequestIndex: number) => {
+          if (!req?.id) return;
+          const reason = window.prompt("Decline reason (required)?") ?? "";
+          if (!reason.trim()) return;
+          setIsProcessing(true);
+          Promise.resolve()
+            .then(() => declineEditRequest(String(req.id), editRequestIndex, reason.trim()))
+            .then(() => toast({ title: "Edit request declined", description: "" }))
+            .catch(() => toast({ title: "Failed", description: "Action failed.", variant: "destructive" }))
+            .finally(() => setIsProcessing(false));
+        }}
+        onApproveCancellation={(req: any) => {
+          if (!req?.id) return;
+          setIsProcessing(true);
+          Promise.resolve()
+            .then(() => approveCancellation(String(req.id)))
+            .then(() => toast({ title: "Cancellation approved", description: "" }))
+            .catch(() => toast({ title: "Failed", description: "Action failed.", variant: "destructive" }))
+            .finally(() => setIsProcessing(false));
+        }}
+        onDeclineCancellation={(req: any) => {
+          if (!req?.id) return;
+          const reason = window.prompt("Decline reason (required)?") ?? "";
+          if (!reason.trim()) return;
+          setIsProcessing(true);
+          Promise.resolve()
+            .then(() => declineCancellation(String(req.id), reason.trim()))
+            .then(() => toast({ title: "Cancellation declined", description: "" }))
+            .catch(() => toast({ title: "Failed", description: "Action failed.", variant: "destructive" }))
+            .finally(() => setIsProcessing(false));
+        }}
         onMarkAsSold={(req: any) => {
           if (!req?.id) return;
-          setRequests((prev) => prev.map((r) => (r.id === req.id ? { ...r, status: "sold" } : r)));
-          toast({ title: "Marked sold", description: "" });
+          const title =
+            (req?.vehicle_details?.title as string | undefined) ||
+            (req?.vehicle_title as string | undefined) ||
+            "this vehicle";
+          const ok = window.confirm(
+            `Are you sure you want to mark "${title}" as sold?\n\nThis will update the request and the vehicle listing.`
+          );
+          if (!ok) return;
+
+          setIsProcessing(true);
+          Promise.resolve()
+            .then(() => markSoldMsr(String(req.id)))
+            .then(() => toast({ title: "Marked sold", description: "" }))
+            .catch(() => toast({ title: "Failed", description: "Action failed.", variant: "destructive" }))
+            .finally(() => setIsProcessing(false));
         }}
       />
 
       {adminEditTarget ? (
         <ManagedSalesRequestFormUI
           isOpen={adminEditOpen}
-          requestToEdit={{
-            id: adminEditTarget.id,
-            submitted_by_user_id: adminEditTarget.submitted_by_user_id,
-            requester_contact_info: (adminEditTarget as any).requester_contact_info,
-            vehicle_details: adminEditTarget.vehicle_details as any,
-            access_arrangements: adminEditTarget.access_arrangements as any,
-            terms_agreed: (adminEditTarget as any).terms_agreed,
-          }}
+          requestToEdit={adminEditTarget}
           onClose={() => {
             setAdminEditOpen(false);
             setAdminEditTarget(null);
           }}
-          onSave={(payload) => {
-            setRequests((prev) =>
-              prev.map((r) =>
-                r.id === adminEditTarget.id
-                  ? {
-                    ...r,
-                    vehicle_details: { ...r.vehicle_details, ...payload.vehicle_details },
-                    access_arrangements: payload.access_arrangements,
-                    service_fee_amount: payload.service_fee_amount,
-                    final_sale_price_for_buyer: payload.final_sale_price_for_buyer,
-                    owner_receives_amount: payload.owner_receives_amount,
-                    status: (payload.status as any) ?? r.status,
-                  }
-                  : r,
-              ),
-            );
-            toast({ title: "Saved", description: "Admin edit saved to local state." });
+          onSave={async (payload: ManagedSaleRequestUpdatePayload) => {
+            const fd = new window.FormData();
+
+            fd.set("contact_full_name", payload.requester_contact_info.full_name);
+            fd.set("contact_email", payload.requester_contact_info.email);
+            fd.set("contact_phone", payload.requester_contact_info.phone);
+
+            fd.set("vehicle_title", payload.vehicle_details.title);
+            fd.set("vehicle_make", payload.vehicle_details.make);
+            fd.set("vehicle_model", payload.vehicle_details.model);
+            fd.set("vehicle_year", String(payload.vehicle_details.year));
+            fd.set("vehicle_mileage", payload.vehicle_details.mileage === "" ? "" : String(payload.vehicle_details.mileage));
+            fd.set("vehicle_condition", payload.vehicle_details.condition);
+            fd.set("vehicle_description", payload.vehicle_details.description);
+            fd.set("vehicle_fuel_type", payload.vehicle_details.fuel_type);
+            fd.set("vehicle_transmission", payload.vehicle_details.transmission);
+            fd.set("vehicle_location", payload.vehicle_details.location);
+            fd.set("seller_asking_price", payload.vehicle_details.seller_asking_price === "" ? "" : String(payload.vehicle_details.seller_asking_price));
+
+            fd.set("financing_available", payload.vehicle_details.financing_available);
+            fd.set("warranty_available", payload.vehicle_details.warranty_available);
+            fd.set("warranty_link", payload.vehicle_details.warranty_link);
+
+            // Backend merges existing URLs from `vehicle_images` string array.
+            const urls =
+              payload.vehicle_details.images_medium?.length
+                ? payload.vehicle_details.images_medium
+                : payload.vehicle_details.images?.length
+                  ? payload.vehicle_details.images
+                  : [];
+            fd.set("vehicle_images", JSON.stringify(urls));
+
+            fd.set("access_arrangements", JSON.stringify(payload.access_arrangements));
+            fd.set("terms_agreed", JSON.stringify(payload.terms_agreed));
+
+            if (payload.status) fd.set("status", payload.status);
+
+            fd.set("final_sale_price_for_buyer", String(payload.final_sale_price_for_buyer));
+            fd.set("service_fee_amount", String(payload.service_fee_amount));
+            fd.set("owner_receives_amount", String(payload.owner_receives_amount));
+
+            setIsProcessing(true);
+            try {
+              await adminPatch(adminEditTarget.id, fd);
+              toast({ title: "Saved", description: "" });
+              setAdminEditOpen(false);
+              setAdminEditTarget(null);
+            } catch (_e) {
+              toast({ title: "Failed", description: "Save failed.", variant: "destructive" });
+            } finally {
+              setIsProcessing(false);
+            }
           }}
         />
       ) : null}

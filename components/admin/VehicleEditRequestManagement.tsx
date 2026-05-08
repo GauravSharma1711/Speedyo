@@ -1,98 +1,41 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Car, CheckCircle, Clock, Edit, XCircle } from "lucide-react";
+import { Car, CheckCircle, Clock, Edit, Loader2, XCircle } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Textarea } from "@/components/ui/TextArea";
+import { useToast } from "@/components/ui/UseToast";
+import { useVehicleEditRequestsStore } from "@/store/admin/vehicleEditRequests";
+import type { VehicleEditRequestApi, VehicleEditRequestStatus } from "@/services/admin/vehicleEditRequestServices";
 
-type RequestStatus = "pending" | "approved" | "declined";
-
-type VehicleRow = {
-  id: string;
-  title: string;
-  price?: number | null;
-  status?: "available" | "sold";
-  [key: string]: unknown;
-};
-
-type UserRow = {
-  id: string;
-  full_name: string;
-  email: string;
-};
+type RequestStatus = VehicleEditRequestStatus;
 
 type EditRequest = {
   id: string;
   vehicle_id: string;
-  requested_by_user_id: string;
   created_date: string; // ISO
   status: RequestStatus;
   reason: string;
-  requested_changes: Record<string, any>;
-
+  requested_changes: Record<string, unknown>;
   admin_notes?: string | null;
   processed_by_admin?: string | null;
   processed_at?: string | null;
+  requestedByUser: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
+  vehicle: {
+    id: string;
+    title: string;
+    price?: string | number | null;
+    [key: string]: unknown;
+  } | null;
 };
-
-const MOCK_VEHICLES: VehicleRow[] = [
-  {
-    id: "v_001",
-    title: "2018 Toyota Aqua (Hybrid) — Clean",
-    price: 9500,
-    status: "available",
-    year: 2018,
-    make: "Toyota",
-    model: "Aqua",
-  },
-  {
-    id: "v_002",
-    title: "2020 Honda Fit — Great City Car",
-    price: 11200,
-    status: "available",
-    year: 2020,
-    make: "Honda",
-    model: "Fit",
-  },
-];
-
-const MOCK_USERS: UserRow[] = [
-  { id: "u_001", full_name: "Yuki Tanaka", email: "yuki@example.com" },
-  { id: "u_002", full_name: "Tanmay Ahuja", email: "tanmay@example.com" },
-];
-
-const MOCK_REQUESTS: EditRequest[] = [
-  {
-    id: "req_001",
-    vehicle_id: "v_001",
-    requested_by_user_id: "u_001",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    status: "pending",
-    reason: "Price and title need correction after new inspection report.",
-    requested_changes: {
-      title: "2018 Toyota Aqua (Hybrid) — Fresh Inspection",
-      price: 9200,
-    },
-  },
-  {
-    id: "req_002",
-    vehicle_id: "v_002",
-    requested_by_user_id: "u_002",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
-    status: "approved",
-    reason: "Add missing model info and update description.",
-    requested_changes: {
-      model: "Fit (S Package)",
-    },
-    admin_notes: "Approved — change is consistent with listing docs.",
-    processed_by_admin: "admin@local.dev",
-    processed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-  },
-];
 
 function getStatusBadge(status: RequestStatus) {
   switch (status) {
@@ -120,10 +63,52 @@ function getStatusBadge(status: RequestStatus) {
   }
 }
 
+function renderValue(v: unknown) {
+  if (v == null) return "Not set";
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return String(v);
+  try {
+    const s = JSON.stringify(v);
+    return s.length > 160 ? `${s.slice(0, 160)}…` : s;
+  } catch {
+    return String(v);
+  }
+}
+
 export default function VehicleEditRequestManagementUI() {
-  const [vehicles, setVehicles] = useState<VehicleRow[]>(MOCK_VEHICLES);
-  const [users] = useState<UserRow[]>(MOCK_USERS);
-  const [editRequests, setEditRequests] = useState<EditRequest[]>(MOCK_REQUESTS);
+  const { toast } = useToast();
+  const { items, isLoading, error, fetch, update } = useVehicleEditRequestsStore();
+  const [isSaving, setIsSaving] = useState<string | null>(null);
+
+  useEffect(() => {
+    void fetch();
+  }, [fetch]);
+
+  const editRequests: EditRequest[] = useMemo(() => {
+    return items.map((r: VehicleEditRequestApi) => ({
+      id: r.id,
+      vehicle_id: r.vehicleId,
+      created_date: r.createdAt,
+      status: r.status,
+      reason: r.reason,
+      requested_changes: r.requested_changes ?? {},
+      admin_notes: r.admin_notes,
+      processed_by_admin: r.processed_by_admin,
+      processed_at: r.processed_at,
+      requestedByUser: {
+        id: r.requestedByUser.id,
+        full_name: r.requestedByUser.full_name,
+        email: r.requestedByUser.email,
+      },
+      vehicle: r.vehicle
+        ? {
+            ...r.vehicle,
+            id: r.vehicle.id,
+            title: r.vehicle.title,
+            price: r.vehicle.price,
+          }
+        : null,
+    }));
+  }, [items]);
 
   // per-request notes (avoid single global adminNotes bug)
   const [adminNotesByRequest, setAdminNotesByRequest] = useState<Record<string, string>>(
@@ -136,70 +121,46 @@ export default function VehicleEditRequestManagementUI() {
     [editRequests],
   );
 
-  const getVehicleById = (vehicleId: string): VehicleRow | null =>
-    vehicles.find((v) => v.id === vehicleId) ?? null;
-
-  const getUserById = (userId: string): UserRow | null =>
-    users.find((u) => u.id === userId) ?? null;
-
-  const applyRequestedChangesToVehicle = (vehicleId: string, changes: Record<string, any>) => {
-    setVehicles((prev) =>
-      prev.map((v) => (v.id === vehicleId ? { ...v, ...changes } : v)),
-    );
-  };
-
-  const handleApproveRequest = (requestId: string) => {
-    setProcessingRequestId(requestId);
+  const handleApproveRequest = async (requestId: string) => {
+    const notes = (adminNotesByRequest[requestId] ?? "").trim();
+    setIsSaving(requestId);
     try {
-      const request = editRequests.find((r) => r.id === requestId);
-      if (!request) return;
-
-      const notes = (adminNotesByRequest[requestId] ?? "").trim();
-
-      applyRequestedChangesToVehicle(request.vehicle_id, request.requested_changes);
-
-      setEditRequests((prev) =>
-        prev.map((r) =>
-          r.id === requestId
-            ? {
-                ...r,
-                status: "approved",
-                admin_notes: notes || null,
-                processed_by_admin: "admin@local.dev",
-                processed_at: new Date().toISOString(),
-              }
-            : r,
-        ),
-      );
+      await update(requestId, { status: "approved", admin_notes: notes || undefined });
+      toast({ title: "Request approved", description: `Edit request #${requestId} approved.` });
+    } catch (_e) {
+      toast({
+        title: "Action failed",
+        description: "Could not approve this request. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setProcessingRequestId(null);
+      setIsSaving(null);
     }
   };
 
-  const handleDeclineRequest = (requestId: string) => {
+  const handleDeclineRequest = async (requestId: string) => {
     const notes = (adminNotesByRequest[requestId] ?? "").trim();
     if (!notes) {
-      alert("Please provide a reason for declining this request.");
+      toast({
+        title: "Admin notes required",
+        description: "Please provide a reason for declining this request.",
+        variant: "destructive",
+      });
       return;
     }
 
-    setProcessingRequestId(requestId);
+    setIsSaving(requestId);
     try {
-      setEditRequests((prev) =>
-        prev.map((r) =>
-          r.id === requestId
-            ? {
-                ...r,
-                status: "declined",
-                admin_notes: notes,
-                processed_by_admin: "admin@local.dev",
-                processed_at: new Date().toISOString(),
-              }
-            : r,
-        ),
-      );
+      await update(requestId, { status: "declined", admin_notes: notes });
+      toast({ title: "Request declined", description: `Edit request #${requestId} declined.` });
+    } catch (_e) {
+      toast({
+        title: "Action failed",
+        description: "Could not decline this request. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setProcessingRequestId(null);
+      setIsSaving(null);
     }
   };
 
@@ -218,7 +179,15 @@ export default function VehicleEditRequestManagementUI() {
         </Badge>
       </div>
 
-      {editRequests.length === 0 ? (
+      {isLoading && editRequests.length === 0 ? (
+        <div className="py-14 flex items-center justify-center text-slate-500">
+          <Loader2 className="w-5 h-5 animate-spin" />
+        </div>
+      ) : null}
+
+      {error ? <div className="text-sm text-red-600">{error}</div> : null}
+
+      {!isLoading && editRequests.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <Edit className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -231,8 +200,8 @@ export default function VehicleEditRequestManagementUI() {
       ) : (
         <div className="space-y-4">
           {editRequests.map((request) => {
-            const vehicle = getVehicleById(request.vehicle_id);
-            const requester = getUserById(request.requested_by_user_id);
+            const vehicle = request.vehicle;
+            const requester = request.requestedByUser;
 
             return (
               <Card
@@ -275,11 +244,11 @@ export default function VehicleEditRequestManagementUI() {
                     <h4 className="font-medium text-slate-800 mb-3">Requested Changes</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {Object.entries(request.requested_changes).map(([field, newValue]) => {
-                        const currentValue = vehicle ? (vehicle as any)[field] : undefined;
+                        const currentValue = vehicle ? (vehicle as Record<string, unknown>)[field] : undefined;
 
                         const showMoney = field === "price" && typeof newValue === "number";
-                        const formatMoney = (v: any) =>
-                          typeof v === "number" ? `$${v.toLocaleString()}` : v ?? "Not set";
+                        const formatMoney = (v: unknown) =>
+                          typeof v === "number" ? `$${v.toLocaleString()}` : renderValue(v);
 
                         return (
                           <div key={field} className="border border-slate-200 rounded-lg p-3">
@@ -291,7 +260,7 @@ export default function VehicleEditRequestManagementUI() {
                               <div>
                                 <span className="text-xs text-red-600 font-medium">Current:</span>
                                 <p className="text-sm">
-                                  {showMoney ? formatMoney(currentValue) : currentValue ?? "Not set"}
+                                  {showMoney ? formatMoney(currentValue) : renderValue(currentValue)}
                                 </p>
                               </div>
 
@@ -300,7 +269,7 @@ export default function VehicleEditRequestManagementUI() {
                                   Requested:
                                 </span>
                                 <p className="text-sm font-medium">
-                                  {showMoney ? formatMoney(newValue) : newValue ?? "Not set"}
+                                  {showMoney ? formatMoney(newValue) : renderValue(newValue)}
                                 </p>
                               </div>
                             </div>
@@ -347,7 +316,7 @@ export default function VehicleEditRequestManagementUI() {
                           <Button
                             variant="outline"
                             onClick={() => handleDeclineRequest(request.id)}
-                            disabled={processingRequestId === request.id}
+                            disabled={isSaving === request.id}
                             className="text-red-600 border-red-300 hover:bg-red-50"
                           >
                             <XCircle className="w-4 h-4 mr-2" />
@@ -356,7 +325,7 @@ export default function VehicleEditRequestManagementUI() {
 
                           <Button
                             onClick={() => handleApproveRequest(request.id)}
-                            disabled={processingRequestId === request.id}
+                            disabled={isSaving === request.id}
                             className="bg-green-600 hover:bg-green-700"
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />
