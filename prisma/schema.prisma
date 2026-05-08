@@ -25,6 +25,7 @@ model TestDriveRequest {
   seller_notes        String?
   userId              String?          @map("user_id")
   location            String?
+   availabilitySlot   VehicleAvailabilitySlot? 
   report              TestDriveReport?
   user                User?            @relation(fields: [userId], references: [id])
   vehicle             Vehicle          @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
@@ -48,6 +49,30 @@ model TestDriveReport {
   testDriveRequest       TestDriveRequest @relation(fields: [testDriveRequestId], references: [id], onDelete: Cascade)
 
   @@map("test_drive_reports")
+}
+
+model VehicleAvailabilitySlot {
+  id                 String            @id @default(cuid())
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  vehicleId          String            @map("vehicle_id")
+  date               String
+  start_time         String
+  end_time           String
+  location           String?
+  is_booked          Boolean           @default(false)
+  booked_by_user_id  String?           @map("booked_by_user_id")
+  testDriveRequestId String?           @unique @map("test_drive_request_id")
+  booked_at          DateTime?
+
+  vehicle            Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  bookedByUser       User?             @relation(fields: [booked_by_user_id], references: [id])
+  testDriveRequest   TestDriveRequest? @relation(fields: [testDriveRequestId], references: [id])
+
+  @@unique([vehicleId, date, start_time])
+  @@index([vehicleId])
+  @@index([is_booked])
+  @@map("vehicle_availability_slots")
 }
 
 model User {
@@ -112,6 +137,9 @@ model User {
   vehicleSaves                     VehicleSave[]
   vehicles                         Vehicle[]
   verificationRequests             VerificationRequest[]        @relation("UserVerificationRequests")
+   availabilitySlotBookings  VehicleAvailabilitySlot[]
+    transactions   PaymentTransaction[]
+  invoices       Invoice[]
 
   @@map("users")
 }
@@ -134,6 +162,12 @@ model SellerSubscription {
   vehicles_sold_this_year Int              @default(0)
   square_subscription_id  String?
   square_customer_id      String?
+
+  last_payment_at         DateTime?
+  last_payment_amount     Decimal?         @db.Decimal(12, 2)
+  next_billing_date       DateTime?
+  cancellation_date       DateTime?
+
   user                    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("seller_subscriptions")
@@ -256,6 +290,7 @@ model Vehicle {
   vehicleViews            VehicleView[]
   vehicleLikes            VehicleLike[]
   vehicleSaves            VehicleSave[]
+   availabilitySlots  VehicleAvailabilitySlot[]
   author                  User?                       @relation(fields: [authorId], references: [id])
   dealershipAgreement     DealershipVehicleAgreement? @relation(fields: [dealershipAgreementId], references: [id])
   verificationRequests    VerificationRequest[]
@@ -783,6 +818,90 @@ model VerificationRequest {
   @@index([userId])
   @@index([status])
   @@map("verification_requests")
+}
+
+
+
+
+model PaymentTransaction {
+  id               String              @id @default(cuid())
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  userId           String              @map("user_id")
+
+  
+  transaction_type PaymentTransactionType
+  amount           Decimal             @db.Decimal(12, 2)
+  currency         String              @default("USD")
+  status           PaymentStatus       @default(pending)
+
+  // Square specific
+  square_payment_id     String?        @unique
+  square_order_id       String?
+  square_customer_id    String?
+  square_receipt_url    String?
+
+  
+  subscription_tier     SubscriptionTier?   
+  slots_purchased       Int?
+  promo_code_used       String?
+
+  // Relations
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoice          Invoice?
+
+  @@index([userId])
+  @@index([status])
+  @@index([transaction_type])
+  @@map("payment_transactions")
+}
+
+model Invoice {
+  id                  String         @id @default(cuid())
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+  userId              String         @map("user_id")
+  transactionId       String         @unique @map("transaction_id")
+
+  invoice_number      String         @unique  // e.g. "INV-2026-0001"
+  amount              Decimal        @db.Decimal(12, 2)
+  currency            String         @default("USD")
+  status              InvoiceStatus  @default(unpaid)
+  description         String
+  due_date            DateTime?
+  paid_at             DateTime?
+  invoice_url         String?        // generated PDF url if needed
+
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transaction         PaymentTransaction @relation(fields: [transactionId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("invoices")
+}
+
+enum PaymentTransactionType {
+  subscription_purchase    
+  subscription_renewal     
+  slot_purchase            
+  one_time_service          
+  
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  refunded
+  cancelled
+}
+
+enum InvoiceStatus {
+  unpaid
+  paid
+  overdue
+  cancelled
+  refunded
 }
 
 enum FeedbackCategory {
