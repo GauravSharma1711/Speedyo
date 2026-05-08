@@ -1,15 +1,12 @@
 "use client"
 
-import { useRouter } from "next/navigation"; // App Router
-
-
-
+import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useCallback } from "react";
-import { User } from '@/api/entities';
+import { profileService } from "@/services/profile/profileServices";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input"; // Import Input
-import { Label } from "@/components/ui/Label"; // Import Label
+import { Input } from "@/components/ui/Input"; 
+import { Label } from "@/components/ui/Label";
 import {
   Handshake,
   CheckCircle,
@@ -20,9 +17,9 @@ import {
   Camera,
   Users,
   MapPin,
-  User as UserIcon, // Aliased to avoid conflict
-  ArrowLeft, // Add ArrowLeft import
-  Info // Import Info icon
+  User as UserIcon, 
+  ArrowLeft, 
+  Info
 } from "lucide-react";
 
 import Link from "next/link";
@@ -36,20 +33,22 @@ import Footer from '../../components/layout/Footer';
 
 export default function ManagedSalesPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLocationVerified, setIsLocationVerified] = useState(false);
   const [showLocationVerification, setShowLocationVerification] = useState(false);
-  const [loadError, setLoadError] = useState(null);
+  const [loadError, setLoadError] = useState<any>(null);
 
-  const checkOkinawaLocation = useCallback((locationString) => {
+  const checkOkinawaLocation = useCallback((locationString: string) => {
     if (!locationString) return false;
     const lowerLocation = locationString.toLowerCase();
-    return lowerLocation.includes('okinawa') ||
-           (lowerLocation.includes('japan') && lowerLocation.includes('okinawa')) ||
-           lowerLocation.includes('沖縄');
+    return (
+      lowerLocation.includes('okinawa') ||
+      (lowerLocation.includes('japan') && lowerLocation.includes('okinawa')) ||
+      lowerLocation.includes('沖縄')
+    );
   }, []);
 
   const loadUserData = useCallback(async () => {
@@ -57,16 +56,14 @@ export default function ManagedSalesPage() {
     setLoadError(null);
 
     try {
-      const user = await User.me();
+      const user = await profileService.me();
       setCurrentUser(user);
 
-      // Check if user location is already verified for Okinawa
-      if (user?.location) {
-        const isValidLocation = checkOkinawaLocation(user.location);
+      if ((user as any)?.location) {
+        const isValidLocation = checkOkinawaLocation((user as any).location);
         setIsLocationVerified(isValidLocation);
       }
     } catch (error) {
-      // User not logged in - this is OK for a marketing page
       console.log("User not authenticated - showing public view");
       setCurrentUser(null);
     }
@@ -78,25 +75,23 @@ export default function ManagedSalesPage() {
   }, [loadUserData]);
 
   const handleRequestSubmitted = () => {
-    // ✅ FIX: Close the form first, then show success modal
     setShowRequestForm(false);
     setShowSuccessModal(true);
     loadUserData();
   };
 
-  const handleLocationVerification = (isVerified, userLocation) => {
+  const handleLocationVerification = (isVerified: boolean, userLocation: string) => {
     setIsLocationVerified(isVerified);
     setShowLocationVerification(false);
 
     if (isVerified) {
-      // Automatically open the request form if location is verified
       setShowRequestForm(true);
     }
   };
 
   const handleStartRequest = () => {
     if (!currentUser) {
-      User.login();
+      router.push("/signIn");
       return;
     }
 
@@ -108,7 +103,7 @@ export default function ManagedSalesPage() {
     setShowRequestForm(true);
   };
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status: string) => {
     switch (status) {
       case 'pending_review':
         return {
@@ -172,10 +167,8 @@ export default function ManagedSalesPage() {
               <div className="max-w-6xl mx-auto">
                 {/* Back button - Better mobile positioning */}
                 <div className="mb-4 text-left md:absolute md:left-0">
-             <Link href="/Dashboard">
-                    <Button
-                    
-                    variant="outline" size="sm" className="md:size-default">
+                  <Link href="/Dashboard">
+                    <Button variant="outline" size="sm" className="md:size-default">
                       <ArrowLeft className="w-4 h-4 mr-2" />
                       <span className="hidden sm:inline">Back</span>
                     </Button>
@@ -205,7 +198,7 @@ export default function ManagedSalesPage() {
                       </Button>
                     ) : (
                       <Button
-                      onClick={() => { window.location.href = "https://speedyo.app/login"; }}
+                        onClick={() => router.push("/signIn")}
                         size="lg"
                         className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 text-sm sm:text-base md:text-lg px-6 sm:px-8 py-5 md:py-6 shadow-xl hover:shadow-2xl transition-all duration-300"
                       >
@@ -365,7 +358,7 @@ export default function ManagedSalesPage() {
                               className="pl-8 sm:pl-10 pr-3 sm:pr-4 text-lg sm:text-xl h-12 sm:h-14 border-2 border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-lg"
                               onChange={(e) => {
                                 const askingPrice = parseInt(e.target.value) || 0;
-                                const calculateFee = (p) => {
+                                const calculateFee = (p: number): number => {
                                   if (p < 500) return 300;
                                   if (p <= 3000) return Math.round(300 + (p - 500) * 0.08);
                                   if (p <= 8333) return 500;
@@ -377,7 +370,6 @@ export default function ManagedSalesPage() {
                                   const listingPrice = askingPrice + fee;
                                   const feePercentage = ((fee / listingPrice) * 100).toFixed(2);
                                   
-                                  // Update the display
                                   const display = document.getElementById('calculator-results');
                                   if (display) {
                                     display.innerHTML = `
@@ -524,7 +516,7 @@ export default function ManagedSalesPage() {
                   </Button>
                 ) : (
                   <Button
-                 onClick={() => { window.location.href = "https://speedyo.app/login"; }}
+                    onClick={() => router.push("/signIn")}
                     size="lg"
                     className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4"
                   >

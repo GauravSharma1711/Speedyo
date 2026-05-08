@@ -58,7 +58,7 @@ export default function TestDriveModal({
   currentUser,
 }: TestDriveModalProps) {
   const [selectedVehicleId, setSelectedVehicleId] = useState(preselectedVehicleId || "");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [notes, setNotes] = useState("");
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
