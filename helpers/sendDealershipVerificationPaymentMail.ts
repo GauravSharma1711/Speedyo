@@ -14,7 +14,7 @@ export async function sendDealershipVerificationPaymentMail(
       from: fromEmail,
       to: user_email,
       subject: '✅ Payment Confirmed - Dealership Verification',
-      react: DealershipVerificationPaymentEmail({
+      html: DealershipVerificationPaymentEmail({
         full_name,
         amount_paid,
         transaction_id,

@@ -76,29 +76,31 @@ const Field = ({ label, name, type, placeholder, value, onChange }: FieldProps) 
   </div>
 )
 
+import { useAuthStore } from "@/store/auth";
+
+
 export default function SignUpPage() {
   const router = useRouter()
   const [form, setForm] = useState<FormState>({ email: "", password: "", confirmPassword: "" })
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
 
+  const { signUpUser, isLoading, error } = useAuthStore();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match")
+      console.log("Passwords do not match")
       return
     }
-    setLoading(true)
-    setError("")
-    const res = await fetch("/api/auth/signUp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
-    })
-    const data = await res.json()
-    setLoading(false)
-    if (!res.ok) setError(data.message || data.error)
-    else router.push(`/verify?email=${encodeURIComponent(form.email)}`)
+    try {
+          await signUpUser({
+      email: form.email,
+      password: form.password,
+      confirmPassword: form.confirmPassword,
+    });
+
+    router.push(`/verify?email=${encodeURIComponent(form.email)}`);
+    } catch (error) {
+      console.log("error in signUp",error)
+    }
   }
 
   const handleChange =
@@ -185,9 +187,9 @@ export default function SignUpPage() {
                     <button
                       className="inline-flex items-center justify-center gap-1 whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 px-3 py-2 w-full h-10 sm:h-11 bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-sm rounded-xl transition-all duration-200"
                       type="submit"
-                      disabled={loading}
+                      disabled={isLoading}
                     >
-                      Create account
+                    {isLoading ? "Creating account..." : "Create account"}
                     </button>
                   </form>
                 </div>

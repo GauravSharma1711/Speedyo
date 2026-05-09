@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/Label";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
 import { Loader2, Trash2, ChevronLeft, ChevronRight, CheckCircle, Upload } from "lucide-react";
 import { useToast } from "@/components/ui/UseToast";
+import { Vehicle } from "@/store/admin/vehicleListing";
 
 type VehicleStatus = "available" | "sold";
 
@@ -53,12 +54,13 @@ export type CreateVehiclePatch = {
   status: VehicleStatus;
   images: string[]; // originals
   primary_image: string | null; // original
+   imageFiles: File[];
 };
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  vehicleToEdit?: VehicleLike | null;
+  vehicleToEdit?: Vehicle | null;
   onSave: (patch: CreateVehiclePatch) => void | Promise<void>;
   isSubmitting?: boolean;
 };
@@ -93,6 +95,7 @@ export default function CreateVehicleModalUI({
     status: VehicleStatus;
     images: ImageSet[];
     primary_image: ImageSet | null;
+     imageFiles: File[];
   }>({
     make: "",
     model: "",
@@ -107,6 +110,7 @@ export default function CreateVehicleModalUI({
     status: "available",
     images: [],
     primary_image: null,
+    imageFiles: [],
   });
 
   const localLoading = Boolean(isSubmitting);
@@ -158,6 +162,7 @@ export default function CreateVehicleModalUI({
         status: (vehicleToEdit.status === "sold" ? "sold" : "available") as VehicleStatus,
         images,
         primary_image: primary || (images[0] ?? null),
+          imageFiles: [],
       });
       setCurrentStep(1);
       return;
@@ -191,25 +196,27 @@ export default function CreateVehicleModalUI({
   };
 
   const removeImage = (indexToRemove: number) => {
-    setFormData((prev) => {
-      const updatedImages = prev.images.filter((_, i) => i !== indexToRemove);
+  setFormData((prev) => {
+    const updatedImages = prev.images.filter((_, i) => i !== indexToRemove);
+    const updatedFiles = prev.imageFiles.filter((_, i) => i !== indexToRemove);
 
-      let newPrimaryImage = prev.primary_image;
-      if (
-        prev.primary_image &&
-        prev.images[indexToRemove] &&
-        prev.images[indexToRemove].original === prev.primary_image.original
-      ) {
-        newPrimaryImage = updatedImages.length > 0 ? updatedImages[0] : null;
-      }
+    let newPrimaryImage = prev.primary_image;
+    if (
+      prev.primary_image &&
+      prev.images[indexToRemove] &&
+      prev.images[indexToRemove].original === prev.primary_image.original
+    ) {
+      newPrimaryImage = updatedImages.length > 0 ? updatedImages[0] : null;
+    }
 
-      return {
-        ...prev,
-        images: updatedImages,
-        primary_image: newPrimaryImage,
-      };
-    });
-  };
+    return {
+      ...prev,
+      images: updatedImages,
+      imageFiles: updatedFiles,
+      primary_image: newPrimaryImage,
+    };
+  });
+};
 
   const validateStep = (step: number) => {
     switch (step) {
@@ -273,7 +280,13 @@ export default function CreateVehicleModalUI({
     setFormData((prev) => {
       const newImages = [...prev.images, ...imageSets];
       const newPrimary = prev.primary_image || newImages[0] || null;
-      return { ...prev, images: newImages, primary_image: newPrimary };
+      return { 
+        ...prev, 
+        images: newImages,
+         primary_image: newPrimary,
+           imageFiles: [...prev.imageFiles, ...files],
+
+       };
     });
 
     toast({
@@ -306,6 +319,7 @@ export default function CreateVehicleModalUI({
       status: formData.status,
       images: formData.images.map((img) => img.original).filter(Boolean),
       primary_image: formData.primary_image?.original ?? null,
+      imageFiles: formData.imageFiles,
     };
 
     await onSave(patch);
@@ -512,40 +526,40 @@ export default function CreateVehicleModalUI({
                     className="mt-3 border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
                     onClick={() => fileInputRef.current?.click()}
                     onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const files = e.dataTransfer.files;
-                      if (files && files.length > 0) {
-                        const list = Array.from(files);
-                        const oversized = list.filter((f) => f.size > 30 * 1024 * 1024);
-                        if (oversized.length > 0) {
-                          toast({
-                            title: "File too large",
-                            description: `Some files exceed the 30MB limit: ${oversized
-                              .map((f) => f.name)
-                              .join(", ")}.`,
-                            variant: "destructive",
-                          });
-                          return;
-                        }
-          
-                        const imageSets = list.map((f) => {
-                          const url = URL.createObjectURL(f);
-                          return toImageSet(url);
-                        });
-          
-                        setFormData((prev) => {
-                          const newImages = [...prev.images, ...imageSets];
-                          const newPrimary = prev.primary_image || newImages[0] || null;
-                          return { ...prev, images: newImages, primary_image: newPrimary };
-                        });
-          
-                        toast({
-                          title: "Images added",
-                          description: "Saved locally for preview.",
-                        });
-                      }
-                    }}
+                  onDrop={(e) => {
+  e.preventDefault();
+  const files = e.dataTransfer.files;
+  if (files && files.length > 0) {
+    const list = Array.from(files);
+    const oversized = list.filter((f) => f.size > 30 * 1024 * 1024);
+    if (oversized.length > 0) {
+      toast({
+        title: "File too large",
+        description: `Some files exceed the 30MB limit: ${oversized.map((f) => f.name).join(", ")}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const imageSets = list.map((f) => {
+      const url = URL.createObjectURL(f);
+      return toImageSet(url);
+    });
+
+    setFormData((prev) => {
+      const newImages = [...prev.images, ...imageSets];
+      const newPrimary = prev.primary_image || newImages[0] || null;
+      return {
+        ...prev,
+        images: newImages,
+        primary_image: newPrimary,
+        imageFiles: [...prev.imageFiles, ...list], 
+      };
+    });
+
+    toast({ title: "Images added", description: "Saved locally for preview." });
+  }
+}}
                   >
                     <input
                       ref={fileInputRef}

@@ -10,6 +10,7 @@ import {
   AlertCircle,
   ArrowLeft,
 } from "lucide-react";
+import { usePhotographerAgreementStore } from "@/store/admin/photographer";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -98,11 +99,18 @@ export default function ViewPhotographerAgreementUI() {
   const params = useParams<{ id: string }>();
   const { toast } = useToast();
 
+      const {
+      agreements,
+      addApplication
+    } = usePhotographerAgreementStore();
+
   const agreement = useMemo(() => {
     const id = params?.id;
     if (!id) return null;
-    return MOCK_AGREEMENTS.find((a) => a.id === id) ?? null;
+    return agreements.find((a) => a.id === id) ?? null;
   }, [params?.id]);
+
+
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
@@ -240,7 +248,7 @@ export default function ViewPhotographerAgreementUI() {
       toast({ title: "Accept terms", description: "Please accept agreement terms to continue.", variant: "destructive" });
       return;
     }
-
+  await addApplication(params?.id,applicationData);
     setIsSubmitting(true);
     try {
       toast({

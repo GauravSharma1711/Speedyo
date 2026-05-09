@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/Select";
 import Footer from "@/components/layout/Footer";
 import { useToast } from "@/components/ui/UseToast";
-
+import { useLiaisonAgreementStore } from "@/store/admin/liaison";
 type AgreementStatus = "draft" | "sent" | "signed";
 
 type LiaisonAgreementRow = {
@@ -87,10 +87,20 @@ export default function ViewLiaisonAgreementUI() {
   const params = useParams<{ id: string }>();
   const { toast } = useToast();
 
+  const {
+    agreements,
+    isLoading,
+    error,
+    getAll,
+    create,
+    addApplication
+ 
+  } = useLiaisonAgreementStore();
+
   const agreement = useMemo(() => {
     const id = params?.id;
     if (!id) return null;
-    return MOCK_AGREEMENTS.find((a) => a.id === id) ?? null;
+    return agreements.find((a) => a.id === id) ?? null;
   }, [params?.id]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -184,10 +194,14 @@ export default function ViewLiaisonAgreementUI() {
 
     setIsSubmitting(true);
     try {
+
+      await addApplication(params?.id,applicationData);
+
       toast({
-        title: "Submitted (UI-only)",
-        description: "Application saved locally. API wiring pending.",
+        title: "Submitted",
+        description: "Application saved ",
       });
+
       setIsSuccess(true);
     } finally {
       setIsSubmitting(false);

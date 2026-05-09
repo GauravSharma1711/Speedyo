@@ -6,7 +6,7 @@ import { SignUpData, ResetPasswordData, VerifyOtpData, ForgotPasswordData } from
 
 const authService = {
   signUp: async (data: SignUpData) => {
-    const res = await api.post("/api/auth/signup", data);
+    const res = await api.post("/api/auth/signUp", data);
     return res.data;
   },
 

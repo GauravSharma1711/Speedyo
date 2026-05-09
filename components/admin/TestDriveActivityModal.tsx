@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/Select";
+import { TestDrive, UpdateTestDriveData } from "@/store/admin/testDrive";
 
 type Status = "pending" | "approved" | "completed" | "declined" | "no_show";
 
@@ -83,70 +84,75 @@ function todayYmd() {
 }
 
 export default function TestDriveActivityModalUI(props: {
-  testDriveRequest: TestDriveLite | null;
+  testDriveRequest: TestDrive | null;
   buyer: UserLite | null;
   vehicle: VehicleLite | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updated: TestDriveLite) => void;
+onSave: (updated: UpdateTestDriveData) => Promise<void>;
 }) {
   const { testDriveRequest, buyer, vehicle, isOpen, onClose, onSave } = props;
 
+
   const defaults = useMemo(() => {
-    const d = testDriveRequest?.test_drive_details;
-    return {
-      status: (d?.status ?? "pending") as Status,
-      preferred_date: d?.preferred_date ?? todayYmd(),
-      preferred_time: d?.preferred_time ?? "14:00",
-      location: d?.location ?? vehicle?.location ?? "",
-      admin_notes: "",
-    };
-  }, [testDriveRequest?.id, vehicle?.location]);
+  return {
+    status: (testDriveRequest?.status ?? "pending") as Status,
+  
+    confirmed_date: testDriveRequest?.confirmed_date ?? testDriveRequest?.requested_date ?? todayYmd(),
+    confirmed_time: testDriveRequest?.confirmed_time ?? testDriveRequest?.requested_time ?? "14:00",
+    location: testDriveRequest?.location ?? vehicle?.location ?? "",
+    additional_notes: testDriveRequest?.additional_notes ?? "",
+    admin_note: testDriveRequest?.admin_note ?? "",
+  };
+}, [testDriveRequest?.id, vehicle?.location]);
+
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [newStatus, setNewStatus] = useState<Status>("pending");
   const [adminNotes, setAdminNotes] = useState("");
-  const [editableDetails, setEditableDetails] = useState({
-    preferred_date: "",
-    preferred_time: "",
-    location: "",
-  });
+const [editableDetails, setEditableDetails] = useState({
+  confirmed_date: "",
+  confirmed_time: "",
+  location: "",
+});
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setNewStatus(defaults.status);
-    setAdminNotes(defaults.admin_notes);
-    setEditableDetails({
-      preferred_date: defaults.preferred_date,
-      preferred_time: defaults.preferred_time,
-      location: defaults.location,
-    });
-  }, [isOpen, defaults]);
+
+useEffect(() => {
+  if (!isOpen) return;
+  setNewStatus(defaults.status);
+  setAdminNotes(defaults.admin_note??"");
+  setEditableDetails({
+    confirmed_date: defaults.confirmed_date,
+    confirmed_time: defaults.confirmed_time,
+    location: defaults.location,
+  });
+}, [isOpen, defaults]);
 
   if (!isOpen || !testDriveRequest) return null;
 
-  const handleUpdate = async () => {
-    setIsUpdating(true);
-    try {
-      const updated: TestDriveLite = {
-        ...testDriveRequest,
-        test_drive_details: {
-          ...testDriveRequest.test_drive_details,
-          status: newStatus,
-          preferred_date: editableDetails.preferred_date,
-          preferred_time: editableDetails.preferred_time,
-          location: editableDetails.location,
-        },
-      };
+ const handleUpdate = async () => {
+  setIsUpdating(true);
+  try {
+    const payload: UpdateTestDriveData = {
+      id: testDriveRequest!.id,
+      status: newStatus,
+      confirmed_date: editableDetails.confirmed_date,
+      confirmed_time: editableDetails.confirmed_time,
+      location: editableDetails.location,
+      admin_note: adminNotes.trim() || undefined,
+    };
+    await onSave(payload);  
+    onClose();
+  } catch (err) {
+    // error toast can be shown here if needed
+    console.error("Failed to save test drive:", err);
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
-      onSave(updated);
-      onClose();
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
-  const buyerNotes = testDriveRequest.test_drive_details?.notes;
+ const buyerNotes = testDriveRequest?.additional_notes;
 
   return (
     <Dialog
@@ -205,25 +211,26 @@ export default function TestDriveActivityModalUI(props: {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="td-date">Date</Label>
+              
                   <Input
-                    id="td-date"
-                    type="date"
-                    value={editableDetails.preferred_date}
-                    onChange={(e) =>
-                      setEditableDetails((p) => ({ ...p, preferred_date: e.target.value }))
-                    }
-                  />
+  id="td-date"
+  type="date"
+  value={editableDetails.confirmed_date}
+  onChange={(e) =>
+    setEditableDetails((p) => ({ ...p, confirmed_date: e.target.value }))
+  }
+/>
                 </div>
                 <div>
                   <Label htmlFor="td-time">Time</Label>
-                  <Input
-                    id="td-time"
-                    type="time"
-                    value={editableDetails.preferred_time}
-                    onChange={(e) =>
-                      setEditableDetails((p) => ({ ...p, preferred_time: e.target.value }))
-                    }
-                  />
+            <Input
+  id="td-time"
+  type="time"
+  value={editableDetails.confirmed_time}
+  onChange={(e) =>
+    setEditableDetails((p) => ({ ...p, confirmed_time: e.target.value }))
+  }
+/>
                 </div>
               </div>
 

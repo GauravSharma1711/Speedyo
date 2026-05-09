@@ -115,7 +115,7 @@ const CommentItem = ({ comment, onReplySubmit, currentUser, commentAuthors }: Co
           <Link href={`/profile?id=${authorId}`} className="font-semibold text-sm hover:underline">
             {commentUser.full_name}
           </Link>
-          <p className="text-sm text-slate-800 whitespace-pre-wrap">{comment.content}</p>
+          <p className="text-sm text-slate-800 whitespace-pre-wrap mt-1">{comment.content}</p>
         </div>
 
         <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 pl-1">
@@ -160,7 +160,8 @@ const CommentItem = ({ comment, onReplySubmit, currentUser, commentAuthors }: Co
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" size="sm" disabled={!replyContent.trim() || isSubmittingReply}>
+                  <Button type="submit" size="sm"
+                    disabled={!replyContent.trim() || isSubmittingReply}>
                     {isSubmittingReply ? "Replying..." : "Reply"}
                   </Button>
                 </div>
@@ -369,6 +370,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }: 
         </div>
       </form>
 
+      {/* Comment list */}
       {isLoadingComments ? (
         <div className="space-y-4">
           <Skeleton className="h-20 w-full" />

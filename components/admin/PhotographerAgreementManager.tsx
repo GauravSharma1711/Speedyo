@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { usePhotographerAgreementStore } from "@/store/admin/photographer";
+
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import {
@@ -30,49 +32,13 @@ import {
 } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/UseToast";
 
-type PhotographerAgreementStatus = "draft" | "pending_signature" | "signed" | "terminated";
+// ── Re-use the store's types directly ─────────────────────────────────────────
+import type {
+  PhotographerAgreement,
+  PhotographerApplication,
+} from "@/store/admin/photographer";
 
-type PhotographerApplicationStatus =
-  | "submitted"
-  | "under_review"
-  | "approved"
-  | "rejected";
-
-type PhotographerApplication = {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  photography_experience_years?: number | null;
-  address?: string | null;
-  automotive_photography_experience?: string | null;
-  equipment?: string | null;
-  availability?: string | null;
-  location_preferences?: string | null;
-  motivation?: string | null;
-  portfolio_url?: string | null;
-  sample_work_urls?: string[] | null;
-  status: PhotographerApplicationStatus;
-};
-
-type PhotographerAgreement = {
-  id: string;
-  agreement_title: string;
-  position_title: string;
-  fixed_percentage: number;
-  agreement_start_date?: string | null; // YYYY-MM-DD
-  agreement_end_date?: string | null; // YYYY-MM-DD
-  termination_notice_days: number;
-  admin_notes?: string | null;
-  email?: string | null; // photographer email to send agreement to
-
-  status: PhotographerAgreementStatus;
-  agreement_url?: string | null;
-
-  created_date: string; // ISO
-  application_id?: string | null;
-};
-
+// ── Local form state type ──────────────────────────────────────────────────────
 type FormState = {
   agreement_title: string;
   position_title: string;
@@ -81,12 +47,23 @@ type FormState = {
   agreement_end_date: string;
   termination_notice_days: string;
   admin_notes: string;
-  email: string;
+  photographer_email: string; // matches store field name
 };
 
+// ── Badge colour helper ────────────────────────────────────────────────────────
+function badgeClass(status: string) {
+  if (status === "signed") return "bg-green-100 text-green-800";
+  if (status === "pending_signature") return "bg-amber-100 text-amber-800";
+  if (status === "terminated") return "bg-red-100 text-red-800";
+  return "bg-slate-100 text-slate-800";
+}
+
+// ── Mock applications (kept local – replace with a real store when ready) ─────
 const MOCK_APPLICATIONS: PhotographerApplication[] = [
   {
     id: "papp_001",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     full_name: "Hiro Sato",
     email: "hiro.photo@example.com",
     phone: "+81-90-2222-3333",
@@ -104,63 +81,35 @@ const MOCK_APPLICATIONS: PhotographerApplication[] = [
       "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=800&q=70",
     ],
     status: "submitted",
+    admin_notes: null,
+    reviewed_by_admin_id: null,
+    reviewed_at: null,
   },
 ];
 
-const MOCK_AGREEMENTS: PhotographerAgreement[] = [
-  {
-    id: "ph_001",
-    agreement_title: "Speedio Photographer Partnership Agreement",
-    position_title: "Automotive Photographer - Speedio Platform",
-    fixed_percentage: 10,
-    agreement_start_date: new Date().toISOString().slice(0, 10),
-    agreement_end_date: "",
-    termination_notice_days: 30,
-    admin_notes: "Strong portfolio.",
-    email: "hiro.photo@example.com",
-    status: "draft",
-    agreement_url: "/PhotographerAgreement?id=ph_001",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    application_id: "papp_001",
-  },
-  {
-    id: "ph_002",
-    agreement_title: "Speedio Photographer Partnership Agreement",
-    position_title: "Automotive Photographer - Osaka",
-    fixed_percentage: 12,
-    agreement_start_date: new Date().toISOString().slice(0, 10),
-    agreement_end_date: "",
-    termination_notice_days: 30,
-    admin_notes: "",
-    email: "osaka.photog@example.com",
-    status: "signed",
-    agreement_url: "/PhotographerAgreement?id=ph_002",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18).toISOString(),
-    application_id: null,
-  },
-];
-
-function badgeClass(status: PhotographerAgreementStatus) {
-  if (status === "signed") return "bg-green-100 text-green-800";
-  if (status === "pending_signature") return "bg-amber-100 text-amber-800";
-  if (status === "terminated") return "bg-red-100 text-red-800";
-  return "bg-slate-100 text-slate-800";
-}
-
-function makeId(prefix: string) {
-  return `${prefix}_${Math.random().toString(16).slice(2, 10)}`;
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
 export default function PhotographerAgreementManagerUI() {
   const { toast } = useToast();
 
-  const [isLoading] = useState(false);
+  // ── Store ──────────────────────────────────────────────────────────────────
+  const {
+    agreements,
+    isLoading,
+    error,
+    getAll,
+    create,
+    delete: deleteAgreement,
+    addApplication,
+  } = usePhotographerAgreementStore();
+
+  useEffect(() => {
+    getAll();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Local UI state ─────────────────────────────────────────────────────────
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  const [agreements, setAgreements] = useState<PhotographerAgreement[]>(MOCK_AGREEMENTS);
   const [applications] = useState<PhotographerApplication[]>(MOCK_APPLICATIONS);
-
   const [selected, setSelected] = useState<{
     agreement: PhotographerAgreement;
     application: PhotographerApplication;
@@ -176,19 +125,21 @@ export default function PhotographerAgreementManagerUI() {
     agreement_end_date: "",
     termination_notice_days: "30",
     admin_notes: "",
-    email: "",
+    photographer_email: "",
   });
 
-  const canCreate = useMemo(() => {
-    return (
+  // ── Validation ─────────────────────────────────────────────────────────────
+  const canCreate = useMemo(
+    () =>
       formData.agreement_title.trim().length > 0 &&
       formData.position_title.trim().length > 0 &&
-      formData.email.trim().length > 0 &&
+      formData.photographer_email.trim().length > 0 &&
       Number(formData.fixed_percentage) > 0 &&
-      Number(formData.termination_notice_days) > 0
-    );
-  }, [formData]);
+      Number(formData.termination_notice_days) > 0,
+    [formData],
+  );
 
+  // ── Helpers ────────────────────────────────────────────────────────────────
   function onChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
@@ -205,46 +156,43 @@ export default function PhotographerAgreementManagerUI() {
       agreement_end_date: "",
       termination_notice_days: "30",
       admin_notes: "",
-      email: "",
+      photographer_email: "",
     });
   }
 
+  // ── Create ─────────────────────────────────────────────────────────────────
   async function handleCreateAgreement(e: React.FormEvent) {
     e.preventDefault();
     if (!canCreate) return;
 
     setIsSubmitting(true);
     try {
-      const id = makeId("ph");
-      const created: PhotographerAgreement = {
-        id,
+      await create({
         agreement_title: formData.agreement_title.trim(),
         position_title: formData.position_title.trim(),
-        fixed_percentage: Number(formData.fixed_percentage) || 10,
+        fixed_percentage: formData.fixed_percentage,           // store expects string
         agreement_start_date: formData.agreement_start_date || null,
         agreement_end_date: formData.agreement_end_date || null,
-        termination_notice_days: Number(formData.termination_notice_days) || 30,
+        termination_notice_days: Number(formData.termination_notice_days),
         admin_notes: formData.admin_notes.trim() || null,
-        email: formData.email.trim(),
-        status: "draft",
-        agreement_url: `/PhotographerAgreement?id=${id}`,
-        created_date: new Date().toISOString(),
-        application_id: null,
-      };
+        photographer_email: formData.photographer_email.trim(), // correct field name
+      });
 
-      setAgreements((prev) => [created, ...prev]);
       setShowCreateModal(false);
       resetForm();
-
+      toast({ title: "Agreement created", description: "Agreement saved successfully." });
+    } catch {
       toast({
-        title: "Agreement created",
-        description: "Draft saved locally — API wiring pending.",
+        title: "Error",
+        description: error ?? "Failed to create agreement.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  // ── Copy link ──────────────────────────────────────────────────────────────
   async function copyAgreementLink(a: PhotographerAgreement) {
     const href = `/PhotographerAgreement?id=${a.id}`;
     const fullUrl = `${window.location.origin}${href}`;
@@ -252,6 +200,7 @@ export default function PhotographerAgreementManagerUI() {
     toast({ title: "Copied", description: "Agreement link copied." });
   }
 
+  // ── View application ───────────────────────────────────────────────────────
   function viewApplication(applicationId: string) {
     const app = applications.find((x) => x.id === applicationId);
     const ag = agreements.find((x) => x.application_id === applicationId);
@@ -261,18 +210,15 @@ export default function PhotographerAgreementManagerUI() {
       return;
     }
     if (!ag) {
-      toast({
-        title: "Not found",
-        description: "Associated agreement not found for this application.",
-      });
+      toast({ title: "Not found", description: "Associated agreement not found." });
       return;
     }
-
     setSelected({ agreement: ag, application: app });
   }
 
+  // ── Send signing email ─────────────────────────────────────────────────────
   async function handleSendSigningEmail(a: PhotographerAgreement) {
-    if (!a.email) {
+    if (!a.photographer_email) {
       toast({
         title: "Missing email",
         description: "Set photographer email when creating the agreement.",
@@ -282,26 +228,21 @@ export default function PhotographerAgreementManagerUI() {
 
     setIsSubmitting(true);
     try {
-      setAgreements((prev) =>
-        prev.map((x) =>
-          x.id === a.id && x.status === "draft"
-            ? { ...x, status: "pending_signature" }
-            : x,
-        ),
-      );
-
+      // TODO: wire real send API — e.g. await agreementService.sendSigningEmail(a.id)
       toast({
         title: "Send agreement",
-        description: `Would email ${a.email} a signing link.`,
+        description: `Would email ${a.photographer_email} a signing link.`,
       });
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  // ── Send application email ─────────────────────────────────────────────────
   async function handleSendApplicationEmail(a: PhotographerAgreement) {
     setIsSubmitting(true);
     try {
+      // TODO: wire real send API
       toast({
         title: "Send email",
         description: "Would email the photographer the agreement + application summary.",
@@ -311,18 +252,18 @@ export default function PhotographerAgreementManagerUI() {
     }
   }
 
+  // ── Download PDF ───────────────────────────────────────────────────────────
   async function handleDownloadPDF(a: PhotographerAgreement) {
     setIsSubmitting(true);
     try {
-      toast({
-        title: "Download PDF",
-        description: "PDF generation wiring pending.",
-      });
+      // TODO: wire real PDF generation
+      toast({ title: "Download PDF", description: "PDF generation wiring pending." });
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  // ── Delete ─────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
     const ok = window.confirm(
       "Are you sure you want to delete this agreement? This action cannot be undone.",
@@ -331,14 +272,22 @@ export default function PhotographerAgreementManagerUI() {
 
     setIsSubmitting(true);
     try {
-      setAgreements((prev) => prev.filter((x) => x.id !== id));
-      toast({ title: "Deleted", description: "Removed locally." });
+      await deleteAgreement(id); // store removes it from state on success
+      await getAll()
+      toast({ title: "Deleted", description: "Agreement removed." });
+    } catch {
+      toast({
+        title: "Error",
+        description: error ?? "Failed to delete.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  if (isLoading) {
+  // ── Loading state ──────────────────────────────────────────────────────────
+  if (isLoading && agreements.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -346,8 +295,10 @@ export default function PhotographerAgreementManagerUI() {
     );
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Photographer Agreements</h2>
@@ -356,6 +307,7 @@ export default function PhotographerAgreementManagerUI() {
           </p>
         </div>
 
+        {/* Create modal trigger */}
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
@@ -371,6 +323,7 @@ export default function PhotographerAgreementManagerUI() {
 
             <form onSubmit={handleCreateAgreement} className="space-y-4">
               <div className="space-y-4">
+                {/* Agreement Title */}
                 <div>
                   <Label htmlFor="agreement_title">Agreement Title</Label>
                   <Input
@@ -382,6 +335,7 @@ export default function PhotographerAgreementManagerUI() {
                   />
                 </div>
 
+                {/* Position Title */}
                 <div>
                   <Label htmlFor="position_title">Position Title</Label>
                   <Input
@@ -393,13 +347,14 @@ export default function PhotographerAgreementManagerUI() {
                   />
                 </div>
 
+                {/* Photographer Email — uses correct field name */}
                 <div>
-                  <Label htmlFor="email">Photographer Email</Label>
+                  <Label htmlFor="photographer_email">Photographer Email</Label>
                   <Input
-                    id="email"
-                    name="email"
+                    id="photographer_email"
+                    name="photographer_email"
                     type="email"
-                    value={formData.email}
+                    value={formData.photographer_email}
                     onChange={onChange}
                     required
                   />
@@ -408,6 +363,7 @@ export default function PhotographerAgreementManagerUI() {
                   </p>
                 </div>
 
+                {/* Compensation */}
                 <div>
                   <Label htmlFor="fixed_percentage">Compensation Percentage (%)</Label>
                   <Input
@@ -423,6 +379,7 @@ export default function PhotographerAgreementManagerUI() {
                   </p>
                 </div>
 
+                {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="agreement_start_date">Agreement Start Date</Label>
@@ -448,6 +405,7 @@ export default function PhotographerAgreementManagerUI() {
                   </div>
                 </div>
 
+                {/* Termination notice */}
                 <div>
                   <Label htmlFor="termination_notice_days">Termination Notice (Days)</Label>
                   <Input
@@ -460,6 +418,7 @@ export default function PhotographerAgreementManagerUI() {
                   />
                 </div>
 
+                {/* Admin notes */}
                 <div>
                   <Label htmlFor="admin_notes">Admin Notes</Label>
                   <Textarea
@@ -473,7 +432,11 @@ export default function PhotographerAgreementManagerUI() {
               </div>
 
               <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateModal(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={!canCreate || isSubmitting}>
@@ -492,6 +455,7 @@ export default function PhotographerAgreementManagerUI() {
         </Dialog>
       </div>
 
+      {/* Empty state */}
       {agreements.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
@@ -510,12 +474,21 @@ export default function PhotographerAgreementManagerUI() {
             return (
               <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
                 <CardContent className="p-6">
+                  {/* Card header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-slate-800">{a.position_title}</h3>
+                      <h3 className="font-semibold text-lg text-slate-800">
+                        {a.position_title}
+                      </h3>
                       <p className="text-sm text-slate-600 mt-1">
-                        Compensation: {a.fixed_percentage}% of service fee per vehicle photographed and sold
+                        Compensation: {a.fixed_percentage}% of service fee per vehicle
+                        photographed and sold
                       </p>
+                      {a.photographer_email && (
+                        <p className="text-sm text-slate-500 mt-0.5">
+                          {a.photographer_email}
+                        </p>
+                      )}
                     </div>
 
                     <Badge className={badgeClass(a.status)}>
@@ -523,6 +496,7 @@ export default function PhotographerAgreementManagerUI() {
                     </Badge>
                   </div>
 
+                  {/* Meta grid */}
                   <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                     <div>
                       <span className="text-slate-500">Start Date:</span>
@@ -535,8 +509,9 @@ export default function PhotographerAgreementManagerUI() {
 
                     <div>
                       <span className="text-slate-500">Created:</span>
+                    
                       <p className="text-slate-700">
-                        {format(new Date(a.created_date), "MMM d, yyyy")}
+                        {format(new Date(a.createdAt), "MMM d, yyyy")}
                       </p>
                     </div>
 
@@ -555,6 +530,7 @@ export default function PhotographerAgreementManagerUI() {
                     ) : null}
                   </div>
 
+                  {/* Action buttons */}
                   <div className="flex flex-wrap gap-2">
                     {a.agreement_url ? (
                       <>
@@ -580,11 +556,6 @@ export default function PhotographerAgreementManagerUI() {
                         disabled={isSubmitting}
                         className="text-blue-600 border-blue-300 hover:bg-blue-50"
                       >
-                        {isSubmitting ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Send className="w-4 h-4 mr-2" />
-                        )}
                         Send Agreement
                       </Button>
                     ) : null}
@@ -612,7 +583,12 @@ export default function PhotographerAgreementManagerUI() {
                       </Button>
                     ) : null}
 
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)}>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(a.id)}
+                      disabled={isSubmitting}
+                    >
                       <XCircle className="w-4 h-4 mr-2" />
                       Delete
                     </Button>
@@ -624,6 +600,7 @@ export default function PhotographerAgreementManagerUI() {
         </div>
       )}
 
+      {/* Application detail modal */}
       {selected ? (
         <Dialog open={true} onOpenChange={() => setSelected(null)}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">

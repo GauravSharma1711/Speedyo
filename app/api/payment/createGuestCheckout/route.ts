@@ -1,59 +1,44 @@
-// app/api/payments/guest-checkout/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import { squareClient } from "@/lib/payment/square";
 import prisma from "@/db/prisma";
 import { sendPurchaseMail } from "@/helpers/purchaseMail";
 import { sendAdminGuestPurchaseNotificationMail } from "@/helpers/sendAdminGuestPurchaseNotificationMail";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { randomUUID } from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, fullName, quantity, promoCode } = await request.json();
+    const { email, fullName, quantity, promoCode, paymentToken } = await request.json();
 
-    if (!email || !fullName || !quantity) {
+    if (!email || !fullName || !quantity || !paymentToken) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const pricePerSlot = 1; // TEMPORARILY $1 for testing
+    const pricePerSlot = 100; // $1.00 in cents (testing)
     const hasPromo = promoCode && promoCode.toUpperCase() === "SELLER20";
-    const discount = hasPromo ? 0.2 : 0;
-    const subtotal = pricePerSlot * quantity * 100;
-    const discountAmount = Math.round(subtotal * discount);
-    const totalAmount = subtotal - discountAmount;
+    const subtotal = pricePerSlot * quantity;
+    const discountAmount = hasPromo ? Math.round(subtotal * 0.2) : 0;
+    const totalAmount = subtotal - discountAmount; // in cents
 
-    const origin = request.headers.get("origin") ?? "https://speedio.app";
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Private Seller Vehicle Slot",
-              description: `${quantity} vehicle listing slot${quantity > 1 ? "s" : ""}`,
-            },
-            unit_amount: Math.round(totalAmount / quantity),
-          },
-          quantity,
-        },
-      ],
-      mode: "payment",
-      success_url: `${origin}/guest-order-confirmation?session_id={CHECKOUT_SESSION_ID}&email=${encodeURIComponent(email)}&slots=${quantity}`,
-      cancel_url: `${origin}/guest-checkout?promoCode=${promoCode || ""}`,
-      customer_email: email,
-      metadata: {
-        payment_type: "guest_private_seller_payment",
-        guest_email: email,
-        guest_name: fullName,
-        quantity: quantity.toString(),
-        promo_code: promoCode || "",
+    // 1. Charge via Square
+    const response = await squareClient.payments.create({
+      sourceId: paymentToken,
+      idempotencyKey: randomUUID(),
+      amountMoney: {
+        amount: BigInt(totalAmount),
+        currency: "USD",
       },
+      buyerEmailAddress: email,
+      note: `Speedio Guest - ${quantity} vehicle slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,
+      referenceId: `guest_${Date.now()}`,
     });
 
-    // Non-blocking — don't fail checkout if DB/email fails
+    const payment = response.payment;
+
+    if (!payment || payment.status !== "COMPLETED") {
+      throw new Error("Payment not completed");
+    }
+
+    // 2. Save GuestPurchase record
     try {
       await prisma.guestPurchase.create({
         data: {
@@ -61,47 +46,49 @@ export async function POST(request: NextRequest) {
           guest_name: fullName,
           slots_purchased: quantity,
           amount_paid: totalAmount / 100,
-          payment_id: session.id,
-          payment_gateway: "stripe",
+          payment_id: payment.id!,
+          payment_gateway: "square",
           promo_code_used: hasPromo ? promoCode : null,
-          status: "pending_payment",
+          status: "payment_completed",
         },
       });
 
-      // "Almost complete" email to guest
+      // Email to guest
       await sendPurchaseMail(
-        fullName,           // full_name
-        email,              // email
-        quantity,           // quantity
-        totalAmount,        // total_amount (in cents — template divides by 100)
-        hasPromo,           // has_promo
-        promoCode || ""     // promo_code
+        fullName,
+        email,
+        quantity,
+        totalAmount,
+        hasPromo,
+        promoCode || ""
       );
 
-      // Notification to admin
+      // Notify admin
       await sendAdminGuestPurchaseNotificationMail(
-        process.env.ADMIN_EMAIL ?? "admin@speedio.app",  // admin_email
-        fullName,                                         // guest_name
-        email,                                            // guest_email
-        quantity,                                         // quantity
-        (totalAmount / 100).toFixed(2),                   // amount_paid
-        session.id                                        // session_id
+        process.env.ADMIN_EMAIL ?? "admin@speedio.app",
+        fullName,
+        email,
+        quantity,
+        (totalAmount / 100).toFixed(2),
+        payment.id!
       );
-
     } catch (recordError) {
-      console.error("Failed to create record or send emails:", recordError);
-      // Continue — webhook handles fallback
+      console.error("Failed to save record or send emails:", recordError);
+      // Payment already succeeded — don't fail response
     }
 
     return NextResponse.json({
-      url: session.url,
-      sessionId: session.id,
+      success: true,
+      paymentId: payment.id,
+      receiptUrl: payment.receiptUrl,
+      slotsPurchased: quantity,
+      amountPaid: totalAmount / 100,
     });
 
   } catch (error: any) {
     console.error("Guest checkout error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create checkout session" },
+      { error: error.message || "Payment processing failed" },
       { status: 500 }
     );
   }

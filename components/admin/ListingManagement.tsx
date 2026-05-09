@@ -33,6 +33,12 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import CreateVehicleModalUI from "../dashboard/CreateVehicleModalUI";
+import { toast } from "@/components/ui/UseToast";
+
+import { UpdateVehicleData, useVehicleListingStore, Vehicle } from "@/store/admin/vehicleListing";
+import { useDealershipAgreementStore } from "@/store/admin/dealership";
+
+
 
 type VehicleStatus = "available" | "sold";
 
@@ -53,39 +59,102 @@ type AvailabilitySlot = {
   meetingAddress: string;
 };
 
-type VehicleRow = {
-  id: string;
-  title: string;
-  year: number;
-  make: string;
-  model: string;
-  price: number;
+// type VehicleRow = {
+//   id: string;
+//   title: string;
+//   year: number;
+//   make: string;
+//   model: string;
+//   price: number;
 
-  status: VehicleStatus;
-  featured: boolean;
+//   status: VehicleStatus;
+//   featured: boolean;
 
-  website_managed: boolean;
-  created_by: string;
+//   website_managed: boolean;
+//   created_by: string;
 
-  primary_image_small?: string | null;
-  primary_image?: string | null;
+//   primary_image_small?: string | null;
+//   primary_image?: string | null;
 
-  recurring_availability?: AvailabilitySlot[];
+//   recurring_availability?: AvailabilitySlot[];
 
-  dealership_name?: string | null;
-  dealership_agreement_id?: string | null;
-};
+//   dealership_name?: string | null;
+//   dealership_agreement_id?: string | null;
+// };
 
-type DealershipAgreementLite = {
-  id: string;
-  dealership_name: string;
-  status: "signed";
-};
+// type DealershipAgreementLite = {
+//   id: string;
+//   dealership_name: string;
+//   status: "signed";
+// };
 
-const MOCK_DEALERSHIPS: DealershipAgreementLite[] = [
-  { id: "d_001", dealership_name: "Taka Cars", status: "signed" },
-  { id: "d_002", dealership_name: "Ok Motors", status: "signed" },
-];
+// const MOCK_DEALERSHIPS: DealershipAgreementLite[] = [
+//   { id: "d_001", dealership_name: "Taka Cars", status: "signed" },
+//   { id: "d_002", dealership_name: "Ok Motors", status: "signed" },
+// ];
+
+
+
+// const MOCK_VEHICLES: VehicleRow[] = [
+//   {
+//     id: "v_001",
+//     title: "2018 Toyota Aqua (Hybrid) — Clean",
+//     year: 2018,
+//     make: "Toyota",
+//     model: "Aqua",
+//     price: 9500,
+//     status: "available",
+//     featured: true,
+//     website_managed: true,
+//     created_by: "admin@speedyo.local",
+//     primary_image:
+//       "https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=1200&q=70",
+//     recurring_availability: [
+//       {
+//         id: "slot_a",
+//         dayOfWeek: "Monday",
+//         startTime: "09:00",
+//         endTime: "18:00",
+//         meetingAddress: "Urumu, Okinawa",
+//       },
+//     ],
+//     dealership_name: "Taka Cars",
+//     dealership_agreement_id: "d_001",
+//   },
+//   {
+//     id: "v_002",
+//     title: "2020 Honda Fit — Great City Car",
+//     year: 2020,
+//     make: "Honda",
+//     model: "Fit",
+//     price: 11200,
+//     status: "available",
+//     featured: false,
+//     website_managed: false,
+//     created_by: "seller@local.dev",
+//     primary_image:
+//       "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=70",
+//     recurring_availability: [],
+//   },
+//   {
+//     id: "v_003",
+//     title: "2016 Nissan Note — Budget Friendly",
+//     year: 2016,
+//     make: "Nissan",
+//     model: "Note",
+//     price: 6200,
+//     status: "sold",
+//     featured: false,
+//     website_managed: true,
+//     created_by: "admin@speedyo.local",
+//     primary_image: null,
+//     recurring_availability: [],
+//     dealership_name: null,
+//     dealership_agreement_id: null,
+//   },
+// ];
+
+
 
 function makeSlot(): AvailabilitySlot {
   return {
@@ -97,84 +166,76 @@ function makeSlot(): AvailabilitySlot {
   };
 }
 
-const MOCK_VEHICLES: VehicleRow[] = [
-  {
-    id: "v_001",
-    title: "2018 Toyota Aqua (Hybrid) — Clean",
-    year: 2018,
-    make: "Toyota",
-    model: "Aqua",
-    price: 9500,
-    status: "available",
-    featured: true,
-    website_managed: true,
-    created_by: "admin@speedyo.local",
-    primary_image:
-      "https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=1200&q=70",
-    recurring_availability: [
-      {
-        id: "slot_a",
-        dayOfWeek: "Monday",
-        startTime: "09:00",
-        endTime: "18:00",
-        meetingAddress: "Urumu, Okinawa",
-      },
-    ],
-    dealership_name: "Taka Cars",
-    dealership_agreement_id: "d_001",
-  },
-  {
-    id: "v_002",
-    title: "2020 Honda Fit — Great City Car",
-    year: 2020,
-    make: "Honda",
-    model: "Fit",
-    price: 11200,
-    status: "available",
-    featured: false,
-    website_managed: false,
-    created_by: "seller@local.dev",
-    primary_image:
-      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=70",
-    recurring_availability: [],
-  },
-  {
-    id: "v_003",
-    title: "2016 Nissan Note — Budget Friendly",
-    year: 2016,
-    make: "Nissan",
-    model: "Note",
-    price: 6200,
-    status: "sold",
-    featured: false,
-    website_managed: true,
-    created_by: "admin@speedyo.local",
-    primary_image: null,
-    recurring_availability: [],
-    dealership_name: null,
-    dealership_agreement_id: null,
-  },
-];
+function dbSlotToAvailabilitySlot(dbSlot: any): AvailabilitySlot {
+  return {
+    id: dbSlot.id,
+    dayOfWeek: dbSlot.requested_date as DayOfWeek,
+    startTime: dbSlot.requested_time,
+    endTime: dbSlot.endTime ?? "18:00",
+    meetingAddress: dbSlot.meetingAddress ?? "",
+  };
+}
 
 export default function ListingManagementUI(props: {
   initialEditVehicleId?: string | null;
 }) {
-  const [vehicles, setVehicles] = useState<VehicleRow[]>(MOCK_VEHICLES);
-  const [dealerships] = useState<DealershipAgreementLite[]>(MOCK_DEALERSHIPS);
+
+
+   const {
+    vehicles,
+    isLoading: vehiclesLoading,
+    getAll,
+    update,
+    remove,
+    toggleFeatured,
+    markSold,
+    associateDealership,
+    removeDealershipAssociation,
+    manageTestDriveAvailability,
+  } = useVehicleListingStore();
+
+  const {
+    agreements,
+    isLoading: dealershipsLoading,
+    getAll: getDealerships,
+  } = useDealershipAgreementStore();
+
+  const signedDealerships = useMemo(
+    () => agreements.filter((d) => d.status === "signed"),
+    [agreements]
+  );
+
+  useEffect(() => {
+    getAll();
+    getDealerships();
+  }, []);
+
+
+
+
+
+
+
+
+
+  // const [vehicles, setVehicles] = useState<VehicleRow[]>(MOCK_VEHICLES);
+  // const [dealerships] = useState<DealershipAgreementLite[]>(MOCK_DEALERSHIPS);
+
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState<VehicleRow | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle  | null>(null);
 
   const [showAssociateDealershipModal, setShowAssociateDealershipModal] =
     useState(false);
   const [selectedVehicleForAssociation, setSelectedVehicleForAssociation] =
-    useState<VehicleRow | null>(null);
+    useState<Vehicle  | null>(null);
   const [selectedDealershipId, setSelectedDealershipId] = useState("");
 
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [managingAvailabilityVehicle, setManagingAvailabilityVehicle] =
-    useState<VehicleRow | null>(null);
+    useState<Vehicle  | null>(null);
 
   // auto-open edit modal if passed via query param
   useEffect(() => {
@@ -196,108 +257,133 @@ export default function ListingManagementUI(props: {
     );
   }, [vehicles, searchTerm]);
 
-  const handleDelete = (id: string) => {
-    if (
-      !window.confirm("Are you sure you want to delete this listing permanently?")
-    ) {
-      return;
+   const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this listing permanently?")) return;
+    try {
+      await remove(id);
+      toast({ title: "Deleted", description: "Vehicle listing deleted." });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete vehicle.", variant: "destructive" });
     }
-    setVehicles((prev) => prev.filter((v) => v.id !== id));
   };
 
-  const handleEditVehicle = (vehicle: VehicleRow) => {
+  const handleEditVehicle = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
     setShowEditModal(true);
   };
 
-  const handleUpdateVehicle = (patch: Partial<VehicleRow>) => {
-    if (!editingVehicle) return;
+ const handleUpdateVehicle = async (patch: CreateVehiclePatch) => {
+  if (!editingVehicle) return;
+  const formData = new FormData();
 
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === editingVehicle.id
-          ? {
-            ...v,
-            ...patch,
-            price: typeof patch.price === "number" ? patch.price : v.price,
-          }
-          : v,
-      ),
-    );
+  formData.append("make", patch.make);
+  formData.append("model", patch.model);
+  formData.append("year", String(patch.year));
+  formData.append("price", String(patch.price));
+  formData.append("mileage", String(patch.mileage));
+  formData.append("condition", patch.condition);
+  formData.append("description", patch.description);
+  formData.append("location", patch.location);
+  formData.append("fuel_type", patch.fuel_type);
+  formData.append("transmission", patch.transmission);
+  formData.append("status", patch.status);
 
+
+  patch.imageFiles.forEach((file) => formData.append("images", file));
+
+  const primaryIsNew = patch.primary_image?.startsWith("blob:");
+  if (primaryIsNew) {
+    // Find the matching file by index
+    const idx = patch.images.findIndex((url) => url === patch.primary_image);
+    if (idx !== -1 && patch.imageFiles[idx]) {
+      formData.append("primary_image", patch.imageFiles[idx]);
+    }
+  } else if (patch.primary_image) {
+    formData.append("primary_image", patch.primary_image);
+  }
+
+  try {
+    await update(editingVehicle.id, formData);
     setShowEditModal(false);
     setEditingVehicle(null);
+    toast({ title: "Saved", description: "Vehicle updated." });
+  } catch {
+    toast({ title: "Error", description: "Failed to update vehicle.", variant: "destructive" });
+  }
+};
+
+    const handleToggleFeatured = async (vehicleId: string) => {
+    try {
+      await toggleFeatured(vehicleId);
+    } catch {
+      toast({ title: "Error", description: "Failed to toggle featured.", variant: "destructive" });
+    }
   };
 
-  const handleToggleFeatured = (vehicleId: string) => {
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId ? { ...v, featured: !v.featured } : v,
-      ),
-    );
+
+  const handleMarkAsSold = async (vehicleId: string) => {
+    if (!window.confirm("Mark this vehicle as sold?")) return;
+    try {
+      await markSold(vehicleId);
+    } catch {
+      toast({ title: "Error", description: "Failed to mark as sold.", variant: "destructive" });
+    }
   };
 
-  const handleMarkAsSold = (vehicleId: string) => {
-    if (!window.confirm("Are you sure you want to mark this vehicle as sold?"))
-      return;
-    setVehicles((prev) =>
-      prev.map((v) => (v.id === vehicleId ? { ...v, status: "sold" } : v)),
-    );
-  };
-
-  const handleAssociateDealership = (vehicle: VehicleRow) => {
+   const handleAssociateDealership = (vehicle: Vehicle) => {
     setSelectedVehicleForAssociation(vehicle);
-    setSelectedDealershipId(vehicle.dealership_agreement_id ?? "");
+    setSelectedDealershipId(vehicle.dealershipAgreementId ?? "");
     setShowAssociateDealershipModal(true);
   };
 
-  const handleSaveAssociation = () => {
-    if (!selectedVehicleForAssociation) return;
-    if (!selectedDealershipId) return;
-
-    const dealership = dealerships.find((d) => d.id === selectedDealershipId);
-    if (!dealership) return;
-
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === selectedVehicleForAssociation.id
-          ? {
-            ...v,
-            dealership_name: dealership.dealership_name,
-            dealership_agreement_id: dealership.id,
-          }
-          : v,
-      ),
-    );
-
-    setShowAssociateDealershipModal(false);
-    setSelectedVehicleForAssociation(null);
-    setSelectedDealershipId("");
+    const handleSaveAssociation = async () => {
+    if (!selectedVehicleForAssociation || !selectedDealershipId) return;
+    try {
+      await associateDealership(selectedVehicleForAssociation.id, selectedDealershipId);
+      setShowAssociateDealershipModal(false);
+      setSelectedVehicleForAssociation(null);
+      setSelectedDealershipId("");
+      toast({ title: "Saved", description: "Dealership associated." });
+    } catch {
+      toast({ title: "Error", description: "Failed to associate dealership.", variant: "destructive" });
+    }
   };
 
-  const handleRemoveAssociation = (vehicle: VehicleRow) => {
-    if (!window.confirm("Remove dealership association from this vehicle?"))
-      return;
-
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicle.id
-          ? { ...v, dealership_name: null, dealership_agreement_id: null }
-          : v,
-      ),
-    );
+   const handleRemoveAssociation = async (vehicle: Vehicle) => {
+    if (!window.confirm("Remove dealership association from this vehicle?")) return;
+    try {
+      await removeDealershipAssociation(vehicle.id);
+      toast({ title: "Removed", description: "Dealership association removed." });
+    } catch {
+      toast({ title: "Error", description: "Failed to remove association.", variant: "destructive" });
+    }
   };
 
-  const handleManageAvailability = (vehicle: VehicleRow) => {
+  const handleManageAvailability = (vehicle: Vehicle) => {
     setManagingAvailabilityVehicle(vehicle);
     setShowAvailabilityModal(true);
   };
 
-  const handleSaveAvailability = (vehicleId: string, slots: AvailabilitySlot[]) => {
-    setVehicles((prev) =>
-      prev.map((v) => (v.id === vehicleId ? { ...v, recurring_availability: slots } : v)),
-    );
-  };
+ const handleSaveAvailability = async (vehicleId: string, slots: AvailabilitySlot[]) => {
+  const mapped = slots.map((s) => ({
+    requested_date: s.dayOfWeek,
+    requested_time: s.startTime,
+    endTime: s.endTime,
+    meetingAddress: s.meetingAddress,
+  }));
+  try {
+    await manageTestDriveAvailability(vehicleId, mapped);
+    setShowAvailabilityModal(false);
+    setManagingAvailabilityVehicle(null);
+    toast({ title: "Saved", description: "Availability updated." });
+  } catch {
+    toast({ title: "Error", description: "Failed to save availability.", variant: "destructive" });
+  }
+};
+
+  if (vehiclesLoading && vehicles.length === 0) {
+    return <div className="p-8 text-center text-slate-500">Loading vehicles...</div>;
+  }
 
   return (
     <>
@@ -471,10 +557,10 @@ export default function ListingManagementUI(props: {
                         className="text-slate-700 border-slate-300 hover:bg-slate-100"
                       >
                         <Building className="w-4 h-4 mr-2" />
-                        {vehicle.dealership_name ? "Change Dealership" : "Associate Dealership"}
+                        {vehicle.dealershipAgreement?.dealership_name ? "Change Dealership" : "Associate Dealership"}
                       </Button>
 
-                      {vehicle.dealership_name ? (
+                      {vehicle.dealershipAgreement?.dealership_name ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -515,13 +601,7 @@ export default function ListingManagementUI(props: {
             setShowEditModal(false);
             setEditingVehicle(null);
           }}
-          onSave={(patch) => {
-            setVehicles((prev) =>
-              prev.map((v) => (v.id === editingVehicle.id ? { ...v, ...patch } : v)),
-            );
-            setShowEditModal(false);
-            setEditingVehicle(null);
-          }}
+          onSave={handleUpdateVehicle}
         />
       )}
       {showAvailabilityModal && managingAvailabilityVehicle ? (
@@ -562,8 +642,8 @@ export default function ListingManagementUI(props: {
                     <SelectValue placeholder="Choose a dealership..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {dealerships.length ? (
-                      dealerships.map((d) => (
+                    {signedDealerships.length ? (
+                      signedDealerships.map((d) => (
                         <SelectItem key={d.id} value={d.id}>
                           {d.dealership_name}
                         </SelectItem>
@@ -576,7 +656,7 @@ export default function ListingManagementUI(props: {
                   </SelectContent>
                 </Select>
 
-                {!dealerships.length ? (
+                {!signedDealerships.length ? (
                   <p className="text-sm text-amber-600 mt-2">
                     No signed dealership agreements found. Create and sign an agreement first.
                   </p>
@@ -675,14 +755,14 @@ function AvailabilityManagerModal(props: {
   onSave: (slots: AvailabilitySlot[]) => void;
 }) {
   const [slots, setSlots] = useState<AvailabilitySlot[]>(() => {
-    const existing = props.vehicle.recurring_availability ?? [];
-    return existing.length ? existing : [makeSlot()];
+   const existing = (props.vehicle.recurring_availability ?? []).map(dbSlotToAvailabilitySlot);
+return existing.length ? existing : [makeSlot()];
   });
 
-  useEffect(() => {
-    const existing = props.vehicle.recurring_availability ?? [];
-    setSlots(existing.length ? existing : [makeSlot()]);
-  }, [props.vehicle.id]);
+useEffect(() => {
+  const existing = (props.vehicle.recurring_availability ?? []).map(dbSlotToAvailabilitySlot);
+  setSlots(existing.length ? existing : [makeSlot()]);
+}, [props.vehicle.id]);
 
   const setSlot = (id: string, patch: Partial<AvailabilitySlot>) => {
     setSlots((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));

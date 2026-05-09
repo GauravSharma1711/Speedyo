@@ -16,13 +16,12 @@ import {
 import { Card, CardContent } from "@/components/ui/Card";
 
 export type TestDriveReportData = {
-  buyer_interest_level: "" | "very_interested" | "interested" | "somewhat_interested" | "not_interested";
+  buyer_interest_level: "" | "high" | "medium" | "low" | "not_interested";  
   buyer_feedback: string;
-  speedio_report: string;
-  next_steps: string;
+  speedio_assessment: string;        
+  recommended_next_steps: string;    
   admin_notes: string;
 };
-
 export default function TestDriveReportModalUI(props: {
   isOpen: boolean;
   onClose: () => void;
@@ -33,48 +32,54 @@ export default function TestDriveReportModalUI(props: {
   preferred_time?: string;
 
   initialValue?: Partial<TestDriveReportData>;
-  onSave: (data: TestDriveReportData) => void;
+onSave: (data: TestDriveReportData) => Promise<void>;
 }) {
   const { isOpen, onClose, initialValue, onSave } = props;
 
-  const [reportData, setReportData] = useState<TestDriveReportData>({
-    buyer_interest_level: "",
-    buyer_feedback: "",
-    speedio_report: "",
-    next_steps: "",
-    admin_notes: "",
-  });
+const [reportData, setReportData] = useState<TestDriveReportData>({
+  buyer_interest_level: "",
+  buyer_feedback: "",
+  speedio_assessment: "",         // ✅
+  recommended_next_steps: "",     // ✅
+  admin_notes: "",
+});
+
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setReportData({
-      buyer_interest_level: initialValue?.buyer_interest_level ?? "",
-      buyer_feedback: initialValue?.buyer_feedback ?? "",
-      speedio_report: initialValue?.speedio_report ?? "",
-      next_steps: initialValue?.next_steps ?? "",
-      admin_notes: initialValue?.admin_notes ?? "",
+ useEffect(() => {
+  if (!isOpen) return;
+  setReportData({
+    buyer_interest_level: (initialValue?.buyer_interest_level as any) ?? "",
+    buyer_feedback: initialValue?.buyer_feedback ?? "",
+    speedio_assessment: initialValue?.speedio_assessment ?? "",           
+    recommended_next_steps: initialValue?.recommended_next_steps ?? "",  
+    admin_notes: initialValue?.admin_notes ?? "",
+  });
+}, [isOpen, initialValue]);
+
+
+
+const handleSave = async () => {
+  if (!reportData.buyer_interest_level || !reportData.speedio_assessment.trim()) return;
+
+  setIsSubmitting(true);
+
+  try {
+    await onSave({                                    
+      ...reportData,
+      speedio_assessment: reportData.speedio_assessment.trim(),
+      buyer_feedback: reportData.buyer_feedback.trim(),
+      recommended_next_steps: reportData.recommended_next_steps.trim(),
+      admin_notes: reportData.admin_notes.trim(),
     });
-  }, [isOpen, initialValue]);
-
-  const handleSave = async () => {
-    if (!reportData.buyer_interest_level || !reportData.speedio_report.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      onSave({
-        ...reportData,
-        speedio_report: reportData.speedio_report.trim(),
-        buyer_feedback: reportData.buyer_feedback.trim(),
-        next_steps: reportData.next_steps.trim(),
-        admin_notes: reportData.admin_notes.trim(),
-      });
-      onClose();
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    onClose();
+  } catch (err) {
+    console.error("Failed to save report:", err);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -136,24 +141,24 @@ export default function TestDriveReportModalUI(props: {
               <label className="text-sm font-medium text-slate-700 mb-2 block">
                 Speedio's Assessment *
               </label>
-              <Textarea
-                value={reportData.speedio_report}
-                onChange={(e) => setReportData((p) => ({ ...p, speedio_report: e.target.value }))}
-                placeholder="Your assessment of the test drive and buyer's likelihood to purchase"
-                className="h-24"
-              />
+         <Textarea
+  value={reportData.speedio_assessment}                           
+  onChange={(e) => setReportData((p) => ({ ...p, speedio_assessment: e.target.value }))}
+  placeholder="Your assessment of the test drive..."
+  className="h-24"
+/>
             </div>
 
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">
                 Recommended Next Steps
               </label>
-              <Textarea
-                value={reportData.next_steps}
-                onChange={(e) => setReportData((p) => ({ ...p, next_steps: e.target.value }))}
-                placeholder="What should happen next?"
-                className="h-24"
-              />
+         <Textarea
+  value={reportData.recommended_next_steps}                       
+  onChange={(e) => setReportData((p) => ({ ...p, recommended_next_steps: e.target.value }))}
+  placeholder="What should happen next?"
+  className="h-24"
+/>
             </div>
 
             <div>
@@ -175,7 +180,7 @@ export default function TestDriveReportModalUI(props: {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isSubmitting || !reportData.buyer_interest_level || !reportData.speedio_report.trim()}
+             disabled={isSubmitting || !reportData.buyer_interest_level || !reportData.speedio_assessment.trim()}
               className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
             >
               {isSubmitting ? (
