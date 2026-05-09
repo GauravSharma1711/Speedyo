@@ -4,14 +4,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 
 function validateCommentBody(body: Record<string, unknown>): string | null {
-  const { content, parentCommentId } = body;
+  const content = body.content;
+  const parentCommentId = body.parentCommentId ?? body.parent_comment_id;
 
   if (!content || typeof content !== "string" || content.trim().length === 0)
     return "content is required";
 
   if (content.trim().length > 2000) return "content must be 2000 characters or fewer";
 
-  if (parentCommentId !== undefined && typeof parentCommentId !== "string")
+  if (parentCommentId !== undefined && parentCommentId !== null && typeof parentCommentId !== "string")
     return "parentCommentId must be a string";
 
   return null;
@@ -42,7 +43,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: st
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const { content, parentCommentId } = body;
+    const { content, parentCommentId: pc1, parent_comment_id: pc2 } = body;
+    const parentCommentId = pc1 ?? pc2 ?? null;
 
     if (parentCommentId) {
       const parentComment = await prisma.comment.findUnique({

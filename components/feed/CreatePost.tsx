@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/TextArea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { X, Image, FileText, Video, Loader2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import feedService from "@/services/feedService";
+import notificationsService from "@/services/notificationsService";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -72,21 +74,25 @@ const convertImageToWebP = (file: File): Promise<{ file: File; originalSize: num
     reader.readAsDataURL(file);
   });
 
-// Replace with your actual upload util (e.g. Supabase Storage, S3 presigned URL, etc.)
+// Real upload using API
 async function uploadFile(file: File): Promise<string> {
-  // TODO: implement real upload
-  // Example with your own API route:
-  // const form = new FormData(); form.append("file", file);
-  // const res = await fetch("/api/upload", { method: "POST", body: form });
-  // const { url } = await res.json(); return url;
-  console.log("[uploadFile] stub called for:", file.name);
-  return URL.createObjectURL(file); // local preview until real upload is wired
+  try {
+    const result = await feedService.uploadImage(file);
+    return result.url;
+  } catch (err) {
+    console.error("[uploadFile] failed:", err);
+    // Fallback to local preview
+    return URL.createObjectURL(file);
+  }
 }
 
-// Replace with your real API call to notify followers
+// Real notification to followers
 async function notifyFollowersOfNewPost(postId: string): Promise<void> {
-  // TODO: POST /api/notifications/followers or server action
-  console.log("[notifyFollowersOfNewPost] stub called for postId:", postId);
+  try {
+    await notificationsService.notifyFollowersOnNewPost(postId);
+  } catch (err) {
+    console.error("[notifyFollowersOfNewPost] failed:", err);
+  }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -104,6 +110,20 @@ export default function CreatePost({
   const [files, setFiles]                   = useState<string[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isSubmitting, setIsSubmitting]     = useState(false);
+  const [userVehicles, setUserVehicles]     = useState<Vehicle[]>([]);
+
+  useEffect(() => {
+    const loadVehicles = async () => {
+      try {
+        const res = await feedService.getMyVehicles();
+        setUserVehicles(res.vehicles ?? []);
+      } catch (err) {
+        console.error("Failed to load vehicles:", err);
+        setUserVehicles([]);
+      }
+    };
+    loadVehicles();
+  }, []);
 
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
@@ -279,12 +299,19 @@ export default function CreatePost({
                           <Badge variant="outline" className="ml-2">${v.price?.toLocaleString()}</Badge>
                         </div>
                       </SelectItem>
+                    )) : userVehicles.length > 0 ? userVehicles.map(v => (
+                      <SelectItem key={v.id} value={v.id}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{v.title}</span>
+                          <Badge variant="outline" className="ml-2">${v.price?.toLocaleString()}</Badge>
+                        </div>
+                      </SelectItem>
                     )) : (
                       <SelectItem value="none" disabled>No vehicles found.</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
-                {vehicles.length === 0 && (
+                {vehicles.length === 0 && userVehicles.length === 0 && (
                   <p className="text-sm text-slate-500">You need to create a vehicle listing before posting.</p>
                 )}
               </div>

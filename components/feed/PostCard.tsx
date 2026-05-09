@@ -30,6 +30,7 @@ import {
 import ShareModal from "./ShareModal";
 import EmojiReactions from "./EmojiReactions";
 import CommentSection from "./CommentSection";
+import feedService from "@/services/feedService";
 
 type PostReactionMap = Record<string, number>;
 
@@ -40,7 +41,9 @@ type FeedPost = {
   created_at?: string | Date | null;
 
   author_id?: string | null;
+  authorId?: string | null;
   vehicle_id?: string | null;
+  vehicleId?: string | null;
 
   post_type?: string | null;
   content?: string | null;
@@ -63,14 +66,25 @@ type FeedPost = {
 
   article_title?: string | null;
   article_excerpt?: string | null;
+
+  author?: {
+    id?: string | null;
+    full_name?: string | null;
+    profile_image?: string | null;
+    user_type?: string | null;
+    role?: string | null;
+    isVerified?: boolean | null;
+  } | null;
 };
 
 type PostCardProps = {
   post: FeedPost;
+  currentUser?: { id: string; email?: string | null; full_name?: string | null } | null;
   onReact: (reactionType: string | null) => void | Promise<void>;
   onComment: (postId: string) => void | Promise<void>;
   onShare: (post: FeedPost) => void | Promise<void>;
   onEdit: (post: FeedPost) => void;
+  onDelete?: (post: FeedPost) => void | Promise<void>;
 };
 
 type ApiMe = {
@@ -106,23 +120,22 @@ function safeMoney(v: any): string {
 
 export default function PostCard({
   post,
+  currentUser: currentUserProp,
   onReact,
   onComment,
   onShare,
   onEdit,
+  onDelete,
 }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [currentUser, setCurrentUser] = useState<ApiMe | null>(null);
+  const [currentUser, setCurrentUser] = useState(currentUserProp ?? null);
 
   const [viewCount, setViewCount] = useState<number>(post.views || 0);
 
-  const [postAuthor, setPostAuthor] = useState<ApiPublicUser | null>(null);
   const [vehicleData, setVehicleData] = useState<ApiVehicle | null>(null);
 
-  const [isLoadingAuthor, setIsLoadingAuthor] = useState(true);
   const [isLoadingVehicle, setIsLoadingVehicle] = useState(false);
-  
 
   const cardRef = useRef<HTMLDivElement | null>(null);
 
@@ -133,76 +146,12 @@ export default function PostCard({
   })();
 
   useEffect(() => {
-    const run = async () => {
-      try {
-        const res = await fetch("/api/user/me", { cache: "no-store" });
-        if (!res.ok) return setCurrentUser(null);
-        const json = (await res.json()) as { user?: ApiMe };
-        setCurrentUser(json.user ?? null);
-      } catch {
-        setCurrentUser(null);
-      }
-    };
-    run();
-  }, []);
-
-  // Fetch post author
-  useEffect(() => {
-    const run = async () => {
-      if (!post.author_id) {
-        setIsLoadingAuthor(false);
-        setPostAuthor({
-          id: "unknown",
-          user_id: "unknown",
-          full_name: "Unknown User",
-          user_type: "guest",
-          profile_image: null,
-          verified: false,
-          role: "user",
-        });
-        return;
-      }
-
-      setIsLoadingAuthor(true);
-      try {
-        const res = await fetch(
-          `/api/user/public?userId=${encodeURIComponent(post.author_id)}`,
-          { cache: "no-store" },
-        );
-        if (!res.ok) throw new Error("author fetch failed");
-        const json = (await res.json()) as { user?: ApiPublicUser };
-        setPostAuthor(
-          json.user ?? {
-            id: "unknown",
-            user_id: post.author_id,
-            full_name: "Unknown User",
-            user_type: "guest",
-            profile_image: null,
-            verified: false,
-            role: "user",
-          },
-        );
-      } catch {
-        setPostAuthor({
-          id: "unknown",
-          user_id: post.author_id ?? "unknown",
-          full_name: "Unknown User",
-          user_type: "guest",
-          profile_image: null,
-          verified: false,
-          role: "user",
-        });
-      } finally {
-        setIsLoadingAuthor(false);
-      }
-    };
-
-    run();
-  }, [post.author_id]);
+    setCurrentUser(currentUserProp ?? null);
+  }, [currentUserProp]);
 
   useEffect(() => {
     const run = async () => {
-      if (!post.vehicle_id) {
+      if (!post.vehicle_id && !post.vehicleId) {
         setIsLoadingVehicle(false);
         setVehicleData(null);
         return;
@@ -210,12 +159,9 @@ export default function PostCard({
 
       setIsLoadingVehicle(true);
       try {
-        const res = await fetch(`/api/vehicles/${encodeURIComponent(post.vehicle_id)}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error("vehicle fetch failed");
-        const json = (await res.json()) as { vehicle?: ApiVehicle };
-        setVehicleData(json.vehicle ?? null);
+        const vid = post.vehicle_id ?? post.vehicleId ?? "";
+        const res = await feedService.getVehicle(vid);
+        setVehicleData(res.vehicle ?? null);
       } catch {
         setVehicleData(null);
       } finally {
@@ -224,9 +170,9 @@ export default function PostCard({
     };
 
     run();
-  }, [post.vehicle_id]);
+  }, [post.vehicle_id, post.vehicleId]);
 
-  // View counter (client-only increment for now; can be wired to /api/post/incrementPostViews later)
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const node = cardRef.current;
@@ -237,10 +183,15 @@ export default function PostCard({
         if (!entry) return;
 
         if (entry.isIntersecting) {
-          timer = setTimeout(() => {
+          timer = setTimeout(async () => {
             if (!sessionStorage.getItem(`post_view_${post.id}`)) {
               setViewCount((prev) => prev + 1);
               sessionStorage.setItem(`post_view_${post.id}`, "true");
+              try {
+                await feedService.incrementPostViews(post.id);
+              } catch (err) {
+                console.error("[incrementPostViews] failed:", err);
+              }
             }
             observer.disconnect();
           }, 1500);
@@ -261,7 +212,7 @@ export default function PostCard({
     };
   }, [post.id]);
 
-  const isPostOwner = Boolean(currentUser?.id && currentUser.id === post.author_id);
+  const isPostOwner = Boolean(currentUser?.id && currentUser.id === (post.author_id ?? post.authorId));
 
   const PostTypeBadge = ({ type }: { type: string | null | undefined }) => {
     const typeConfig = {
@@ -281,12 +232,10 @@ export default function PostCard({
     : 0;
 
   const handleDeletePost = async () => {
-    alert("Delete wiring pending (no API route connected).");
+    if (!onDelete) return;
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    await onDelete(post);
   };
-
-  const authorName = postAuthor?.full_name || "Unknown User";
-  const authorAvatar = postAuthor?.profile_image || "";
-  const authorInitial = (authorName?.trim()?.[0] ?? "U").toUpperCase();
 
   return (
     <Card
@@ -294,77 +243,67 @@ export default function PostCard({
       className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300"
     >
       <CardContent className="p-0">
-        {/* Header */}
+        {/* Post Header */}
         <div className="p-6 pb-4">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3 flex-1">
-              {isLoadingAuthor ? (
-                <div className="flex items-center gap-3">
-                  <Skeleton className="w-12 h-12 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
+              <>
+                <Avatar className="w-12 h-12">
+                  <AvatarImage src={post.author?.profile_image ?? undefined} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-emerald-500 text-white font-semibold">
+                    {post.author?.full_name?.[0] ?? "U"}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href={`/Profile?id=${post.author?.id ?? post.authorId ?? ""}`}
+                      className="hover:underline"
+                    >
+                      <h3 className="font-semibold text-slate-800">{post.author?.full_name ?? "Unknown User"}</h3>
+                    </Link>
+
+                    {post.author?.isVerified ? (
+                      <Badge className="bg-blue-100 text-blue-800 text-xs">
+                        <Shield className="w-3 h-3 mr-1" />
+                        Verified
+                      </Badge>
+                    ) : null}
+
+                    {post.author?.role === "admin" ? (
+                      <Badge
+                        variant="outline"
+                        className="text-xs capitalize bg-slate-100 text-slate-700 border-slate-300"
+                      >
+                        Admin
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {post.author?.user_type === "private_seller"
+                          ? "Private Seller"
+                          : post.author?.user_type === "dealership"
+                            ? "Dealership"
+                            : "Member"}
+                      </Badge>
+                    )}
+
+                    <PostTypeBadge type={post.post_type} />
+                  </div>
+
+                  <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
+                    <span>{createdDateLabel}</span>
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-3 h-3" />
+                      <span>{viewCount}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MessageCircle className="w-3 h-3" />
+                      <span>{post.comments_count || 0}</span>
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={authorAvatar} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-emerald-500 text-white font-semibold">
-                      {authorInitial}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Link
-                        href={`/profile?id=${postAuthor?.user_id ?? post.author_id ?? ""}`}
-                        className="hover:underline"
-                      >
-                        <h3 className="font-semibold text-slate-800">{authorName}</h3>
-                      </Link>
-
-                      {postAuthor?.verified ? (
-                        <Badge className="bg-blue-100 text-blue-800 text-xs">
-                          <Shield className="w-3 h-3 mr-1" />
-                          Verified
-                        </Badge>
-                      ) : null}
-
-                      {postAuthor?.role === "admin" ? (
-                        <Badge
-                          variant="outline"
-                          className="text-xs capitalize bg-slate-100 text-slate-700 border-slate-300"
-                        >
-                          Admin
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {postAuthor?.user_type === "private_seller"
-                            ? "Private Seller"
-                            : postAuthor?.user_type === "dealership"
-                              ? "Dealership"
-                              : "Member"}
-                        </Badge>
-                      )}
-
-                      <PostTypeBadge type={post.post_type} />
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
-                      <span>{createdDateLabel}</span>
-                      <div className="flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                        <span>{viewCount}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MessageCircle className="w-3 h-3" />
-                        <span>{post.comments_count || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+              </>
             </div>
 
             {/* Actions menu (owner only) */}
@@ -417,6 +356,12 @@ export default function PostCard({
                       alt={`Post image ${index + 1}`}
                       className="w-full h-48 object-cover rounded-lg shadow-md group-hover:shadow-lg transition-shadow cursor-pointer"
                       loading="lazy"
+                      onClick={() => {
+                        const vid = post.vehicle_id ?? post.vehicleId;
+                        if (vid) {
+                          window.location.href = `/vehicle?id=${vid}`;
+                        }
+                      }}
                     />
                   )}
                 </div>
@@ -433,9 +378,9 @@ export default function PostCard({
             </div>
           ) : null}
 
-          {/* Vehicle preview card */}
-          {post.vehicle_id ? (
-            <Card className="mt-4 overflow-hidden border-slate-200/60">
+          {/* Vehicle Preview Card */}
+          {post.vehicle_id || post.vehicleId ? (
+            <Card className="mt-4 overflow-hidden border-slate-200/60 group-hover:border-blue-200/50 transition-colors duration-300">
               {isLoadingVehicle ? (
                 <div className="flex gap-3 p-4">
                   <Skeleton className="w-16 h-16 sm:w-20 sm:h-20 rounded-md" />
@@ -447,48 +392,50 @@ export default function PostCard({
                 </div>
               ) : vehicleData ? (
                 <Link href={`/vehicle?id=${vehicleData.id}`} className="block">
-                  <div className="flex gap-3 p-3 hover:bg-slate-50 transition-colors">
-                    <div className="w-24 h-20 bg-slate-100 rounded-md overflow-hidden flex-shrink-0">
-                      {vehicleData.primary_image ? (
-                        <img
-                          src={vehicleData.primary_image}
-                          alt={vehicleData.title ?? "Vehicle"}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Car className="w-8 h-8 text-slate-400" />
-                        </div>
-                      )}
-                    </div>
+                  <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer border-blue-200">
+                    <div className="flex gap-3 p-3">
+                      <div className="w-24 h-20 bg-slate-100 rounded-md overflow-hidden flex-shrink-0">
+                        {vehicleData.primary_image ? (
+                          <img
+                            src={vehicleData.primary_image}
+                            alt={vehicleData.title ?? "Vehicle"}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Car className="w-8 h-8 text-slate-400" />
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-slate-800 truncate">{vehicleData.title ?? "Vehicle"}</h4>
-                      <p className="text-sm text-slate-600">{safeMoney(vehicleData.price)}</p>
-                      <div className="flex gap-2 mt-1">
-                        <Badge
-                          variant="outline"
-                          className={`text-xs capitalize ${
-                            vehicleData.status === "unavailable"
-                              ? "bg-amber-50 text-amber-700 border-amber-300"
-                              : vehicleData.status === "sold"
-                                ? "bg-slate-100 text-slate-600"
-                                : ""
-                          }`}
-                        >
-                          {vehicleData.status ?? "available"}
-                        </Badge>
-
-                        {vehicleData.verified ? (
-                          <Badge className="bg-blue-100 text-blue-700 text-xs">
-                            <Shield className="w-3 h-3 mr-1" />
-                            Verified
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-slate-800 truncate">{vehicleData.title ?? "Vehicle"}</h4>
+                        <p className="text-sm text-slate-600">{safeMoney(vehicleData.price)}</p>
+                        <div className="flex gap-2 mt-1">
+                          <Badge
+                            variant="outline"
+                            className={`text-xs capitalize ${
+                              vehicleData.status === "unavailable"
+                                ? "bg-amber-50 text-amber-700 border-amber-300"
+                                : vehicleData.status === "sold"
+                                  ? "bg-slate-100 text-slate-600"
+                                  : ""
+                            }`}
+                          >
+                            {vehicleData.status ?? "available"}
                           </Badge>
-                        ) : null}
+
+                          {vehicleData.verified ? (
+                            <Badge className="bg-blue-100 text-blue-700 text-xs">
+                              <Shield className="w-3 h-3 mr-1" />
+                              Verified
+                            </Badge>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Card>
                 </Link>
               ) : (
                 <div className="flex gap-3 p-4 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-lg">
@@ -505,7 +452,7 @@ export default function PostCard({
           ) : null}
         </div>
 
-        {/* Reactions summary row */}
+        {/* Reactions Bar */}
         {totalReactions > 0 || (post.comments_count || 0) > 0 ? (
           <div className="text-slate-500 pr-6 pl-6 pb-3 text-sm">
             <div className="flex items-center justify-between">
@@ -534,7 +481,7 @@ export default function PostCard({
           </div>
         ) : null}
 
-        {/* Action buttons */}
+        {/* Post Actions */}
         <div className="px-6 py-4 border-t border-slate-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
@@ -583,17 +530,15 @@ export default function PostCard({
         ) : null}
       </CardContent>
       {showShareModal ? (
-      <ShareModal
-        post={post}
-        onClose={() => setShowShareModal(false)}
-        onShare={(postId, platform) => {
-          console.log("Shared:", postId, platform);
-
-          // optional parent callback
-          onShare(post);
-        }}
-      />
-    ) : null}
+        <ShareModal
+          post={post}
+          onClose={() => setShowShareModal(false)}
+          onShare={(postId, platform) => {
+            console.log("Shared:", postId, platform);
+            onShare(post);
+          }}
+        />
+      ) : null}
     </Card>
   );
 }

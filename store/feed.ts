@@ -133,10 +133,12 @@ interface FeedState {
   getAll: () => Promise<void>;
   getVehicleById: (id: string) => Promise<void>;
   getFeaturedVehicles: () => Promise<void>;
-  createPost: (data: CreatePostData) => Promise<void>;
-  likePost: (postId: string) => Promise<void>;
-  reactToPost: (postId: string, reactionType: string | null) => Promise<void>;
+  createPost: (data: CreatePostData) => Promise<{ id: string } | null>;
+  reactToPost: (postId: string, reactionType: string | null, userEmail?: string | null) => Promise<void>;
   commentPost: (postId: string, data: CommentPostData) => Promise<Comment>;
+  sharePost: (postId: string) => Promise<void>;
+  incrementViews: (postId: string) => Promise<void>;
+  deletePost: (postId: string) => Promise<void>;
 }
 
 export const useFeedStore = create<FeedState>()(
@@ -197,6 +199,7 @@ export const useFeedStore = create<FeedState>()(
           state.posts.unshift(res.post);
         });
         set({ isCreating: false });
+        return res.post;
       } catch (error: any) {
         set({
           isCreating: false,
@@ -206,38 +209,58 @@ export const useFeedStore = create<FeedState>()(
       }
     },
 
-    async likePost(postId) {
+    reactToPost: async (postId: string, reactionType: string | null, userEmail?: string | null) => {
+      let originalPost: any = null;
+
+      set((state) => {
+        const idx = state.posts.findIndex((p) => p.id === postId);
+        if (idx !== -1) {
+          originalPost = { ...state.posts[idx] };
+          const post = state.posts[idx];
+          if (userEmail) {
+            const existingIdx = post.user_reactions?.findIndex(
+              (r: any) => r.user_email === userEmail
+            ) ?? -1;
+            if (existingIdx > -1) {
+              const oldReaction = post.user_reactions[existingIdx].reaction;
+              if (oldReaction && post.reactions?.[oldReaction] > 0) {
+                post.reactions[oldReaction]--;
+              }
+              post.user_reactions.splice(existingIdx, 1);
+            }
+          }
+
+          if (reactionType) {
+            post.reactions = { ...(post.reactions || {}), [reactionType]: (post.reactions?.[reactionType] || 0) + 1 };
+            if (userEmail) {
+              post.user_reactions = [...(post.user_reactions || []), { user_email: userEmail, reaction: reactionType }];
+            }
+          }
+        }
+      });
+
       try {
-        const res = await feedService.likePost(postId);
+        const res = await feedService.reactToPost(postId, reactionType);
         set((state) => {
           const idx = state.posts.findIndex((p) => p.id === postId);
-          if (idx !== -1) {
-            state.posts[idx].likes = res.post?.likes ?? state.posts[idx].likes;
-            state.posts[idx].reactions = res.post?.reactions ?? state.posts[idx].reactions;
+          if (idx !== -1 && res.post) {
+            state.posts[idx].reactions = res.post.reactions ?? state.posts[idx].reactions;
+            state.posts[idx].user_reactions = res.post.user_reactions ?? state.posts[idx].user_reactions;
           }
         });
       } catch (error: any) {
-        set({ error: error?.response?.data?.message ?? "Failed to like post" });
+        if (originalPost) {
+          set((state) => {
+            const idx = state.posts.findIndex((p) => p.id === postId);
+            if (idx !== -1) {
+              state.posts[idx] = originalPost;
+            }
+          });
+        }
+        set({ error: error?.response?.data?.message ?? "Failed to react to post" });
         throw error;
       }
     },
-
-    reactToPost: async (postId: string, reactionType: string | null) => {
-  try {
-    const res = await feedService.reactToPost(postId, reactionType);
-    set((state) => {
-      const idx = state.posts.findIndex((p) => p.id === postId);
-      if (idx !== -1) {
-        state.posts[idx].likes = res.post?.likes ?? state.posts[idx].likes;
-        state.posts[idx].reactions = res.post?.reactions ?? state.posts[idx].reactions;
-        state.posts[idx].user_reactions = res.post?.user_reactions ?? state.posts[idx].user_reactions;
-      }
-    });
-  } catch (error: any) {
-    set({ error: error?.response?.data?.message ?? "Failed to react to post" });
-    throw error;
-  }
-},
 
     async commentPost(postId, data) {
       try {
@@ -249,6 +272,42 @@ export const useFeedStore = create<FeedState>()(
         return res.comment;
       } catch (error: any) {
         set({ error: error?.response?.data?.message ?? "Failed to comment on post" });
+        throw error;
+      }
+    },
+
+    async sharePost(postId) {
+      try {
+        await feedService.updatePostShare(postId, 1);
+        set((state) => {
+          const idx = state.posts.findIndex((p) => p.id === postId);
+          if (idx !== -1) state.posts[idx].shares += 1;
+        });
+      } catch (error: any) {
+        set({ error: error?.response?.data?.message ?? "Failed to share post" });
+      }
+    },
+
+    async incrementViews(postId) {
+      try {
+        await feedService.incrementPostViews(postId);
+        set((state) => {
+          const idx = state.posts.findIndex((p) => p.id === postId);
+          if (idx !== -1) state.posts[idx].views += 1;
+        });
+      } catch (error) {
+
+      }
+    },
+
+    async deletePost(postId) {
+      try {
+        await feedService.deletePost(postId);
+        set((state) => {
+          state.posts = state.posts.filter((p) => p.id !== postId);
+        });
+      } catch (error: any) {
+        set({ error: error?.response?.data?.message ?? "Failed to delete post" });
         throw error;
       }
     },

@@ -19,7 +19,7 @@ interface FeedProps {
   currentUser?: CurrentUser | null;
 
   onCreatePost: (data: any) => Promise<CreatePostResult>;
-  onReact: (post: FeedPost, reactionType: string) => void | Promise<void>;
+  onReact: (post: FeedPost, reactionType: string | null) => void | Promise<void>;
   onComment: (postId: string) => void | Promise<void>;
   onShare: (post: FeedPost) => void | Promise<void>;
   onEdit?: (post: FeedPost) => void;
@@ -89,7 +89,7 @@ export default function Feed({
           <PostCard
             key={post.id}
             post={post}
-            onReact={(reactionType: string) => onReact(post, reactionType)}
+            onReact={(reactionType: string | null) => onReact(post, reactionType)}
             onComment={() => onComment(post.id)}
             onShare={() => onShare(post)}
             onEdit={() => onEdit?.(post)}

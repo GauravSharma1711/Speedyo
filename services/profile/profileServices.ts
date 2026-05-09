@@ -35,6 +35,14 @@ export type ProfilePost = {
   created_date?: string | Date | null;
   updated_date?: string | Date | null;
   author_id?: string | null;
+  author?: {
+    id?: string | null;
+    full_name?: string | null;
+    profile_image?: string | null;
+    user_type?: string | null;
+    role?: string | null;
+    isVerified?: boolean | null;
+  } | null;
   vehicle_id?: string | null;
   post_type?: string | null;
   content?: string | null;
