@@ -22,10 +22,10 @@ export default function BuyMoreSlotsModal({ isOpen, onClose, currentSlots }) {
     const params = new URLSearchParams({
       type: 'private_seller',
       name: 'Private Seller Vehicle Slots',
-      price: '$50',
+      price: ' ¥50',
       quantity: quantity.toString()
     });
-  return `/checkout?${params.toString()}`;
+  return `/Checkout?${params.toString()}`;
   };
 
   if (!isOpen) return null;

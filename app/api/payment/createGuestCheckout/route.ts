@@ -5,6 +5,8 @@ import { sendPurchaseMail } from "@/helpers/purchaseMail";
 import { sendAdminGuestPurchaseNotificationMail } from "@/helpers/sendAdminGuestPurchaseNotificationMail";
 import { randomUUID } from "crypto";
 
+
+
 export async function POST(request: NextRequest) {
   try {
     const { email, fullName, quantity, promoCode, paymentToken } = await request.json();

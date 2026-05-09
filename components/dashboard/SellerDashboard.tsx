@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+
+
 import React, { useState, useEffect, useCallback } from "react";
 import {
   invokeFunction,
@@ -51,9 +53,10 @@ import {
   MoreHorizontal,
   FileText,
   MapPin,
+  Loader2,
 } from "lucide-react";
 
-
+import { useSession } from 'next-auth/react';
 
 import CreateVehicleModal from "./CreateVehicleModal";
 import VehicleAnalytics from "./VehicleAnalytics";
@@ -84,6 +87,7 @@ import {
 import BuyMoreSlotsModal from "./BuyMoreSlotsModal";
 import NotificationSettings from "./NotificationSettings";
 import TransferProgressTracker from "./TransferProgressTracker";
+import { usePaymentStore } from "@/store/paymentStore";
 
 type ManagedSaleDetailsModalProps = {
   isOpen: boolean;
@@ -92,6 +96,8 @@ type ManagedSaleDetailsModalProps = {
   onEdit: () => void;
   onCancel: () => void;
 };
+
+
 
 const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel }: ManagedSaleDetailsModalProps) => {
   if (!isOpen || !request) return null;
@@ -308,6 +314,20 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
 
 export default function SellerDashboard({ user }: { user: UserData }) {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  
+  const {
+  fetchSlotDetails,
+  slotDetails,
+  isLoadingSlots,
+} = usePaymentStore();
+
+useEffect(() => {
+  if (user?.user_type === "private_seller") {
+    fetchSlotDetails();
+  }
+}, [user]);
+
   const [publicUser, setPublicUser] = useState<PublicUserData | null>(null);
   const [activeTab, setActiveTab] = useState("listings"); // Added for tabs control
 
@@ -1258,72 +1278,67 @@ export default function SellerDashboard({ user }: { user: UserData }) {
 
   type TierKey = "tier1" | "tier2" | "tier3";
 
-  const canPostVehicle = () => {
-    if (!user) return false;
+ const canPostVehicle = () => {
+  if (!user) return false;
 
-    if (user.user_type === 'private_seller') {
-      // Private Seller: Ability to post is based purely on available slots
-      const slotInfo = getPrivateSellerSlotInfo();
-      return slotInfo && slotInfo.remaining > 0;
-    }
+  if (user.user_type === "private_seller") {
+    // Use store slotDetails if available, fallback to user object
+    const remaining = slotDetails?.remaining ?? 0;
+    return remaining > 0;
+  }
 
-    if (user.user_type === 'dealership') {
-      const subscription = user.seller_subscription;
-      if (!subscription || !subscription.expires_at) return false;
+  if (user.user_type === "dealership") {
+    const subscription = user.seller_subscription;
+    if (!subscription || !subscription.expires_at) return false;
+    const expiresAt = new Date(subscription.expires_at);
+    if (expiresAt <= new Date()) return false;
+    const vehiclesSoldThisYear = subscription.vehicles_sold_this_year || 0;
+    const salesLimits: Record<TierKey, number> = {
+      tier1: 10,
+      tier2: 25,
+      tier3: -1,
+    };
+    const tier = (subscription.tier ?? "tier1") as TierKey;
+    const limit = salesLimits[tier];
+    if (limit === -1) return true;
+    return vehiclesSoldThisYear < limit;
+  }
 
-      const expiresAt = new Date(subscription.expires_at);
-      const now = new Date();
+  return false;
+};
 
-      if (expiresAt <= now) return false; // Subscription expired
+const getSalesLimitInfo = () => {
+  if (!user) return null;
 
-      const vehiclesSoldThisYear = subscription.vehicles_sold_this_year || 0;
-      const salesLimits: Record<TierKey, number> = {
-        tier1: 10, // Standard: 10 sales per year
-        tier2: 25, // Professional: 25 sales per year
-        tier3: -1, // Enterprise: unlimited sales
-      };
+  if (user.user_type === "private_seller") {
+    // Use store slotDetails if available, fallback to user object
+    const purchased = slotDetails?.purchased  ?? 0;
+    const used = slotDetails?.used  ?? 0;
+    return {
+      current: used,
+      limit: purchased,
+      type: "Private Seller",
+    };
+  }
 
-      const tier = (subscription.tier ?? "tier1") as TierKey;
-      const limit = salesLimits[tier];
-      if (limit === -1) return true; // Unlimited
+  if (user.user_type === "dealership" && user.seller_subscription) {
+    const vehiclesSoldThisYear = user.seller_subscription.vehicles_sold_this_year || 0;
+    const limits: Record<TierKey, { limit: number; name: string }> = {
+      tier1: { limit: 10, name: "Standard" },
+      tier2: { limit: 25, name: "Professional" },
+      tier3: { limit: -1, name: "Enterprise" },
+    };
+    const tier = (user.seller_subscription.tier ?? "tier1") as TierKey;
+    const tierInfo = limits[tier] ?? limits.tier1;
+    return {
+      current: vehiclesSoldThisYear,
+      limit: tierInfo.limit,
+      type: tierInfo.name,
+    };
+  }
 
-      return vehiclesSoldThisYear < limit;
-    }
-
-    return false;
-  };
-
-  const getSalesLimitInfo = () => {
-    if (!user || !user.seller_subscription) return null;
-
-    if (user.user_type === 'private_seller') {
-      const slotInfo = getPrivateSellerSlotInfo();
-      return {
-        current: slotInfo?.used || 0,
-        limit: slotInfo?.purchased || 0,
-        type: 'Private Seller'
-      };
-    }
-
-    if (user.user_type === 'dealership') {
-      const vehiclesSoldThisYear = user.seller_subscription.vehicles_sold_this_year || 0;
-      const limits: Record<TierKey, { limit: number; name: string }> = {
-        tier1: { limit: 10, name: "Standard" },
-        tier2: { limit: 25, name: "Professional" },
-        tier3: { limit: -1, name: "Enterprise" },
-      };
-
-      const tier = (user.seller_subscription.tier ?? "tier1") as TierKey;
-      const tierInfo = limits[tier] ?? limits.tier1;
-      return {
-        current: vehiclesSoldThisYear,
-        limit: tierInfo.limit,
-        type: tierInfo.name
-      };
-    }
-
-    return null;
-  };
+  return null;
+};
 
   const getSubscriptionPill = () => {
     if (user.user_type === 'dealership' && user.seller_subscription?.tier) {
@@ -1501,7 +1516,8 @@ export default function SellerDashboard({ user }: { user: UserData }) {
     return null;
   };
 
-  const isGuest = !user || publicUser?.user_type === 'guest';
+
+ const isGuest =  session?.user?.user_type === 'guest';
 
   return (
     <div className="space-y-6">
@@ -1526,74 +1542,87 @@ export default function SellerDashboard({ user }: { user: UserData }) {
               </Badge>
             ) : (
               <Badge variant="outline" className="capitalize text-lg px-4 py-2">
-                {publicUser?.user_type || 'guest'}
+                {session?.user?.user_type || 'guest'}
               </Badge>
             )}
           </div>
         </div>
 
         {/* Private Seller Slot Info Card */}
-        {user?.user_type === 'private_seller' && (() => {
-          const slotInfo = getPrivateSellerSlotInfo();
-          if (!slotInfo) return null;
-          return (
-            <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-lg">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-start justify-between gap-6">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-slate-800 mb-2">Vehicle Slots</h3>
-                    <div className="space-y-1 text-sm text-slate-700 mb-4">
-                      <p><strong>Purchased:</strong> {slotInfo.purchased} slots</p>
-                      <p><strong>Used:</strong> {slotInfo.used} vehicles sold</p> {/* FIX: Changed from 'vehicles listed' to 'vehicles' */}
-                      <p><strong>Remaining:</strong> {slotInfo.remaining} slots available</p>
-                    </div>
+    
+{user?.user_type === "private_seller" && (
+  isLoadingSlots ? (
+    <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-lg">
+      <CardContent className="p-6 flex items-center gap-3">
+        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+        <span className="text-slate-600">Loading slot details...</span>
+      </CardContent>
+    </Card>
+  ) : slotDetails ? (() => {
+    const slotInfo = {
+      purchased: slotDetails.purchased,
+      used: slotDetails.used,
+      remaining: slotDetails.remaining,
+    };
+    return (
+      <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-lg">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-6">
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Vehicle Slots</h3>
+              <div className="space-y-1 text-sm text-slate-700 mb-4">
+                <p><strong>Purchased:</strong> {slotInfo.purchased} slots</p>
+                <p><strong>Used:</strong> {slotInfo.used} vehicles sold</p>
+                <p><strong>Remaining:</strong> {slotInfo.remaining} slots available</p>
+              </div>
 
-                    {slotInfo.remaining === 0 && (
-                      <Alert variant="destructive" className="mb-4">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                          <span className="text-sm">No slots remaining. Purchase more to list additional vehicles.</span>
-                        </AlertDescription>
-                      </Alert>
-                    )}
+              {slotInfo.remaining === 0 && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <span className="text-sm">No slots remaining. Purchase more to list additional vehicles.</span>
+                  </AlertDescription>
+                </Alert>
+              )}
 
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => setShowBuyMoreSlotsModal(true)}
-                        size="sm"
-                        className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Buy More Slots
-                      </Button>
-                      {slotInfo.remaining > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingVehicle(null);
-                            setShowCreateModal(true);
-                          }}
-                        >
-                          <Car className="w-4 h-4 mr-2" />
-                          List a Vehicle
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowBuyMoreSlotsModal(true)}
+                  size="sm"
+                  className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Buy More Slots
+                </Button>
+                {slotInfo.remaining > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingVehicle(null);
+                      setShowCreateModal(true);
+                    }}
+                  >
+                    <Car className="w-4 h-4 mr-2" />
+                    List a Vehicle
+                  </Button>
+                )}
+              </div>
+            </div>
 
-                  <div className="text-right flex-shrink-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-blue-600">{slotInfo.remaining}</span>
-                      <span className="text-lg text-slate-500">/ {slotInfo.purchased}</span>
-                    </div>
-                    <p className="text-xs text-slate-600 mt-1">Available</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })()}
+            <div className="text-right flex-shrink-0">
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-blue-600">{slotInfo.remaining}</span>
+                <span className="text-lg text-slate-500">/ {slotInfo.purchased}</span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1">Available</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  })() : null
+)}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -2722,7 +2751,11 @@ export default function SellerDashboard({ user }: { user: UserData }) {
       <BuyMoreSlotsModal
         isOpen={showBuyMoreSlotsModal}
         onClose={() => setShowBuyMoreSlotsModal(false)}
-        currentSlots={getPrivateSellerSlotInfo() || { purchased: 0, used: 0, remaining: 0 }}
+       currentSlots={
+  slotDetails
+    ? { purchased: slotDetails.purchased, used: slotDetails.used, remaining: slotDetails.remaining }
+    : { purchased: 0, used: 0, remaining: 0 }
+}
       />
 
       {/* Transfer Details Modal */}

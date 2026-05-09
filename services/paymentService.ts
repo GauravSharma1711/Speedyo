@@ -49,6 +49,12 @@ export type Invoice = {
   invoice_url: string | null;
 };
 
+export type SlotDetails = {
+  remaining: number;
+  used: number;
+  purchased: number;
+};
+
 export type SubscriptionDetails = {
   id: string;
   status: string;
@@ -96,6 +102,11 @@ const paymentService = {
     });
     return res.data;
   },
+
+  getSlotDetails: async (): Promise<SlotDetails> => {
+  const res = await api.get("/api/payment/getSlotDetails");
+  return res.data.slots;
+},
 
   // Verify a payment by ID
   verifyPayment: async (paymentId: string) => {

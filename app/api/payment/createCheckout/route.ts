@@ -7,6 +7,7 @@ import { sendPaymentConfirmationMail } from "@/helpers/sendPaymentConfirmationMa
 import { sendDealershipVerificationPaymentMail } from "@/helpers/sendDealershipVerificationPaymentMail";
 import { sendDealershipSubscriptionConfirmationMail } from "@/helpers/sendDealershipSubscriptionConfirmationMail";
 import { randomUUID } from "crypto";
+import { CURRENCY, formatCurrency } from "@/lib/payment/square";
 
 const TIER_PRICES: Record<string, { amount: number; name: string }> = {
   tier1: { amount: 9900,  name: "Standard Dealership Plan" },
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       const response = await squareClient.payments.create({
         sourceId: paymentToken,
         idempotencyKey: randomUUID(),
-        amountMoney: { amount: BigInt(totalAmount), currency: "USD" },
+        amountMoney: { amount: BigInt(totalAmount), currency: CURRENCY },
         buyerEmailAddress: userEmail,
         note: `Speedio Private Seller - ${quantity} slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,
         referenceId: `private_seller_${Date.now()}`,
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
           userId,
           transaction_type: "slot_purchase",
           amount: totalAmount / 100,
-          currency: "USD",
+            currency: CURRENCY,  
           status: "completed",
           square_payment_id: payment.id!,
           square_receipt_url: payment.receiptUrl ?? null,
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
           userEmail,
           user.full_name ?? "Customer",
           quantity,
-          (totalAmount / 100).toFixed(2),
+          formatCurrency(totalAmount), 
           payment.id!
         );
       } catch (e) {
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
             userId,
             transaction_type: "one_time_service",
             amount: totalAmount / 100,
-            currency: "USD",
+            currency: CURRENCY,
             status: "completed",
             square_payment_id: payment.id!,
             square_receipt_url: payment.receiptUrl ?? null,
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
         await sendDealershipVerificationPaymentMail(
           userEmail,
           user.full_name ?? "Customer",
-          (totalAmount / 100).toFixed(2),
+          formatCurrency(totalAmount),
           payment.id!
         );
       } catch (e) {
@@ -268,7 +269,7 @@ if (!squareCustomerId) {
             userId,
             transaction_type: "subscription_purchase",
             amount: TIER_PRICES[tierId].amount / 100,
-            currency: "USD",
+            currency: CURRENCY,
             status: "completed",
             square_customer_id: squareCustomerId,
             subscription_tier: tierId as any,
@@ -287,7 +288,7 @@ if (!squareCustomerId) {
           userEmail,
           user.full_name ?? "Customer",
           tierNames[tierId] ?? "Unknown",
-          (TIER_PRICES[tierId].amount / 100).toFixed(2),
+          formatCurrency(TIER_PRICES[tierId].amount),
           squareSub?.id ?? ""
         );
       } catch (e) {

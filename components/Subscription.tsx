@@ -112,7 +112,7 @@ const dealershipTiers: DealershipTier[] = [
 
 const privateSellerPlan: Plan = {
   name: "Private Seller",
-  price: "$50",
+  price: " ¥50",
   priceUnit: "per vehicle",
   features: [
     "Pay only for vehicles you want to sell",
@@ -123,7 +123,7 @@ const privateSellerPlan: Plan = {
     "Access to seller dashboard",
   ],
   cta: "Become a Private Seller",
-  info: "Perfect for individuals selling their personal vehicles. $50 per vehicle (purchase 1-3 slots at checkout).",
+  info: "Perfect for individuals selling their personal vehicles.  ¥50 per vehicle (purchase 1-3 slots at checkout).",
   type: "private_seller",
 };
 

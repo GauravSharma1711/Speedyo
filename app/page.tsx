@@ -586,7 +586,7 @@ const handleGetStarted = () => {
 
                   <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-lg p-4 border-l-4 border-blue-500">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-extrabold text-blue-600">$50</span>
+                      <span className="text-4xl font-extrabold text-blue-600"> ¥50</span>
                       <span className="text-slate-600 font-medium">per vehicle</span>
                     </div>
                     <p className="text-xs text-slate-600 mt-1">One-time payment • Sell up to 3 vehicles per year</p>
@@ -691,9 +691,9 @@ const handleGetStarted = () => {
                     </div>
                     <div className="hidden md:flex items-center gap-2 text-sm">
                       <span className="text-slate-700 font-medium">Service fee:</span>
-                      <span className="text-emerald-700 font-semibold">$300-$500 minimum</span>
+                      <span className="text-emerald-700 font-semibold"> ¥300- ¥500 minimum</span>
                       <span className="text-slate-500">or</span>
-                      <span className="text-emerald-700 font-semibold">6% for $8,333+</span>
+                      <span className="text-emerald-700 font-semibold">6% for ¥8,333+</span>
                     </div>
                     <p className="text-xs text-slate-600 mt-1">Deducted from proceeds only after sale • No upfront costs</p>
                   </div>
@@ -908,7 +908,7 @@ const handleGetStarted = () => {
                       <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
                         <CheckCircle className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-sm text-slate-700">$50/car DIY option</span>
+                      <span className="text-sm text-slate-700">¥50/car DIY option</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -966,7 +966,7 @@ const handleGetStarted = () => {
                       <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
                         <CheckCircle className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-sm text-slate-700">Starting at $99/month</span>
+                      <span className="text-sm text-slate-700">Starting at  ¥99/month</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">

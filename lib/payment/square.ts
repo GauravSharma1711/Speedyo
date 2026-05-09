@@ -7,3 +7,17 @@ export const squareClient = new SquareClient({
       ? SquareEnvironment.Production
       : SquareEnvironment.Sandbox,
 });
+
+
+
+
+
+export const CURRENCY = "JPY";
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("ja-JP", {
+    style: "currency",
+    currency: "JPY",
+    minimumFractionDigits: 0,
+  }).format(amount);
+}

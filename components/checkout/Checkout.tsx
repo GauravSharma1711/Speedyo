@@ -290,8 +290,8 @@ useEffect(() => {
                     ) : (
                       <><ShoppingCart className="w-5 h-5 mr-2" />
                         {isDealershipVerification
-                          ? `Pay $${dealershipFee}.00 Verification Fee`
-                          : `Complete Purchase — $${total.toFixed(2)}`}
+                          ? `Pay  ¥${dealershipFee}.00 Verification Fee`
+                          : `Complete Purchase —  ¥${total.toFixed(2)}`}
                       </>
                     )}
                   </Button>
@@ -315,7 +315,7 @@ useEffect(() => {
                     </div>
                     <div className="flex justify-between py-3 border-b">
                       <span>Verification Fee</span>
-                      <span>$149.00</span>
+                      <span> ¥149.00</span>
                     </div>
                     <div className="flex justify-between py-3 border-b text-emerald-600">
                       <span>First Month Subscription</span>
@@ -323,7 +323,7 @@ useEffect(() => {
                     </div>
                     <div className="flex justify-between items-center py-4 bg-gradient-to-r from-blue-50 to-emerald-50 px-4 rounded-lg">
                       <span className="text-lg font-bold">Total Today</span>
-                      <span className="text-2xl font-bold text-blue-600">$149.00</span>
+                      <span className="text-2xl font-bold text-blue-600"> ¥149.00</span>
                     </div>
                     <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
                       <p className="font-semibold mb-1">What happens next?</p>
@@ -338,23 +338,23 @@ useEffect(() => {
                     </div>
                     <div className="flex justify-between py-3 border-b">
                       <span>Price per slot</span>
-                      <span>${pricePerSlot.toFixed(2)}</span>
+                      <span> ¥{pricePerSlot.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-3 border-b">
                       <span>Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span> ¥{subtotal.toFixed(2)}</span>
                     </div>
                     {appliedPromo && (
                       <div className="flex justify-between py-3 border-b text-emerald-600">
                         <span className="flex items-center gap-2">
                           <Tag className="w-4 h-4" />Promo Discount
                         </span>
-                        <span>-${discountAmount.toFixed(2)}</span>
+                        <span> ¥{discountAmount.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center py-4 bg-gradient-to-r from-blue-50 to-emerald-50 px-4 rounded-lg">
                       <span className="text-lg font-bold">Total</span>
-                      <span className="text-2xl font-bold text-blue-600">${total.toFixed(2)}</span>
+                      <span className="text-2xl font-bold text-blue-600"> ¥{total.toFixed(2)}</span>
                     </div>
 
                     <div className="pt-4">

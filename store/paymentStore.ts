@@ -6,9 +6,12 @@ import paymentService, {
   SubscriptionDetails,
   SlotPurchaseData,
   GuestSlotPurchaseData,
+  SlotDetails,
 } from "@/services/paymentService";
 
 // ── State Type ─────────────────────────────────────────────────────────────
+
+
 
 interface PaymentState {
   // Payment form state
@@ -51,6 +54,11 @@ interface PaymentState {
     slotsPurchased?: number;
   }>;
   getHistory: () => Promise<void>;
+
+
+  slotDetails: SlotDetails | null;
+isLoadingSlots: boolean;
+fetchSlotDetails: () => Promise<void>;
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────
@@ -63,6 +71,9 @@ export const usePaymentStore = create<PaymentState>()(
     lastPaymentId: null,
     lastReceiptUrl: null,
     paymentSuccess: false,
+
+        slotDetails: null,
+isLoadingSlots: false,
 
     payments: [],
     invoices: [],
@@ -77,6 +88,10 @@ export const usePaymentStore = create<PaymentState>()(
         lastPaymentId: null,
         lastReceiptUrl: null,
         paymentSuccess: false,
+
+        slotDetails: null,
+isLoadingSlots: false,
+
       });
     },
 
@@ -96,6 +111,7 @@ export const usePaymentStore = create<PaymentState>()(
           paymentSuccess: true,
           lastPaymentId: result.paymentId ?? null,
           lastReceiptUrl: result.receiptUrl ?? null,
+        
         });
 
         return {
@@ -123,6 +139,8 @@ export const usePaymentStore = create<PaymentState>()(
       }
     },
 
+
+
     async verifyDealership(data) {
   set({ isProcessing: true, paymentError: null, paymentSuccess: false });
   try {
@@ -138,6 +156,17 @@ export const usePaymentStore = create<PaymentState>()(
     const msg = error?.response?.data?.error ?? error?.message ?? "Payment failed.";
     set({ isProcessing: false, paymentError: msg, paymentSuccess: false });
     return { success: false };
+  }
+},
+
+
+async fetchSlotDetails() {
+  set({ isLoadingSlots: true });
+  try {
+    const result = await paymentService.getSlotDetails();
+    set({ slotDetails: result, isLoadingSlots: false });
+  } catch (error: any) {
+    set({ isLoadingSlots: false });
   }
 },
 
