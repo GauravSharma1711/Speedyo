@@ -3,14 +3,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
-import { Client } from "square";
+import { SquareClient, SquareEnvironment } from "square";
 import prisma from "@/db/prisma";
 import { sendGuestPaymentConfirmationMail } from "@/helpers/sendGuestPaymentConfirmationMail";
 import { sendSlotsAddedConfirmationMail } from "@/helpers/sendSlotsAddedConfirmationMail";
 
-const squareClient = new Client({
-  accessToken: process.env.SQUARE_ACCESS_TOKEN,
-  environment:'production',
+const squareClient = new SquareClient({
+  token: process.env.SQUARE_ACCESS_TOKEN,
+  environment: SquareEnvironment.Production,
 });
 
 export async function POST(request: NextRequest) {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     // Process Square payment
     let payment;
     try {
-      const paymentResponse = await squareClient.paymentsApi.createPayment({
+      const paymentResponse = await squareClient.payments.create({
         sourceId: paymentToken,
         idempotencyKey,
         amountMoney: {
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         referenceId: `${paymentType}_${Date.now()}`,
       });
 
-      payment = paymentResponse.result.payment;
+     payment = paymentResponse.payment;
       console.log("Square payment successful:", payment?.id);
     } catch (paymentError: any) {
       console.error("Square payment failed:", paymentError);

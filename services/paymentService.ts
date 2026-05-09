@@ -65,7 +65,7 @@ const paymentService = {
 
   // Private seller slot purchase (logged-in user)
   purchaseSlots: async (data: SlotPurchaseData) => {
-    const res = await api.post("/api/payments/checkout", {
+    const res = await api.post("/api/payment/createCheckout", {
       type: "private_seller",
       paymentToken: data.paymentToken,
       quantity: data.quantity,
@@ -75,9 +75,18 @@ const paymentService = {
     return res.data;
   },
 
+  verifyDealership: async (data: { paymentToken: string; tierId: string }) => {
+  const res = await api.post("/api/payment/createCheckout", {
+    purpose: "dealership_verification",
+    paymentToken: data.paymentToken,
+    tierId: data.tierId,
+  });
+  return res.data;
+},
+
   // Guest slot purchase (no account)
   purchaseSlotsAsGuest: async (data: GuestSlotPurchaseData) => {
-    const res = await api.post("/api/payments/guest-checkout", {
+    const res = await api.post("/api/payment/createGuestCheckout", {
       paymentToken: data.paymentToken,
       email: data.email,
       fullName: data.fullName,
@@ -96,7 +105,7 @@ const paymentService = {
 
   // Get payment history
   getHistory: async (): Promise<PaymentHistoryResponse> => {
-    const res = await api.get("/api/payments/history");
+    const res = await api.get("/api/payment/getPaymentHistory");
     return res.data;
   },
 };

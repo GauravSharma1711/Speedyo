@@ -1,25 +1,17 @@
-// app/api/payments/history/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
-import { Client, Environment } from "square";
+import { squareClient } from "@/lib/payment/square";
 import prisma from "@/db/prisma";
-
-const squareClient = new Client({
-  accessToken: process.env.SQUARE_ACCESS_TOKEN,
-  environment: Environment.Sandbox, // Change to Environment.Production for live
-});
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id;
+    const userId    = session.user.id;
     const userEmail = session.user.email;
 
     // Fetch user with subscription from DB
@@ -31,38 +23,41 @@ export async function GET(request: NextRequest) {
     let payments: any[] = [];
     let subscriptionDetails = null;
 
-    // Fetch payments from Square filtered by email
+    // 1. Fetch payments from our DB (most reliable source)
     try {
-      const searchPaymentsResponse = await squareClient.paymentsApi.listPayments();
+      const dbTransactions = await prisma.paymentTransaction.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        include: { invoice: true },
+      });
 
-      const userPayments =
-        searchPaymentsResponse.result.payments?.filter(
-          (payment) => payment.buyerEmailAddress === userEmail
-        ) || [];
-
-      payments = userPayments.map((payment) => ({
-        id: payment.id,
-        amount: Number(payment.amountMoney?.amount ?? 0) / 100,
-        currency: payment.amountMoney?.currency,
-        status: payment.status,
-        description: payment.note || "Payment",
-        created: payment.createdAt,
-        receipt_url: payment.receiptUrl || null,
-        reference_id: payment.referenceId || null,
+      payments = dbTransactions.map((tx) => ({
+        id: tx.square_payment_id ?? tx.id,
+        amount: Number(tx.amount),
+        currency: tx.currency,
+        status: tx.status,
+        description: tx.invoice?.description ?? tx.transaction_type.replace(/_/g, " "),
+        created: tx.createdAt,
+        receipt_url: tx.square_receipt_url ?? null,
+        reference_id: null,
+        transaction_type: tx.transaction_type,
+        slots_purchased: tx.slots_purchased,
+        invoice_number: tx.invoice?.invoice_number ?? null,
       }));
     } catch (error) {
-      console.error("Error fetching payments from Square:", error);
+      console.error("Error fetching transactions from DB:", error);
     }
 
-    // Fetch subscription details if exists
+    // 2. Fetch subscription details from Square if exists
     if (user?.seller_subscription?.square_subscription_id) {
       try {
-        const subscriptionResponse =
-          await squareClient.subscriptionsApi.retrieveSubscription(
-            user.seller_subscription.square_subscription_id
-          );
 
-        const subscription = subscriptionResponse.result.subscription;
+        
+const subResponse = await squareClient.subscriptions.get({
+  subscriptionId: user.seller_subscription.square_subscription_id,
+});
+
+        const subscription = subResponse.subscription;
 
         subscriptionDetails = {
           id: subscription?.id,
@@ -70,33 +65,53 @@ export async function GET(request: NextRequest) {
           current_period_start: subscription?.startDate,
           current_period_end: subscription?.chargedThroughDate,
           cancel_at_period_end: subscription?.canceledDate ? true : false,
-          canceled_at: subscription?.canceledDate || null,
+          canceled_at: subscription?.canceledDate ?? null,
+          tier: user.seller_subscription.tier,
         };
       } catch (error) {
         console.error("Error fetching subscription from Square:", error);
+
+        // Fallback to DB data if Square call fails
+        subscriptionDetails = {
+          id: user.seller_subscription.square_subscription_id,
+          status: "unknown",
+          current_period_start: null,
+          current_period_end: user.seller_subscription.expires_at,
+          cancel_at_period_end: !!user.seller_subscription.cancellation_date,
+          canceled_at: user.seller_subscription.cancellation_date ?? null,
+          tier: user.seller_subscription.tier,
+        };
       }
     }
 
-    // Fetch activated guest purchases from Prisma
+    // 3. Also include activated guest purchases
     try {
       const guestPurchases = await prisma.guestPurchase.findMany({
         where: {
           activated_for_user_id: userId,
           payment_gateway: "square",
         },
+        orderBy: { createdAt: "desc" },
       });
 
       guestPurchases.forEach((purchase) => {
-        payments.push({
-          id: purchase.payment_id,
-          amount: Number(purchase.amount_paid),
-          currency: "USD",
-          status: "completed",
-          description: `Private Seller Slots - ${purchase.slots_purchased} slot${purchase.slots_purchased > 1 ? "s" : ""}`,
-          created: purchase.createdAt,
-          receipt_url: null,
-          reference_id: null,
-        });
+        // Only add if not already in payments list
+        const alreadyExists = payments.some((p) => p.id === purchase.payment_id);
+        if (!alreadyExists) {
+          payments.push({
+            id: purchase.payment_id,
+            amount: Number(purchase.amount_paid),
+            currency: "USD",
+            status: "completed",
+            description: `Private Seller Slots - ${purchase.slots_purchased} slot${purchase.slots_purchased > 1 ? "s" : ""}`,
+            created: purchase.createdAt,
+            receipt_url: null,
+            reference_id: null,
+            transaction_type: "slot_purchase",
+            slots_purchased: purchase.slots_purchased,
+            invoice_number: null,
+          });
+        }
       });
     } catch (error) {
       console.error("Error fetching guest purchases:", error);
@@ -107,16 +122,30 @@ export async function GET(request: NextRequest) {
       (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
     );
 
+    // Fetch invoices from DB
+    const invoices = await prisma.invoice.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    }).catch(() => []);
+
     return NextResponse.json({
       payments,
-      invoices: [],
+      invoices: invoices.map((inv) => ({
+        id: inv.id,
+        invoice_number: inv.invoice_number,
+        amount: Number(inv.amount),
+        currency: inv.currency,
+        status: inv.status,
+        description: inv.description,
+        created: inv.createdAt,
+        paid_at: inv.paid_at,
+        invoice_url: inv.invoice_url,
+      })),
       subscription: subscriptionDetails,
     });
 
   } catch (error: any) {
     console.error("Error in getPaymentHistory:", error);
-
-    // Return empty data instead of 500 (same as original)
     return NextResponse.json({
       payments: [],
       invoices: [],

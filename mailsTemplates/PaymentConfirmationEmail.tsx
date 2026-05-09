@@ -2,7 +2,7 @@ interface EmailTemplateProps {
   full_name: string;
   email: string;
   quantity: number;
-  total_amount: number;
+  total_amount: string;
   payment_id: string;
   has_promo?: boolean;
   register_url?: string;
@@ -17,7 +17,7 @@ export default function PaymentConfirmationEmail({
   has_promo = false,
   register_url = 'https://speedio.app/register',
 }: EmailTemplateProps): string {
-  const formattedAmount = (total_amount / 100).toFixed(2);
+const formattedAmount = parseFloat(total_amount).toFixed(2);
   const currentYear = new Date().getFullYear();
   const slotLabel = quantity > 1 ? 'slots' : 'slot';
 

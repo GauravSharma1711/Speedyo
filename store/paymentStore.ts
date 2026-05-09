@@ -37,6 +37,14 @@ interface PaymentState {
     availableSlots?: number;
     wasUpgraded?: boolean;
   }>;
+
+  verifyDealership: (data: { paymentToken: string; tierId: string }) => Promise<{
+  success: boolean;
+  paymentId?: string;
+  receiptUrl?: string;
+}>;
+
+
   purchaseSlotsAsGuest: (data: GuestSlotPurchaseData) => Promise<{
     success: boolean;
     paymentId?: string;
@@ -114,6 +122,24 @@ export const usePaymentStore = create<PaymentState>()(
         return { success: false };
       }
     },
+
+    async verifyDealership(data) {
+  set({ isProcessing: true, paymentError: null, paymentSuccess: false });
+  try {
+    const result = await paymentService.verifyDealership(data);
+    set({
+      isProcessing: false,
+      paymentSuccess: true,
+      lastPaymentId: result.paymentId ?? null,
+      lastReceiptUrl: result.receiptUrl ?? null,
+    });
+    return { success: true, paymentId: result.paymentId, receiptUrl: result.receiptUrl };
+  } catch (error: any) {
+    const msg = error?.response?.data?.error ?? error?.message ?? "Payment failed.";
+    set({ isProcessing: false, paymentError: msg, paymentSuccess: false });
+    return { success: false };
+  }
+},
 
     // ── Purchase slots as guest ──────────────────────────────────────────
     async purchaseSlotsAsGuest(data) {
