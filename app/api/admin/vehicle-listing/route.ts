@@ -9,8 +9,25 @@ export async function GET(request: NextRequest) {
     if (!session || session.user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-   const vehicles = await prisma.vehicle.findMany();
+const vehicles = await prisma.vehicle.findMany({
+  include: {
+    testDriveRequests: {
+      select: {
+        id: true,
+        requested_date: true,
+        requested_time: true,
+        additional_notes: true,
+      },
+    },
 
+    dealershipAgreement: {
+      select: {
+        id: true,
+        dealership_name: true,
+      },
+    },
+  },
+});
     return NextResponse.json({
       success: true,
       vehicles,

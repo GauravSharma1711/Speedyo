@@ -3,7 +3,7 @@ import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 
-export async function PATCH(
+export async function POST(
   request: NextRequest,
   context: { params: Promise<{ vehicleId: string; dealershipAgreementId: string }> },
 ) {
@@ -33,7 +33,7 @@ export async function PATCH(
 
     const vehicle = await prisma.vehicle.update({
       where: { id: vehicleId },
-      data: { dealershipAgreementId: dealershipAgreementId },
+      data: { dealershipAgreementId },
       include: {
         dealershipAgreement: {
           select: { id: true, dealership_name: true, representative_name: true, status: true },
@@ -41,7 +41,12 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json({ success: true, vehicle });
+    const flattened = {
+      ...vehicle,
+      dealership_name: vehicle.dealershipAgreement?.dealership_name ?? null,
+    };
+
+    return NextResponse.json({ success: true, vehicle: flattened }, { status: 200 });
   } catch (error) {
     console.error("Failed to associate dealership", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

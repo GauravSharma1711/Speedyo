@@ -1,178 +1,312 @@
-
-
 import { NextRequest, NextResponse } from "next/server";
+import { squareClient } from "@/lib/payment/square";
+import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
-import Stripe from "stripe";
+import { sendPaymentConfirmationMail } from "@/helpers/sendPaymentConfirmationMail";
+import { sendDealershipVerificationPaymentMail } from "@/helpers/sendDealershipVerificationPaymentMail";
+import { sendDealershipSubscriptionConfirmationMail } from "@/helpers/sendDealershipSubscriptionConfirmationMail";
+import { randomUUID } from "crypto";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const validPromoCodes: Record<string, string> = {
-  SELLER20: "promo_1SIMrO0Sf8oiOE3POKqZNQm0",
+const TIER_PRICES: Record<string, { amount: number; name: string }> = {
+  tier1: { amount: 9900,  name: "Standard Dealership Plan" },
+  tier2: { amount: 19900, name: "Professional Dealership Plan" },
+  tier3: { amount: 34900, name: "Enterprise Dealership Plan" },
 };
 
-const tierPrices = {
-  tier1: { price: 9900, name: "Standard Dealership Plan" },
-  tier2: { price: 19900, name: "Professional Dealership Plan" },
-  tier3: { price: 34900, name: "Enterprise Dealership Plan" },
-} as const;
+const TIER_PLAN_IDS: Record<string, string> = {
+  tier1: process.env.SQUARE_TIER1_PLAN_ID!,
+  tier2: process.env.SQUARE_TIER2_PLAN_ID!,
+  tier3: process.env.SQUARE_TIER3_PLAN_ID!,
+};
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { type, tierId, purpose, quantity = 1, promoCode } = await request.json();
-
-    const origin = request.headers.get("origin") ?? "";
-
-    // Determine URL payment type
-    let urlPaymentType = purpose || type;
-    if (type === "dealership" && tierId && !purpose) urlPaymentType = "dealership_subscription";
-    if (type === "private_seller" && !purpose) urlPaymentType = "private_seller_payment";
-
-    const successUrl = `${origin}/OrderConfirmation?session_id={CHECKOUT_SESSION_ID}&payment_type=${urlPaymentType}&tier_id=${tierId || ""}&quantity=${quantity}&user_email=${encodeURIComponent(session.user.email)}`;
-    const cancelUrl = `${origin}/Subscription`;
-
-    const sharedMetadata = {
-      user_id: session.user.id,
-      user_email: session.user.email,
-    };
-
-    // Validate promo code
-    let promoCodeId: string | null = null;
-    if (promoCode) {
-      const upper = promoCode.toUpperCase().trim();
-      if (validPromoCodes[upper]) {
-        promoCodeId = validPromoCodes[upper];
-      } else {
-        return NextResponse.json({ error: "Invalid promo code" }, { status: 400 });
-      }
+        const body = await request.text();
+    console.log("Raw request body:", body);
+    console.log("Content-Type:", request.headers.get("content-type"));
+    
+    if (!body || body.trim() === "") {
+      return NextResponse.json({ error: "Empty request body" }, { status: 400 });
     }
 
-    let checkoutSession;
+    const parsed = JSON.parse(body);
+    console.log("Parsed body:", parsed);
+    
+    const { type, tierId, purpose, quantity = 1, promoCode, paymentToken, cardId } = parsed;
+
+    // const { type, tierId, purpose, quantity = 1, promoCode, paymentToken, cardId } =
+    //   await request.json();
+
+    const userId    = session.user.id;
+    const userEmail = session.user.email;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { private_seller_slots: true, seller_subscription: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     // ── Private Seller — one-time slot purchase ──
     if (type === "private_seller") {
-      const sessionConfig: Stripe.Checkout.SessionCreateParams = {
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: "Private Seller Vehicle Slots",
-                description: `Purchase ${quantity} vehicle slot${quantity > 1 ? "s" : ""} to sell your vehicles`,
-              },
-              unit_amount: 100, // $1.00 per slot (testing)
-            },
-            quantity,
-          },
-        ],
-        mode: "payment",
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        client_reference_id: session.user.id,
-        metadata: {
-          ...sharedMetadata,
-          payment_type: "private_seller_payment",
-          quantity: quantity.toString(),
-        },
-        custom_text: {
-          submit: { message: "Complete your Speedio Private Seller purchase" },
-        },
-      };
+      const pricePerSlot = 100; // $1.00 in cents (testing)
+      const hasPromo = promoCode && promoCode.toUpperCase() === "SELLER20";
+      const subtotal = pricePerSlot * quantity;
+      const discountAmount = hasPromo ? Math.round(subtotal * 0.2) : 0;
+      const totalAmount = subtotal - discountAmount;
 
-      if (promoCodeId) {
-        sessionConfig.discounts = [{ promotion_code: promoCodeId }];
+      const response = await squareClient.payments.create({
+        sourceId: paymentToken,
+        idempotencyKey: randomUUID(),
+        amountMoney: { amount: BigInt(totalAmount), currency: "USD" },
+        buyerEmailAddress: userEmail,
+        note: `Speedio Private Seller - ${quantity} slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,
+        referenceId: `private_seller_${Date.now()}`,
+      });
+
+
+      console.log("Square payment response:", response);
+
+      const payment = response.payment;
+      if (!payment || payment.status !== "COMPLETED") {
+        throw new Error("Payment not completed");
       }
 
-      checkoutSession = await stripe.checkout.sessions.create(sessionConfig);
+      // Update slots + upgrade user_type if guest
+      const currentPurchased = user.private_seller_slots?.purchased ?? 0;
+      const currentUsed      = user.private_seller_slots?.used ?? 0;
+      const wasGuest         = user.user_type === "guest";
 
-    // ── Dealership Verification — one-time payment ──
-    } else if (purpose === "dealership_verification") {
-      checkoutSession = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: "Dealership Verification Fee",
-                description: "One-time business verification and first month free",
-              },
-              unit_amount: 14900, // $149.00
-            },
-            quantity: 1,
-          },
-        ],
-        mode: "payment",
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        client_reference_id: session.user.id,
-        metadata: {
-          ...sharedMetadata,
-          payment_type: "dealership_verification",
-        },
-        custom_text: {
-          submit: { message: "Complete your Speedio dealership verification" },
+      await prisma.$transaction([
+        prisma.privateSellerSlots.upsert({
+          where: { userId },
+          update: { purchased: currentPurchased + quantity },
+          create: { userId, purchased: quantity, used: 0 },
+        }),
+        ...(wasGuest
+          ? [prisma.user.update({
+              where: { id: userId },
+              data: { user_type: "private_seller" },
+            })]
+          : []),
+      ]);
+
+      // Save transaction
+      await prisma.paymentTransaction.create({
+        data: {
+          userId,
+          transaction_type: "slot_purchase",
+          amount: totalAmount / 100,
+          currency: "USD",
+          status: "completed",
+          square_payment_id: payment.id!,
+          square_receipt_url: payment.receiptUrl ?? null,
+          slots_purchased: quantity,
+          promo_code_used: hasPromo ? promoCode : null,
         },
       });
 
-    // ── Dealership Subscription — recurring monthly ──
-    } else if (type === "dealership") {
-      const tierData = tierPrices[tierId as keyof typeof tierPrices];
+      try {
+        await sendPaymentConfirmationMail(
+          userEmail,
+          user.full_name ?? "Customer",
+          quantity,
+          (totalAmount / 100).toFixed(2),
+          payment.id!
+        );
+      } catch (e) {
+        console.error("Failed to send confirmation email:", e);
+      }
 
-      if (!tierData) {
+      return NextResponse.json({
+        success: true,
+        paymentId: payment.id,
+        receiptUrl: payment.receiptUrl,
+        slotsAdded: quantity,
+        totalSlots: currentPurchased + quantity,
+        availableSlots: currentPurchased + quantity - currentUsed,
+        wasUpgraded: wasGuest,
+      });
+    }
+
+    // ── Dealership Verification — one-time fee ──
+    if (purpose === "dealership_verification") {
+      const totalAmount = 14900; // $149.00
+
+      const response = await squareClient.payments.create({
+        sourceId: paymentToken,
+        idempotencyKey: randomUUID(),
+        amountMoney: { amount: BigInt(totalAmount), currency: "USD" },
+        buyerEmailAddress: userEmail,
+        note: "Speedio Dealership Verification Fee",
+        referenceId: `dealership_verification_${Date.now()}`,
+      });
+
+      console.log("Square dealership_verification payment response:", response);  
+
+      const payment = response.payment;
+      if (!payment || payment.status !== "COMPLETED") {
+        throw new Error("Payment not completed");
+      }
+
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: userId },
+          data: {
+            verification_fee_paid: true,
+            dealership_verification_status: "pending_review",
+          },
+        }),
+        prisma.paymentTransaction.create({
+          data: {
+            userId,
+            transaction_type: "one_time_service",
+            amount: totalAmount / 100,
+            currency: "USD",
+            status: "completed",
+            square_payment_id: payment.id!,
+            square_receipt_url: payment.receiptUrl ?? null,
+          },
+        }),
+      ]);
+
+      try {
+        await sendDealershipVerificationPaymentMail(
+          userEmail,
+          user.full_name ?? "Customer",
+          (totalAmount / 100).toFixed(2),
+          payment.id!
+        );
+      } catch (e) {
+        console.error("Failed to send verification email:", e);
+      }
+
+      return NextResponse.json({
+        success: true,
+        paymentId: payment.id,
+        receiptUrl: payment.receiptUrl,
+      });
+    }
+
+    // ── Dealership Subscription — recurring via Square Subscriptions ──
+    if (type === "dealership") {
+      if (!tierId || !TIER_PRICES[tierId]) {
         return NextResponse.json({ error: "Invalid tier selected" }, { status: 400 });
       }
 
-      checkoutSession = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: tierData.name,
-                description: `Monthly subscription for ${tierData.name}`,
-              },
-              unit_amount: tierData.price,
-              recurring: { interval: "month" },
-            },
-            quantity: 1,
-          },
-        ],
-        mode: "subscription",
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        client_reference_id: session.user.id,
-        metadata: {
-          ...sharedMetadata,
-          payment_type: "dealership_subscription",
-          tier_id: tierId,
-        },
-        custom_text: {
-          submit: { message: "Start your Speedio dealership subscription" },
-        },
+      // Need square_customer_id to create subscription
+      let squareCustomerId = user.seller_subscription?.square_customer_id;
+if (!squareCustomerId) {
+  const customerResponse = await squareClient.customers.create({
+    emailAddress: userEmail,
+    givenName: user.full_name ?? undefined,
+  });
+
+  squareCustomerId = customerResponse.customer?.id;
+
+  if (!squareCustomerId) {
+    return NextResponse.json(
+      { error: "Failed to create Square customer" },
+      { status: 500 }
+    );
+  }
+}
+
+      // Create subscription
+      const subResponse = await squareClient.subscriptions.create({
+        idempotencyKey: randomUUID(),
+        locationId: process.env.SQUARE_LOCATION_ID!,
+        planVariationId: TIER_PLAN_IDS[tierId],
+        customerId: squareCustomerId,
+        cardId, // card on file ID from Square
+        startDate: new Date().toISOString().split("T")[0],
       });
 
-    } else {
-      return NextResponse.json({ error: "Invalid payment type" }, { status: 400 });
+      const squareSub = subResponse.subscription;
+
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: userId },
+          data: {
+            user_type: "dealership",
+            dealership_verification_status: "approved",
+          },
+        }),
+        prisma.sellerSubscription.upsert({
+          where: { userId },
+          update: {
+            tier: tierId as any,
+            square_subscription_id: squareSub?.id,
+            square_customer_id: squareCustomerId,
+            expires_at: squareSub?.chargedThroughDate
+              ? new Date(squareSub.chargedThroughDate)
+              : null,
+            next_billing_date: squareSub?.chargedThroughDate
+              ? new Date(squareSub.chargedThroughDate)
+              : null,
+          },
+          create: {
+            userId,
+            tier: tierId as any,
+            square_subscription_id: squareSub?.id,
+            square_customer_id: squareCustomerId,
+            expires_at: squareSub?.chargedThroughDate
+              ? new Date(squareSub.chargedThroughDate)
+              : null,
+          },
+        }),
+        prisma.paymentTransaction.create({
+          data: {
+            userId,
+            transaction_type: "subscription_purchase",
+            amount: TIER_PRICES[tierId].amount / 100,
+            currency: "USD",
+            status: "completed",
+            square_customer_id: squareCustomerId,
+            subscription_tier: tierId as any,
+          },
+        }),
+      ]);
+
+      const tierNames: Record<string, string> = {
+        tier1: "Standard",
+        tier2: "Professional",
+        tier3: "Enterprise",
+      };
+
+      try {
+        await sendDealershipSubscriptionConfirmationMail(
+          userEmail,
+          user.full_name ?? "Customer",
+          tierNames[tierId] ?? "Unknown",
+          (TIER_PRICES[tierId].amount / 100).toFixed(2),
+          squareSub?.id ?? ""
+        );
+      } catch (e) {
+        console.error("Failed to send subscription email:", e);
+      }
+
+      return NextResponse.json({
+        success: true,
+        subscriptionId: squareSub?.id,
+        tier: tierId,
+      });
     }
 
-    return NextResponse.json({
-      url: checkoutSession.url,
-      sessionId: checkoutSession.id,
-    });
+    return NextResponse.json({ error: "Invalid payment type" }, { status: 400 });
 
   } catch (error: any) {
-    console.error("Stripe checkout error:", error);
+    console.error("Checkout error:", error);
     return NextResponse.json(
-      { error: "Failed to create checkout session", details: error.message },
+      { error: error.message || "Payment processing failed" },
       { status: 500 }
     );
   }

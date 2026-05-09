@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+
 import AuthProvider from "./(frontend)/context/AuthProvider";
+
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
         {children}
+          <Script
+          src="https://sandbox.web.squarecdn.com/v1/square.js"
+          // src = ' https://web.squarecdn.com/v1/square.js '  for production
+          strategy="beforeInteractive"
+        />
       </body>
         </AuthProvider>
     </html>

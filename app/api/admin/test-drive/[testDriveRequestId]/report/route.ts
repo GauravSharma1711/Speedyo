@@ -50,6 +50,8 @@ export async function POST(
       admin_notes,
     } = body;
 
+    console.log("body",body);
+
     if (!buyer_interest_level || !speedio_assessment) {
       return NextResponse.json(
         { error: "buyer_interest_level and speedio_assessment are required" },

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   CheckCircle,
@@ -48,11 +48,11 @@ import {
 
 type DealershipTier = "tier1" | "tier2" | "tier3";
 type VerificationStatus =
-  | "pending_review"
-  | "pending_payment"
-  | "approved"
-  | "declined"
-  | "not_submitted";
+  'pending_review'|
+  'not_submitted'|
+  'approved'|
+  'declined'
+  
 type UserType = "guest" | "private_seller" | "dealership";
 
 type SellerSubscription = {
@@ -61,30 +61,9 @@ type SellerSubscription = {
   vehicles_sold_this_year: number;
 };
 
-type UserRow = {
-  id: string;
-  full_name: string;
-  email: string;
-  created_date: string; // ISO
 
-  user_type: UserType;
-  dealership_verification_status: VerificationStatus;
 
-  dealership_selected_tier?: DealershipTier | null;
-  seller_subscription?: SellerSubscription | null;
-
-  business_name?: string | null;
-  tax_id_number?: string | null;
-  business_address?: string | null;
-  business_city?: string | null;
-  business_state?: string | null;
-  business_zip?: string | null;
-
-  business_license_urls?: string[] | null;
-  admin_verification_notes?: string | null;
-};
-
-const MOCK_USERS: UserRow[] = [
+const MOCK_USERS: User[] = [
   {
     id: "u_001",
     full_name: "Yuki Tanaka",
@@ -152,12 +131,26 @@ function getStatusBadge(status: VerificationStatus) {
   }
 }
 
+
+import { useUserStore } from "@/store/admin/user";
+import type { User } from "@/store/admin/user";
+import { toast } from "sonner";
+
+
+
+
+
 export default function UserManagementUI() {
-  const [users, setUsers] = useState<UserRow[]>(MOCK_USERS);
+
+
+  const { users, isLoading, error, getAll, update } = useUserStore();
+useEffect(() => { getAll(); }, []);
+
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
@@ -167,12 +160,12 @@ export default function UserManagementUI() {
   } | null>(null);
 
   const [showEditStatusModal, setShowEditStatusModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserRow | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newUserType, setNewUserType] = useState<UserType>("guest");
   const [newVerificationStatus, setNewVerificationStatus] =
     useState<VerificationStatus>("not_submitted");
 
-  const isLoading = false;
+
 
   const filteredUsers = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -183,90 +176,69 @@ export default function UserManagementUI() {
     );
   }, [users, searchTerm]);
 
-  const handleViewDetails = (user: UserRow) => {
+  const handleViewDetails = (user: User) => {
     setSelectedUser(user);
     setShowDetailsModal(true);
   };
 
-  const handleEditUserStatus = (user: UserRow) => {
+  const handleEditUserStatus = (user: User) => {
     setEditingUser(user);
     setNewUserType(user.user_type);
     setNewVerificationStatus(user.dealership_verification_status);
     setShowEditStatusModal(true);
   };
 
-  const handleSaveUserStatus = () => {
+  const handleSaveUserStatus = async() => {
     if (!editingUser) return;
 
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === editingUser.id
-          ? {
-              ...u,
-              user_type: newUserType,
-              dealership_verification_status: newVerificationStatus,
-            }
-          : u,
-      ),
-    );
-
+     try {
+    await update(editingUser.id, {
+      user_type: newUserType,
+      verification_status: newVerificationStatus,
+    });
     setShowEditStatusModal(false);
     setEditingUser(null);
+  } catch {
+    toast({ title: "Failed to update user", variant: "destructive" });
+  }
+
+
   };
 
-  const handleApproveUser = (userId: string) => {
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id !== userId) return u;
-
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
-
-        return {
-          ...u,
-          dealership_verification_status: "approved",
-          user_type: "dealership",
-          seller_subscription: u.dealership_selected_tier
-            ? {
-                tier: u.dealership_selected_tier,
-                expires_at: expiresAt.toISOString().slice(0, 10),
-                vehicles_sold_this_year: 0,
-              }
-            : u.seller_subscription ?? null,
-        };
-      }),
-    );
-
+  const handleApproveUser = async (userId: string) => {
+  try {
+    await update(userId, {
+      user_type: "dealership",
+      dealership_verification_status: "approved",
+    });
     setShowDetailsModal(false);
-  };
+  } catch {
+    toast({ title: "Failed to approve user", variant: "destructive" });
+  }
+};
 
-  const handleDeclineDealership = () => {
-    if (!declineModalData) return;
-
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === declineModalData.userId
-          ? {
-              ...u,
-              dealership_verification_status: "declined",
-              admin_verification_notes: declineReason || null,
-            }
-          : u,
-      ),
-    );
-
+ const handleDeclineDealership = async () => {
+  if (!declineModalData) return;
+  try {
+    await update(declineModalData.userId, {
+      dealership_verification_status: "declined",
+      admin_verification_notes: declineReason || undefined,
+    });
     setShowDeclineModal(false);
     setDeclineReason("");
     setDeclineModalData(null);
     setShowDetailsModal(false);
-  };
+  } catch {
+    toast({ title: "Failed to decline application", variant: "destructive" });
+  }
+};
 
   const UserDetailsModal = ({
     user,
     isOpen,
     onClose,
   }: {
-    user: UserRow | null;
+    user: User | null;
     isOpen: boolean;
     onClose: () => void;
   }) => {
@@ -342,7 +314,7 @@ export default function UserManagementUI() {
                   <div>
                     <Label className="font-medium">Registration Date</Label>
                     <p className="text-slate-600">
-                      {format(new Date(user.created_date), "PPP")}
+                      {format(new Date(user.createdAt), "PPP")}
                     </p>
                   </div>
                 </CardContent>
@@ -485,9 +457,9 @@ export default function UserManagementUI() {
                   <Badge>{user.user_type}</Badge>
                 </TableCell>
 
-                <TableCell>{getStatusBadge(user.dealership_verification_status)}</TableCell>
+                <TableCell>{getStatusBadge(user.verification_status)}</TableCell>
 
-                <TableCell>{new Date(user.created_date).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
 
                 <TableCell>
                   <DropdownMenu>
@@ -569,7 +541,7 @@ export default function UserManagementUI() {
                 <SelectContent>
                   <SelectItem value="not_submitted">Not Submitted</SelectItem>
                   <SelectItem value="pending_review">Pending Review</SelectItem>
-                  <SelectItem value="pending_payment">Pending Payment</SelectItem>
+                  {/* <SelectItem value="pending_payment">Pending Payment</SelectItem> */}
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="declined">Declined</SelectItem>
                 </SelectContent>

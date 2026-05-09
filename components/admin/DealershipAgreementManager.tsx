@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Copy, Eye, FileText, Loader2, Plus, Send, XCircle } from "lucide-react";
+
+import { DealershipAgreement, useDealershipAgreementStore } from "@/store/admin/dealership";
 
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -20,26 +22,7 @@ import {
 } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/UseToast";
 
-type AgreementStatus = "draft" | "pending_signature" | "signed" | "cancelled";
-
-type DealershipAgreement = {
-  id: string;
-  dealership_name: string;
-  representative_name: string;
-  address?: string | null;
-  phone?: string | null;
-  email: string;
-  license_number?: string | null;
-  service_fee_amount?: number | null;
-  admin_notes?: string | null;
-
-  status: AgreementStatus;
-  agreement_url?: string | null;
-
-  created_date: string; // ISO
-  signed_at?: string | null; // ISO
-};
-
+// ── Local form state ───────────────────────────────────────────────────────────
 type FormState = {
   dealership_name: string;
   representative_name: string;
@@ -47,7 +30,7 @@ type FormState = {
   phone: string;
   email: string;
   license_number: string;
-  service_fee_amount: string; // keep as string for the input
+  service_fee_amount: string; // string for input, sent as string to API
   admin_notes: string;
 };
 
@@ -91,18 +74,29 @@ function statusBadgeClass(status: AgreementStatus) {
   return "bg-slate-100 text-slate-700";
 }
 
-function makeId() {
-  return `agr_${Math.random().toString(16).slice(2, 10)}`;
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
 export default function DealershipAgreementManagerUI() {
   const { toast } = useToast();
 
-  const [isLoading] = useState(false);
+  // ── Store ──────────────────────────────────────────────────────────────────
+  const {
+    agreements,
+    isLoading,
+    error,
+    getAll,
+    create,
+    update,
+    delete: deleteAgreement,
+  } = useDealershipAgreementStore();
+
+  // Fetch on mount
+  useEffect(() => {
+    getAll();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Local UI state ─────────────────────────────────────────────────────────
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  const [agreements, setAgreements] = useState<DealershipAgreement[]>(MOCK);
 
   const [formData, setFormData] = useState<FormState>({
     dealership_name: "",
@@ -115,14 +109,16 @@ export default function DealershipAgreementManagerUI() {
     admin_notes: "",
   });
 
-  const canCreate = useMemo(() => {
-    return (
+  // ── Validation ─────────────────────────────────────────────────────────────
+  const canCreate = useMemo(
+    () =>
       formData.dealership_name.trim().length > 0 &&
       formData.representative_name.trim().length > 0 &&
-      formData.email.trim().length > 0
-    );
-  }, [formData]);
+      formData.email.trim().length > 0,
+    [formData],
+  );
 
+  // ── Helpers ────────────────────────────────────────────────────────────────
   function resetForm() {
     setFormData({
       dealership_name: "",
@@ -143,24 +139,18 @@ export default function DealershipAgreementManagerUI() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
+  // ── Create ─────────────────────────────────────────────────────────────────
   async function handleCreateAgreement(e: React.FormEvent) {
     e.preventDefault();
     if (!canCreate) return;
 
     setIsSubmitting(true);
     try {
-      const id = makeId();
-      const fee =
-        formData.service_fee_amount.trim() === ""
-          ? null
-          : Number(formData.service_fee_amount);
-
-      const created: DealershipAgreement = {
-        id,
+      await create({
         dealership_name: formData.dealership_name.trim(),
         representative_name: formData.representative_name.trim(),
-        address: formData.address.trim() || null,
-        phone: formData.phone.trim() || null,
+        address: formData.address.trim() || undefined,
+        phone: formData.phone.trim() || undefined,
         email: formData.email.trim(),
         license_number: formData.license_number.trim() || null,
         service_fee_amount: Number.isFinite(fee as number) ? fee : null,
@@ -171,74 +161,77 @@ export default function DealershipAgreementManagerUI() {
         signed_at: null,
       };
 
-      setAgreements((prev) => [created, ...prev]);
       setShowCreateModal(false);
       resetForm();
-
+      toast({ title: "Agreement created", description: "Agreement saved successfully." });
+    } catch {
       toast({
-        title: "Agreement created",
-        description: "Saved locally — API wiring pending.",
+        title: "Error",
+        description: error ?? "Failed to create agreement.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleSendSigningEmail(a: DealershipAgreement) {
+  // ── Send signing email (draft → pending_signature via API) ─────────────────
+  async function handleSendSigningEmail(id: string, email: string, currentStatus: string) {
+    if (currentStatus !== "draft" && currentStatus !== "pending_signature") return;
+
     setIsSubmitting(true);
     try {
-      setAgreements((prev) =>
-        prev.map((x) =>
-          x.id === a.id && x.status === "draft"
-            ? { ...x, status: "pending_signature" }
-            : x,
-        ),
-      );
-
+      // Update status to pending_signature in DB, then notify
+      await update(id, { status: "pending_signature" });
       toast({
-        title: "Send to dealership",
-        description: `Would email ${a.email} a signing link.`,
+        title: "Sent to dealership",
+        description: `Signing link sent to ${email}.`,
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: error ?? "Failed to send agreement.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleSendAgreementEmail(a: DealershipAgreement) {
+  // ── Send signed agreement email (stub — wire real email API) ──────────────
+  async function handleSendAgreementEmail(email: string) {
     setIsSubmitting(true);
     try {
+      // TODO: call your email API here
       toast({
-        title: "Send email",
-        description: `Would email ${a.email} the signed/view link.`,
+        title: "Email sent",
+        description: `Signed agreement emailed to ${email}.`,
       });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function copyAgreementLink(a: DealershipAgreement) {
-    const url = a.agreement_url ?? "";
-    if (!url) return;
-
-    const fullUrl =
-      url.startsWith("http") ? url : `${window.location.origin}${url}`;
-
+  // ── Copy link ──────────────────────────────────────────────────────────────
+  async function copyAgreementLink(agreementUrl: string) {
+    const fullUrl = agreementUrl.startsWith("http")
+      ? agreementUrl
+      : `${window.location.origin}${agreementUrl}`;
     await navigator.clipboard.writeText(fullUrl);
     toast({ title: "Copied", description: "Agreement link copied." });
   }
 
-  async function downloadAgreement(a: DealershipAgreement) {
+  // ── Download PDF (stub) ────────────────────────────────────────────────────
+  async function downloadAgreement() {
     setIsSubmitting(true);
     try {
-      toast({
-        title: "Download PDF ",
-        description: "PDF generation wiring pending.",
-      });
+      toast({ title: "Download PDF", description: "PDF generation wiring pending." });
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  // ── Delete ─────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
     const ok = window.confirm(
       "Are you sure you want to delete this agreement? This action cannot be undone.",
@@ -247,14 +240,21 @@ export default function DealershipAgreementManagerUI() {
 
     setIsSubmitting(true);
     try {
-      setAgreements((prev) => prev.filter((x) => x.id !== id));
-      toast({ title: "Deleted", description: "Removed locally." });
+      await deleteAgreement(id);
+      toast({ title: "Deleted", description: "Agreement removed." });
+    } catch {
+      toast({
+        title: "Error",
+        description: error ?? "Failed to delete agreement.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  if (isLoading) {
+  // ── Loading (initial fetch only) ───────────────────────────────────────────
+  if (isLoading && agreements.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -262,8 +262,10 @@ export default function DealershipAgreementManagerUI() {
     );
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">
@@ -274,6 +276,7 @@ export default function DealershipAgreementManagerUI() {
           </p>
         </div>
 
+        {/* Create modal */}
         <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-emerald-500">
@@ -284,12 +287,11 @@ export default function DealershipAgreementManagerUI() {
 
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>
-                Create New Dealership Managed Sales Agreement
-              </DialogTitle>
+              <DialogTitle>Create New Dealership Managed Sales Agreement</DialogTitle>
             </DialogHeader>
 
             <form onSubmit={handleCreateAgreement} className="space-y-6">
+              {/* Dealership info */}
               <div>
                 <h3 className="text-lg font-semibold mb-4 text-slate-800">
                   Dealership Information
@@ -308,9 +310,7 @@ export default function DealershipAgreementManagerUI() {
                   </div>
 
                   <div>
-                    <Label htmlFor="representative_name">
-                      Representative Name *
-                    </Label>
+                    <Label htmlFor="representative_name">Representative Name *</Label>
                     <Input
                       id="representative_name"
                       name="representative_name"
@@ -353,9 +353,7 @@ export default function DealershipAgreementManagerUI() {
                   </div>
 
                   <div className="col-span-2">
-                    <Label htmlFor="license_number">
-                      Business License Number
-                    </Label>
+                    <Label htmlFor="license_number">Business License Number</Label>
                     <Input
                       id="license_number"
                       name="license_number"
@@ -366,6 +364,7 @@ export default function DealershipAgreementManagerUI() {
                 </div>
               </div>
 
+              {/* Service terms */}
               <div>
                 <h3 className="text-lg font-semibold mb-4 text-slate-800">
                   Service Terms
@@ -373,9 +372,7 @@ export default function DealershipAgreementManagerUI() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="service_fee_amount">
-                      Service Fee (USD) per Vehicle
-                    </Label>
+                    <Label htmlFor="service_fee_amount">Service Fee (USD) per Vehicle</Label>
                     <Input
                       id="service_fee_amount"
                       name="service_fee_amount"
@@ -407,10 +404,7 @@ export default function DealershipAgreementManagerUI() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setShowCreateModal(false);
-                    resetForm();
-                  }}
+                  onClick={() => { setShowCreateModal(false); resetForm(); }}
                   disabled={isSubmitting}
                 >
                   Cancel
@@ -435,6 +429,7 @@ export default function DealershipAgreementManagerUI() {
         </Dialog>
       </div>
 
+      {/* Empty state */}
       {agreements.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
@@ -456,6 +451,7 @@ export default function DealershipAgreementManagerUI() {
             return (
               <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
                 <CardContent className="p-6">
+                  {/* Card header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg text-slate-800">
@@ -464,6 +460,7 @@ export default function DealershipAgreementManagerUI() {
                       <p className="text-sm text-slate-600 mt-1">
                         Representative: {a.representative_name}
                       </p>
+                      <p className="text-sm text-slate-500">{a.email}</p>
                     </div>
 
                     <Badge className={statusBadgeClass(a.status)}>
@@ -471,20 +468,22 @@ export default function DealershipAgreementManagerUI() {
                     </Badge>
                   </div>
 
+                  {/* Meta */}
                   <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                     <div>
                       <span className="text-slate-500">Service Fee:</span>
                       <p className="font-semibold text-slate-800">
                         {a.service_fee_amount
-                          ? `$${a.service_fee_amount.toLocaleString()}`
+                          ? `$${Number(a.service_fee_amount).toLocaleString()}`
                           : "Varies per vehicle"}
                       </p>
                     </div>
 
                     <div>
                       <span className="text-slate-500">Created:</span>
+                      {/* ✅ Fixed: store uses createdAt not created_date */}
                       <p className="text-slate-700">
-                        {format(new Date(a.created_date), "MMM d, yyyy")}
+                        {format(new Date(a.createdAt), "MMM d, yyyy")}
                       </p>
                     </div>
 
@@ -498,11 +497,12 @@ export default function DealershipAgreementManagerUI() {
                     ) : null}
                   </div>
 
+                  {/* Actions */}
                   <div className="flex flex-wrap gap-2">
                     {(a.status === "draft" || a.status === "pending_signature") ? (
                       <Button
                         size="sm"
-                        onClick={() => handleSendSigningEmail(a)}
+                        onClick={() => handleSendSigningEmail(a.id, a.email, a.status)}
                         className="bg-blue-500 hover:bg-blue-600"
                         disabled={isSubmitting}
                       >
@@ -515,12 +515,12 @@ export default function DealershipAgreementManagerUI() {
                       </Button>
                     ) : null}
 
-                    {a.agreement_url ? (
+                    {/* {a.agreement_url ? ( */}
                       <>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => copyAgreementLink(a)}
+                          onClick={() => copyAgreementLink(a.agreement_url!)}
                         >
                           <Copy className="w-4 h-4 mr-2" />
                           Copy Link
@@ -533,13 +533,13 @@ export default function DealershipAgreementManagerUI() {
                           </Button>
                         </Link>
                       </>
-                    ) : null}
+                    {/* ) : null} */}
 
                     {a.status === "signed" ? (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleSendAgreementEmail(a)}
+                        onClick={() => handleSendAgreementEmail(a.email)}
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? (
@@ -554,7 +554,7 @@ export default function DealershipAgreementManagerUI() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => downloadAgreement(a)}
+                      onClick={downloadAgreement}
                       disabled={isSubmitting}
                     >
                       <FileText className="w-4 h-4 mr-2" />

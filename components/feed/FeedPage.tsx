@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Car, MapPin, Image, Video, FileText, Loader2, Star, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -18,15 +18,43 @@ import ShareModal from "@/components/feed/ShareModal";
 
 // Replace with your actual entity stubs
 import { Post, Vehicle, UserEntity, Follow } from "@/api/entities";
+import { useFeedStore } from "@/store/feed";
 
 export default function FeedPage() {
-  const [posts, setPosts]                     = useState<any[]>([]);
-  const [followedPosts, setFollowedPosts]     = useState<any[]>([]);
-  const [globalPosts, setGlobalPosts]         = useState<any[]>([]);
-  const [vehicles, setVehicles]               = useState<any[]>([]);
+
+
+
+
+
+
+
+
+
+const {
+  posts,
+  featuredVehicles,
+  isLoading,
+  isCreating,
+  getAll,
+  getFeaturedVehicles,
+  createPost,
+  likePost,
+  reactToPost,
+  commentPost,
+  getVehicleById,
+} = useFeedStore();
+
+useEffect(() => {
+  getAll();
+  getFeaturedVehicles();
+}, []);
+
+
+
+
   const [currentUser, setCurrentUser]         = useState<any>(null);
   const [followedUserIds, setFollowedUserIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading]             = useState(true);
+
   const [isLoadingMore, setIsLoadingMore]     = useState(false);
   const [canLoadMore, setCanLoadMore]         = useState(true);
   const [showCreatePost, setShowCreatePost]   = useState(false);
@@ -41,54 +69,17 @@ export default function FeedPage() {
   const postsRef = useRef<any[]>([]);
   useEffect(() => { postsRef.current = posts; }, [posts]);
 
-  const loadData = useCallback(async (initialLoad = false, limit = 10) => {
-    if (initialLoad) setIsLoading(true);
-    else setIsLoadingMore(true);
 
-    const offset = initialLoad ? 0 : postsRef.current.length;
+  const followedPosts = useMemo(
+  () => posts.filter(p => followedUserIds.includes(p.authorId)),
+  [posts, followedUserIds]
+);
+const globalPosts = useMemo(
+  () => posts.filter(p => !followedUserIds.includes(p.authorId)),
+  [posts, followedUserIds]
+);
 
-    try {
-      const postsData = await Post.list("-created_date", limit, offset);
-      setCanLoadMore(postsData.length >= limit);
 
-      const postsWithEngagement = postsData.map((post: any) => {
-        const totalReactions = post.reactions
-          ? Object.values(post.reactions).reduce((sum: number, count: any) => sum + count, 0)
-          : 0;
-        return {
-          ...post,
-          engagement_score:
-            (post.likes || 0) +
-            (post.shares || 0) * 2 +
-            (post.comments_count || 0) * 1.5 +
-            totalReactions * 1.2 +
-            (post.views || 0) * 0.1,
-        };
-      });
-
-      if (followedUserIds.length > 0) {
-        const followed = postsWithEngagement.filter((p: any) => followedUserIds.includes(p.author_id));
-        const global   = postsWithEngagement.filter((p: any) => !followedUserIds.includes(p.author_id));
-        if (initialLoad) { setFollowedPosts(followed); setGlobalPosts(global); }
-        else { setFollowedPosts(prev => [...prev, ...followed]); setGlobalPosts(prev => [...prev, ...global]); }
-      } else {
-        if (initialLoad) { setGlobalPosts(postsWithEngagement); setFollowedPosts([]); }
-        else setGlobalPosts(prev => [...prev, ...postsWithEngagement]);
-      }
-
-      setPosts(prev => initialLoad ? postsWithEngagement : [...prev, ...postsWithEngagement]);
-
-      if (initialLoad) {
-        const vehiclesData = await Vehicle.list("-created_date", 20);
-        setVehicles(vehiclesData);
-      }
-    } catch (e) {
-      console.error("Failed to load data:", e);
-    } finally {
-      if (initialLoad) setIsLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, [followedUserIds]);
 
   // Fetch current user + follows
   useEffect(() => {
@@ -106,9 +97,7 @@ export default function FeedPage() {
     fetchCurrentUser();
   }, []);
 
-  useEffect(() => {
-    if (currentUser !== null) loadData(true, 10);
-  }, [currentUser, followedUserIds, loadData]);
+
 
   // Mobile create post event (dispatched from bottom nav)
   useEffect(() => {
@@ -122,62 +111,18 @@ export default function FeedPage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleCreatePost = async (postData: any) => {
-    try {
-      await Post.create(postData);
-      setShowCreatePost(false);
-      loadData(true, 10);
-    } catch (e) {
-      console.error("Failed to create post:", e);
-      alert("Failed to create post. Please try again.");
-    }
-  };
+const handleCreatePost = async (postData: any) => {
+  await createPost(postData); 
+  setShowCreatePost(false);
+};
 
   const handleReactToPost = async (post: any, reactionType: string) => {
-    if (!currentUser) { alert("Please log in to react to posts."); return; }
-
-    const updatedReactions     = { ...(post.reactions || {}) };
-    const updatedUserReactions = [...(post.user_reactions || [])];
-    const existingIdx          = updatedUserReactions.findIndex(ur => ur.user_email === currentUser.email);
-
-    if (existingIdx > -1) {
-      const old = updatedUserReactions[existingIdx].reaction;
-      updatedReactions[old] = Math.max(0, (updatedReactions[old] || 0) - 1);
-      updatedUserReactions.splice(existingIdx, 1);
-    }
-
-    const existingReaction = post.user_reactions?.find((ur: any) => ur.user_email === currentUser.email)?.reaction;
-    if (reactionType && existingReaction !== reactionType) {
-      updatedReactions[reactionType] = (updatedReactions[reactionType] || 0) + 1;
-      updatedUserReactions.push({ user_email: currentUser.email, reaction: reactionType });
-    }
-
-    try {
-      await Post.update(post.id, { reactions: updatedReactions, user_reactions: updatedUserReactions });
-      const patch = (list: any[]) => list.map(p => {
-        if (p.id !== post.id) return p;
-        const total = Object.values(updatedReactions).reduce((s: number, c: any) => s + c, 0);
-        return { ...p, reactions: updatedReactions, user_reactions: updatedUserReactions,
-          engagement_score: (p.likes||0) + (p.shares||0)*2 + (p.comments_count||0)*1.5 + total*1.2 + (p.views||0)*0.1 };
-      });
-      setPosts(patch); setFollowedPosts(patch); setGlobalPosts(patch);
-    } catch { alert("Failed to update reaction."); }
+ await reactToPost(post.id, reactionType);
   };
 
-  const handleCommentOnPost = async (postId: string) => {
-    try {
-      const post = posts.find(p => p.id === postId);
-      const newCount = (post?.comments_count || 0) + 1;
-      await Post.update(postId, { comments_count: newCount });
-      const patch = (list: any[]) => list.map(p => {
-        if (p.id !== postId) return p;
-        const total = p.reactions ? Object.values(p.reactions).reduce((s: number, c: any) => s + c, 0) : 0;
-        return { ...p, comments_count: newCount,
-          engagement_score: (p.likes||0) + (p.shares||0)*2 + newCount*1.5 + total*1.2 + (p.views||0)*0.1 };
-      });
-      setPosts(patch); setFollowedPosts(patch); setGlobalPosts(patch);
-    } catch (e) { console.error("Failed to update comment count:", e); }
-  };
+  const handleCommentOnPost = (postId: string) => {
+  commentPost(postId, { content: "" }); 
+};
 
   const handleSharePost = async (postId: string) => {
     try {
@@ -218,7 +163,7 @@ export default function FeedPage() {
     return [...getSortedPosts(followedPosts), ...getSortedPosts(globalPosts)];
   };
 
-  const getVehicleById = (id: string) => vehicles.find(v => v.id === id);
+
 
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -333,7 +278,7 @@ export default function FeedPage() {
             <AnimatePresence>
               {getDisplayPosts().map((post, i) => (
                 <motion.div key={post.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                  <PostCard post={post} vehicle={getVehicleById(post.vehicle_id)}
+                  <PostCard post={post} vehicle={ getVehicleById(post.vehicle_id)}
                     onReact={rt => handleReactToPost(post, rt)}
                     onComment={() => handleCommentOnPost(post.id)}
                     onShare={() => { setSharingPost(post); setShowShareModal(true); }}
@@ -388,7 +333,7 @@ export default function FeedPage() {
           <CardContent className="p-4">
             <h2 className="text-2xl font-bold text-slate-800 mb-6">Featured Vehicles</h2>
             <div className="flex gap-6 overflow-x-auto pb-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6">
-              {vehicles.filter(v => v.featured && v.status === "available").slice(0, 6).map(vehicle => (
+              {featuredVehicles.slice(0, 6).map(vehicle => (
                 <Card key={vehicle.id} className="bg-white/80 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex-shrink-0 w-72 md:w-auto">
                   {/* Next.js Link replaces react-router Link */}
                   <Link href={`/vehicle?id=${vehicle.id}`}>
@@ -411,7 +356,7 @@ export default function FeedPage() {
                 </Card>
               ))}
             </div>
-            {vehicles.filter(v => v.featured && v.status === "available").length === 0 && (
+            {featuredVehicles.length === 0 && (
               <div className="text-center py-8 text-slate-500">
                 <Star className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                 <p className="font-medium mb-1">No Featured Vehicles Yet</p>

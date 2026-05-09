@@ -29,7 +29,10 @@ export async function PATCH(
       return NextResponse.json({ error: "Transfer not found" }, { status: 404 });
     }
 
+
     const body = await request.json();
+
+    console.log("body",body)
     const { steps_completed, status, user_facing_notes, admin_notes } = body;
 
   

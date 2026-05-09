@@ -11,7 +11,7 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session) {
+    if (!session || session.user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -26,41 +26,39 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { requested_date, requested_time, additional_notes } = body;
 
-    if (!requested_date || !requested_time) {
+    if (!Array.isArray(body)) {
       return NextResponse.json(
-        { error: "requested_date and requested_time are required" },
+        { error: "Body must be an array of slots" },
         { status: 400 }
       );
     }
 
-    const dbUser = await prisma.user.findUnique({
-  where: { id: session.user.id },
-  select: { phone: true },
-});
+    for (const slot of body) {
+      if (!slot.requested_date || !slot.requested_time) {
+        return NextResponse.json(
+          { error: "Each slot must have requested_date and requested_time" },
+          { status: 400 }
+        );
+      }
+    }
 
-
-    const testDriveRequest = await prisma.testDriveRequest.create({
+    const vehicle = await prisma.vehicle.update({
+      where: { id: vehicleId },
       data: {
-        vehicleId,
-        requester_name: session.user.full_name ?? session.user.email,
-        requester_email: session.user.email,
-        requester_phone: dbUser?.phone ?? null,
-        requested_date,
-        requested_time,
-        additional_notes: additional_notes ?? null,
-        userId: session.user.id,
-      },
-      include: {
-        vehicle: { select: { id: true, title: true, make: true, model: true } },
-        user: { select: { id: true, full_name: true, email: true } },
+        recurring_availability: body.map((s) => ({
+          id: crypto.randomUUID(),
+          requested_date: s.requested_date,
+          requested_time: s.requested_time,
+          meetingAddress: s.meetingAddress ?? "",
+          additional_notes: s.additional_notes ?? null,
+        })),
       },
     });
 
-    return NextResponse.json({ success: true, testDriveRequest }, { status: 201 });
+    return NextResponse.json({ success: true, vehicle }, { status: 200 });
   } catch (error) {
-    console.error("Failed to request test drive", error);
+    console.error("Failed to manage test drive availability", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

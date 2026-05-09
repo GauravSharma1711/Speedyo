@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    console.log("photograph aggrement body",body);
+
     const {
       agreement_title,
       position_title,
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
          ...(photographer_email && { photographer_email }),
         ...(position_title && { position_title }),
         ...(fixed_percentage && { fixed_percentage }),
-        ...(termination_notice_days && { termination_notice_days: parseInt(termination_notice_days) }),
+      ...(termination_notice_days != null && { termination_notice_days: Number(termination_notice_days) }),
        ...(parseDate(agreement_start_date) && { agreement_start_date: parseDate(agreement_start_date) }),
     ...(parseDate(agreement_end_date) && { agreement_end_date: parseDate(agreement_end_date) }),
         created_by_admin_id: session.user.id,

@@ -8,7 +8,7 @@ export async function sendPaymentConfirmationMail(
   full_name: string,
   email: string,
   quantity: number,
-  total_amount: number,
+  total_amount: string,
   payment_id: string,
   has_promo?: boolean,
 ) {
@@ -17,7 +17,7 @@ export async function sendPaymentConfirmationMail(
       from: fromEmail,
       to: email,
       subject: 'Payment Confirmed - Speedio Vehicle Slots',
-      react: PaymentConfirmationEmail({
+      html: PaymentConfirmationEmail({
         full_name,
         email,
         quantity,

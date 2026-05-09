@@ -1,8 +1,10 @@
 "use client";
+import { useVehicleListingStore } from "@/store/admin/vehicleListing";
+import { useUserStore } from "@/store/admin/user"; 
 
 import React, { useMemo, useState } from "react";
 import { AlertCircle, Edit, Plus, Search } from "lucide-react";
-
+import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -19,9 +21,13 @@ import {
 import { Textarea } from "@/components/ui/TextArea";
 import { toast } from "@/components/ui/UseToast";
 
+import { useTransferStore } from "@/store/admin/transfer";
+import { useEffect } from "react";
+
+
 type TransferType = "speedio_managed" | "self_service";
 type TransferStatus = "in_progress" | "on_hold" | "completed";
-
+import type { Transfer } from "@/store/admin/transfer";
 type Vehicle = { id: string; title: string };
 type PublicUser = { id: string; full_name: string; email: string };
 
@@ -113,47 +119,97 @@ function statusBadgeVariant(status: TransferStatus): "default" | "secondary" | "
 }
 
 export default function TransferStatusManagerUI() {
-  const [transfers, setTransfers] = useState<VehicleTransfer[]>(MOCK_TRANSFERS);
+
+
+    const { transfers, isLoading, error, create, update, getAll } = useTransferStore();
+
+
+
+  // const [transfers, setTransfers] = useState<VehicleTransfer[]>(MOCK_TRANSFERS);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpenForId, setEditOpenForId] = useState<string | null>(null);
 
-  const filteredTransfers = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    if (!q) return transfers;
-    return transfers.filter((t) => {
-      const vehicle = MOCK_VEHICLES.find((v) => v.id === t.vehicleId);
-      const buyer = MOCK_USERS.find((u) => u.id === t.buyerId);
-      const hay = [
-        vehicle?.title ?? "",
-        buyer?.full_name ?? "",
-        t.status,
-        t.transferType,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(q);
-    });
-  }, [searchTerm, transfers]);
 
-  const handleCreate = (payload: Omit<VehicleTransfer, "id" | "createdAt">) => {
-    const created: VehicleTransfer = {
-      id: `tr_${Math.random().toString(16).slice(2, 8)}`,
-      createdAt: new Date().toISOString(),
-      ...payload,
-    };
-    setTransfers((prev) => [created, ...prev]);
+    useEffect(() => {
+    getAll();
+  }, []);
+
+ 
+
+  const filteredTransfers = useMemo(() => {
+  const q = searchTerm.trim().toLowerCase();
+  if (!q) return transfers;
+  return transfers.filter((t) => {
+    const hay = [
+      t.vehicle?.title ?? "",
+      t.buyer?.full_name ?? "",
+      t.buyer?.email ?? "",
+      t.status,
+      t.transfer_type,
+    ]
+      .join(" ")
+      .toLowerCase();
+    return hay.includes(q);
+  });
+}, [searchTerm, transfers]);
+
+  const handleCreate = async(payload: Omit<VehicleTransfer, "id" | "createdAt">) => {
+    // const created: VehicleTransfer = {
+    //   id: `tr_${Math.random().toString(16).slice(2, 8)}`,
+    //   createdAt: new Date().toISOString(),
+    //   ...payload,
+    // };
+    // setTransfers((prev) => [created, ...prev]);
+    // setCreateOpen(false);
+    // toast({ title: "Transfer created", description: "" });
+
+
+    try {
+    await create({
+      vehicleId: payload.vehicleId,
+      buyerId: payload.buyerId,
+      sellerId: payload.sellerId && payload.sellerId !== "__none__"
+        ? payload.sellerId
+        : undefined,
+      transfer_type: payload.transferType,
+      admin_notes: payload.adminNotes,
+      user_facing_notes: payload.userFacingNotes,
+    });
+    await getAll();
     setCreateOpen(false);
-    toast({ title: "Transfer created", description: "" });
+    toast({ title: "Transfer created" });
+  } catch {
+    toast({ title: "Failed to create transfer", variant: "destructive" });
+  }
+  
+
+
   };
 
-  const handleUpdate = (transferId: string, updates: Partial<VehicleTransfer>) => {
-    setTransfers((prev) =>
-      prev.map((t) => (t.id === transferId ? { ...t, ...updates } : t)),
-    );
+  const handleUpdate = async(transferId: string, updates: Partial<VehicleTransfer>) => {
+    // setTransfers((prev) =>
+    //   prev.map((t) => (t.id === transferId ? { ...t, ...updates } : t)),
+    // );
+    // setEditOpenForId(null);
+    // toast({ title: "Saved", description: "Transfer updated" });
+
+
+      try {
+    await update(transferId, {
+      steps_completed: updates.stepsCompleted,
+      status: updates.status,
+      admin_notes: updates.adminNotes,
+      user_facing_notes: updates.userFacingNotes,
+    });
+    await getAll(); 
     setEditOpenForId(null);
     toast({ title: "Saved", description: "Transfer updated" });
+  } catch {
+    toast({ title: "Failed to update transfer", variant: "destructive" });
+  }
+
   };
 
   return (
@@ -182,7 +238,21 @@ export default function TransferStatusManagerUI() {
       </div>
 
       <div className="space-y-4">
-        {filteredTransfers.length === 0 ? (
+
+  {isLoading ? (
+    <div className="flex items-center justify-center py-16">
+      <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+    </div>
+  ) : error ? (
+    <Card>
+      <CardContent className="text-center py-12">
+        <AlertCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
+        <p className="text-red-600">{error}</p>
+      </CardContent>
+    </Card>
+  ) :
+
+      filteredTransfers?.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -190,14 +260,14 @@ export default function TransferStatusManagerUI() {
             </CardContent>
           </Card>
         ) : (
-          filteredTransfers.map((t) => {
-            const vehicle = MOCK_VEHICLES.find((v) => v.id === t.vehicleId);
-            const buyer = MOCK_USERS.find((u) => u.id === t.buyerId);
-            const seller = t.sellerId
-              ? MOCK_USERS.find((u) => u.id === t.sellerId)
-              : null;
+          filteredTransfers?.map((t) => {
+            // const vehicle = MOCK_VEHICLES.find((v) => v.id === t.vehicleId);
+            // const buyer = MOCK_USERS.find((u) => u.id === t.buyerId);
+            // const seller = t.sellerId
+            //   ? MOCK_USERS.find((u) => u.id === t.sellerId)
+            //   : null;
             const totalSteps = 6;
-            const pct = Math.round(((t.stepsCompleted.length || 0) / totalSteps) * 100);
+            const pct = Math.round(((t?.steps_completed?.length || 0) / totalSteps) * 100);
 
             return (
               <Card key={t.id} className="shadow-md hover:shadow-lg transition-shadow">
@@ -205,22 +275,22 @@ export default function TransferStatusManagerUI() {
                   <div className="flex items-start justify-between mb-4 gap-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                        {vehicle?.title ?? "Unknown Vehicle"}
+                        {t.vehicle?.title ?? "Unknown Vehicle"}
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge
-                          variant={statusBadgeVariant(t.status)}
+                          variant={statusBadgeVariant(t?.status as TransferStatus)}
                           className="capitalize"
                         >
                           {t.status === "in_progress" ? "In Progress" : t.status}
                         </Badge>
                         <Badge variant="outline" className="capitalize">
-                          {t.transferType === "speedio_managed"
+                          {t.transfer_type === "speedio_managed"
                             ? "Speedio-Managed"
                             : "Self-Service"}
                         </Badge>
                         <span className="text-sm text-slate-600">
-                          Step {t.currentStep} of {totalSteps}
+                          Step {t.current_step} of {totalSteps}
                         </span>
                       </div>
                     </div>
@@ -239,13 +309,13 @@ export default function TransferStatusManagerUI() {
                     <div>
                       <p className="text-slate-500">Buyer</p>
                       <p className="font-medium text-slate-800">
-                        {buyer?.full_name ?? "Unknown"}
+                        {t.buyer?.full_name ?? "Unknown"}
                       </p>
                     </div>
-                    {seller && (
+                    {t.seller && (
                       <div>
                         <p className="text-slate-500">Seller</p>
-                        <p className="font-medium text-slate-800">{seller.full_name}</p>
+                        <p className="font-medium text-slate-800">{t.seller?.full_name ?? "Unknown"}</p>
                       </div>
                     )}
                   </div>
@@ -272,12 +342,13 @@ export default function TransferStatusManagerUI() {
             );
           })
         )}
+
+
+
       </div>
 
       {createOpen && (
         <CreateTransferModal
-          vehicles={MOCK_VEHICLES}
-          users={MOCK_USERS}
           onClose={() => setCreateOpen(false)}
           onCreate={handleCreate}
         />
@@ -287,12 +358,20 @@ export default function TransferStatusManagerUI() {
 }
 
 function CreateTransferModal(props: {
-  vehicles: Vehicle[];
-  users: PublicUser[];
+  // vehicles: Vehicle[];
+  // users: PublicUser[];
   onClose: () => void;
   onCreate: (payload: Omit<VehicleTransfer, "id" | "createdAt">) => void;
 }) {
-  const { vehicles, users, onClose, onCreate } = props;
+  const {  onClose, onCreate } = props;
+
+const { vehicles, getAll: getVehicles } = useVehicleListingStore();
+const { users, getAll: getUsers } = useUserStore();
+
+useEffect(() => {
+  getVehicles();
+  getUsers();
+}, []);
 
   const [vehicleId, setVehicleId] = useState<string>(vehicles[0]?.id ?? "");
   const [transferType, setTransferType] = useState<TransferType>("speedio_managed");
@@ -426,23 +505,23 @@ function CreateTransferModal(props: {
 }
 
 function EditTransferModal(props: {
-  transfer: VehicleTransfer;
+  transfer: Transfer;
   onClose: () => void;
   onSave: (updates: Partial<VehicleTransfer>) => void;
 }) {
   const { transfer, onClose, onSave } = props;
 
   const steps =
-    transfer.transferType === "speedio_managed"
+    transfer.transfer_type  === "speedio_managed"
       ? SPEEDIO_MANAGED_STEPS
       : SELF_SERVICE_STEPS;
 
   const [stepsCompleted, setStepsCompleted] = useState<number[]>(
-    transfer.stepsCompleted ?? [],
+    transfer.steps_completed  ?? [],
   );
   const [status, setStatus] = useState<TransferStatus>(transfer.status);
-  const [userFacingNotes, setUserFacingNotes] = useState(transfer.userFacingNotes ?? "");
-  const [adminNotes, setAdminNotes] = useState(transfer.adminNotes ?? "");
+  const [userFacingNotes, setUserFacingNotes] = useState(transfer.user_facing_notes  ?? "");
+  const [adminNotes, setAdminNotes] = useState(transfer.admin_notes  ?? "");
 
   const toggleStep = (stepNumber: number, checked: boolean) => {
     const updated = checked
@@ -456,11 +535,11 @@ function EditTransferModal(props: {
     const isComplete = updated.length === steps.length;
     setStatus(isComplete ? "completed" : status);
 
-    onSave({
-      stepsCompleted: updated,
-      currentStep: nextCurrentStep,
-      status: isComplete ? "completed" : status,
-    });
+    // onSave({
+    //   stepsCompleted: updated,
+    //   currentStep: nextCurrentStep,
+    //   status: isComplete ? "completed" : status,
+    // });
   };
 
   const submit = (e: React.FormEvent) => {
