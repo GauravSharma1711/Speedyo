@@ -69,6 +69,14 @@ export type SendMessageBody = {
   vehicleId?: string | null;
   managedSaleRequestId?: string | null;
   message_type?: string;
+  test_drive_details?: {
+    preferred_date: string;
+    preferred_time: string;
+    location: string;
+    notes?: string;
+    vehicleTitle: string;
+    status: string;
+  };
 };
 
 export type GetConversationsResponse = {

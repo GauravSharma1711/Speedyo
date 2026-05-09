@@ -55,6 +55,18 @@ app.prepare().then(() => {
       socket.to(`conversation:${conversationId}`).emit("user_typing", { userId, isTyping });
     });
 
+    // Subscribe to notification room
+    socket.on("subscribe_notifications", (userId: string) => {
+      socket.join(`notifications:${userId}`);
+      console.log(`User ${userId} subscribed to notifications`);
+    });
+
+    // Unsubscribe from notification room
+    socket.on("unsubscribe_notifications", (userId: string) => {
+      socket.leave(`notifications:${userId}`);
+      console.log(`User ${userId} unsubscribed from notifications`);
+    });
+
     socket.on("disconnect", () => {
       console.log("Client disconnected:", socket.id);
     });

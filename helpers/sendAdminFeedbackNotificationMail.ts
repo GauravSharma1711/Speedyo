@@ -2,7 +2,7 @@ import { resend } from '../lib/resend'
 import AdminFeedbackNotificationEmail from '@/mailsTemplates/AdminFeedbackNotificationEmail'
 
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'feedback@speedio.app'
-const adminPanelUrl = process.env.ADMIN_PANEL_URL || 'https://speedio.app/AdminPanel'
+const adminPanelUrl = process.env.ADMIN_PANEL_URL || 'http://localhost:3000/AdminPanel'
 
 export async function sendAdminFeedbackNotificationMail(
   rating: number,

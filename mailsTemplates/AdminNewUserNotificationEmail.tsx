@@ -13,7 +13,7 @@ export default function AdminNewUserNotificationEmail({
   user_type,
   created_date,
   user_id,
-  admin_panel_url = 'https://speedio.app/AdminPanel',
+  admin_panel_url = `${process.env.NEXT_PUBLIC_APP_URL}/AdminPanel`,
 }: EmailTemplateProps): string {
   const registrationDate = new Date(created_date).toLocaleString();
 

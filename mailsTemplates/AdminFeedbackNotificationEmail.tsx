@@ -13,7 +13,7 @@ export default function AdminFeedbackNotificationEmail({
   rating,
   category,
   feedback_text,
-  admin_panel_url = 'https://speedio.app/AdminPanel',
+  admin_panel_url = `${process.env.NEXT_PUBLIC_APP_URL}/AdminPanel`,
 }: EmailTemplateProps): string {
   const ratingPercent = ((rating / 5) * 100).toFixed(0);
   const submittedAt = new Date().toLocaleString();

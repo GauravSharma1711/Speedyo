@@ -176,6 +176,14 @@ export default function Messages() {
         vehicleId: testDriveData.vehicleId ?? currentConversation?.vehicleId,
         managedSaleRequestId: currentConversation?.managedSaleRequestId ?? null,
         message_type: "test_drive_request",
+        test_drive_details: {
+          preferred_date: testDriveData.preferred_date,
+          preferred_time: testDriveData.preferred_time,
+          location: testDriveData.location,
+          notes: testDriveData.notes,
+          vehicleTitle: testDriveData.vehicleTitle,
+          status: "pending",
+        },
       });
 
       setShowTestDriveModal(false);

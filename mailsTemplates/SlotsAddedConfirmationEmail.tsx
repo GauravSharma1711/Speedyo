@@ -21,7 +21,7 @@ export default function SlotsAddedConfirmationEmail({
   available,
   has_promo = false,
   is_guest_upgraded = false,
-  dashboard_url = 'https://speedio.app/dashboard',
+  dashboard_url = `${process.env.NEXT_PUBLIC_APP_URL}/Dashboard`,
 }: EmailTemplateProps): string {
   const formattedAmount = (total_amount / 100).toFixed(2);
   const currentYear = new Date().getFullYear();

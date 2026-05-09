@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 import prisma from "@/db/prisma";
 import { sendNewVehicleListingMail } from "@/helpers/sendNewVehicleListingMail";
+import { emitNotification } from "@/lib/emitNotification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (followersWantingInApp.length > 0) {
-      await prisma.notification.createMany({
+      const createdNotifications = await prisma.notification.createManyAndReturn({
         data: followersWantingInApp.map((follower) => ({
           recipientId: follower.id,
           senderId: vehicle.authorId as string,
@@ -104,7 +105,13 @@ export async function POST(request: NextRequest) {
           read: false,
         })),
       });
+
       notificationsSent = followersWantingInApp.length;
+
+      // Emit real-time notifications via WebSocket
+      createdNotifications.forEach((notification) => {
+        emitNotification(notification.recipientId, notification);
+      });
     }
 
     // ── Email notifications ───────────────────────────────────────

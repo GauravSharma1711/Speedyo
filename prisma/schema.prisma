@@ -547,6 +547,7 @@ model Message {
   translated_to        String?
   vehicleId            String?             @map("vehicle_id")
   managedSaleRequestId String?             @map("managed_sale_request_id")
+  test_drive_details   Json?               @map("test_drive_details")
   conversation         Conversation?       @relation(fields: [conversationId], references: [id])
   managedSaleRequest   ManagedSaleRequest? @relation(fields: [managedSaleRequestId], references: [id])
   recipient            User                @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)

@@ -109,7 +109,7 @@ export async function PATCH(
             content: `Your test drive request for "${vehicleTitle}" has been ${status ?? existing.status}.`,
             related_entity_type: "test_drive_request",
             related_entity_id: testDriveRequestId,
-            url: `/messages?conversationId=${conversation.id}`,
+            url: `/Messages?conversationId=${conversation.id}`,
           },
         });
       }

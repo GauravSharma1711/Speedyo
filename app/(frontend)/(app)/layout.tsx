@@ -1,6 +1,7 @@
 "use client";
 import { signOut, useSession } from "next-auth/react"
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { useNotificationSocket } from "@/hooks/useNotificationSocket";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -59,6 +60,7 @@ import { useToast } from "@/components/ui/UseToast";
 import { Toaster } from "@/components/ui/Toaster";
 import FeedbackModal from "@/components/feedback/FeedbackModal";
 import SetupAccountDialog from "@/components/setup/SetupAccountDialog";
+import { useNotificationsStore } from "@/store/notifications";
 
 // ─── Replace these with your actual API/entity imports ───────────────────────
 // import { UserEntity } from "@/entities/User";
@@ -93,16 +95,6 @@ interface CurrentUserDisplay {
   role?: string;
   bio?: string;
   location?: string;
-}
-
-interface NotificationItem {
-  id: string;
-  recipient_id: string;
-  content: string;
-  read: boolean;
-  icon?: string;
-  url?: string;
-  created_date: string;
 }
 
 interface LayoutProps {
@@ -204,17 +196,21 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [currentUserDisplay, setCurrentUserDisplay] = useState<CurrentUserDisplay | null>(null);
   const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
-  const [notificationError, setNotificationError] = useState<string | null>(null);
   const [showSetupDialog, setShowSetupDialog] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [hideBottomNav, setHideBottomNav] = useState(false);
 
-  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const fetchNotificationsRef = useRef<((isInitial?: boolean) => Promise<void>) | null>(null);
-  const POLLING_RATE = 120_000; // 2 minutes
+  const {
+    notifications,
+    unreadCount,
+    isLoading: isNotificationsLoading,
+    error: notificationError,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+  } = useNotificationsStore();
+
+  useNotificationSocket(currentUser?.id);
 
   const showSidebar = !pagesWithoutSidebar.includes(currentPageName);
 
@@ -310,92 +306,12 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
   };
 
   // ── Notifications ─────────────────────────────────────────────────────────
-  const fetchNotifications = useCallback(
-    async (isInitialLoad = false) => {
-      if (!currentUser?.id) return;
-      if (isInitialLoad) setIsNotificationsLoading(true);
-      setNotificationError(null);
-
-      try {
-        // TODO: Replace with your API call
-        // const userNotifications = await Notification.filter(
-        //   { recipient_id: currentUser.id }, "-created_date", 10
-        // );
-        const userNotifications: NotificationItem[] = [];
-        setNotifications(userNotifications);
-        setUnreadCount(userNotifications.filter((n) => !n.read).length);
-      } catch (error: any) {
-        console.error("Failed to fetch notifications:", error);
-        if (error?.response?.status === 429) {
-          setNotificationError("Too many requests. Notifications paused temporarily.");
-          if (pollingIntervalRef.current) {
-            clearInterval(pollingIntervalRef.current);
-            pollingIntervalRef.current = null;
-          }
-          setTimeout(() => {
-            if (!pollingIntervalRef.current && currentUser?.id && fetchNotificationsRef.current) {
-              pollingIntervalRef.current = setInterval(
-                () => fetchNotificationsRef.current?.(false),
-                POLLING_RATE
-              );
-            }
-          }, 600_000);
-        } else {
-          setNotificationError("Failed to load notifications");
-        }
-      } finally {
-        if (isInitialLoad) setIsNotificationsLoading(false);
-      }
-    },
-    [currentUser?.id, POLLING_RATE]
-  );
-
+  // Fetch notifications on mount
   useEffect(() => {
-    fetchNotificationsRef.current = fetchNotifications;
-  }, [fetchNotifications]);
-
-  useEffect(() => {
-    if (!currentUser?.id) {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-      return;
+    if (currentUser?.id) {
+      fetchNotifications(20);
     }
-
-    const startPolling = () => {
-      if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = setInterval(
-        () => fetchNotificationsRef.current?.(false),
-        POLLING_RATE
-      );
-    };
-
-    const stopPolling = () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        setTimeout(() => fetchNotificationsRef.current?.(false), 2000);
-        setTimeout(startPolling, 5000);
-      } else {
-        stopPolling();
-      }
-    };
-
-    setTimeout(() => fetchNotificationsRef.current?.(true), 1000);
-    setTimeout(startPolling, 10_000);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      stopPolling();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [currentUser?.id, POLLING_RATE]);
+  }, [currentUser?.id]);
 
   // ── Auth actions ──────────────────────────────────────────────────────────
   const handleLogin = () => {
@@ -420,31 +336,15 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
 
 
   // ── Notification actions ──────────────────────────────────────────────────
-  const handleNotificationClick = async (notification: NotificationItem) => {
+  const handleNotificationClick = async (notification: any) => {
     if (!notification.read) {
-      try {
-        // TODO: await Notification.update(notification.id, { read: true });
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      } catch (error) {
-        console.error("Failed to mark notification as read:", error);
-      }
+      await markAsRead([notification.id]);
     }
     if (notification.url) window.location.href = notification.url;
   };
 
   const handleMarkAllAsRead = async () => {
-    if (unreadCount === 0) return;
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
-    try {
-      // TODO: await Promise.all(unreadIds.map((id) => Notification.update(id, { read: true })));
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error("Failed to mark all notifications as read:", error);
-    }
+    await markAllAsRead();
   };
 
   // ── Upgrade CTA ───────────────────────────────────────────────────────────
@@ -524,7 +424,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                     {notification.content}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
-                    {new Date(notification.created_date).toLocaleString()}
+                    {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
                 {!notification.read && <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-2" />}
@@ -537,7 +437,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
             <p className="font-medium mb-1">No notifications yet</p>
             <p className="text-sm">{notificationError ?? "We'll notify you when something happens!"}</p>
             {notificationError && (
-              <Button variant="outline" size="sm" className="mt-3" onClick={() => fetchNotifications(true)}>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => fetchNotifications(20)}>
                 Try Again
               </Button>
             )}

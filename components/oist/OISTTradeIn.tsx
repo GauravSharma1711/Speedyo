@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/Select";
 import { ArrowLeft, RefreshCw, CheckCircle, Loader2 } from "lucide-react";
 import { Notification, OISTTradeInRequest, PublicUser, UserEntity } from "@/api/entities";
+import AuthButton from "./AuthButton";
 
 type OISTTradeInProps = {
   onBack: () => void;
@@ -134,11 +135,9 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
             </p>
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <a href="https://speedio.app/login">
-                  <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
-                    Create Account
-                  </Button>
-                </a>
+                <AuthButton className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
+                  Create Account
+                </AuthButton>
                 <Button asChild variant="outline" className="w-full">
                   <Link href="/Marketplace">Browse Vehicles</Link>
                 </Button>
