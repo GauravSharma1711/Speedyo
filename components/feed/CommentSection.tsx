@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Send } from "lucide-react";
@@ -8,59 +8,90 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/TextArea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useFeedStore } from "@/store/feed";
-import { Notification, PublicUser } from "@/api/entities";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface CurrentUser {
+type CurrentUser = {
   id: string;
   email: string;
-  full_name?: string;
-  profile_image?: string;
-}
+  full_name?: string | null;
+  profile_image?: string | null;
+};
 
-interface CommentAuthor {
+type CommentAuthor = {
   user_id: string;
   full_name: string;
   user_type: string;
   profile_image: string | null;
   verified: boolean;
-}
+  role?: string | null;
+};
 
-interface CommentData {
+type CommentData = {
   id: string;
-  postId: string;           // fixed: was post_id
+  postId?: string; 
+  post_id?: string;
   content: string;
-  authorId: string;         // fixed: was author_id
-  parent_comment_id?: string | null;  // fixed: was parent_comment_id
-  createdAt: string;        // fixed: was created_date
+  authorId?: string;
+  author_id?: string;
+  parentCommentId?: string | null;
+  parent_comment_id?: string | null;
+  createdAt?: string;
+  created_date?: string;
   reactions?: Record<string, number>;
   user_reactions?: { user_email: string; reaction: string }[];
   replies?: CommentData[];
-}
+};
 
-// ─── CommentItem ──────────────────────────────────────────────────────────────
-
-interface CommentItemProps {
+type CommentItemProps = {
   comment: CommentData;
-  onCommentAdded: (e: React.FormEvent, parentId?: string | null, replyContent?: string | null) => Promise<void>;
-  onReact: (commentId: string, reactionType: string) => void;
+  onReplySubmit: (parentId: string, replyContent: string) => Promise<void>;
   currentUser: CurrentUser | null;
   commentAuthors: Record<string, CommentAuthor>;
+};
+
+function normalizeComment(c: any): CommentData {
+  return {
+    id: c.id,
+    postId: c.postId ?? c.post_id ?? undefined,
+    post_id: c.post_id ?? c.postId ?? undefined,
+    content: c.content ?? "",
+    authorId: c.authorId ?? c.author_id ?? undefined,
+    author_id: c.author_id ?? c.authorId ?? undefined,
+    parentCommentId: c.parentCommentId ?? c.parent_comment_id ?? null,
+    parent_comment_id: c.parent_comment_id ?? c.parentCommentId ?? null,
+    createdAt: c.createdAt ?? c.created_date ?? undefined,
+    created_date: c.created_date ?? c.createdAt ?? undefined,
+    reactions: c.reactions ?? undefined,
+    user_reactions: c.user_reactions ?? undefined,
+    replies: Array.isArray(c.replies) ? c.replies.map(normalizeComment) : [],
+  };
 }
 
-const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAuthors }: CommentItemProps) => {
+const CommentItem = ({ comment, onReplySubmit, currentUser, commentAuthors }: CommentItemProps) => {
   const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyContent, setReplyContent]     = useState("");
+  const [replyContent, setReplyContent] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
-  const handleReplySubmit = async (e: React.FormEvent) => {
+  const authorId = comment.author_id ?? comment.authorId ?? "";
+  const createdRaw = comment.created_date ?? comment.createdAt ?? "";
+  const createdLabel = createdRaw ? format(new Date(createdRaw), "MMM d, h:mm a") : "—";
+
+  const commentUser =
+    commentAuthors[authorId] ?? {
+      full_name: "Unknown User",
+      user_type: "guest",
+      profile_image: null,
+      verified: false,
+      user_id: authorId,
+    };
+
+  const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyContent.trim()) return;
+    if (!currentUser) return;
+
     setIsSubmittingReply(true);
     try {
-      await onCommentAdded(e, comment.id, replyContent);
+      await onReplySubmit(comment.id, replyContent.trim());
       setReplyContent("");
       setShowReplyInput(false);
     } catch {
@@ -68,19 +99,6 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
     } finally {
       setIsSubmittingReply(false);
     }
-  };
-
-  const userHasLiked = comment.user_reactions?.some(
-    r => r.user_email === currentUser?.email && r.reaction === "like"
-  );
-  const likesCount = comment.reactions?.like ?? 0;
-
-  const commentUser = commentAuthors[comment.authorId] ?? {
-    full_name: "Unknown User",
-    user_type: "guest",
-    profile_image: null,
-    verified: false,
-    user_id: comment.authorId,
   };
 
   return (
@@ -94,7 +112,7 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
 
       <div className="flex-1">
         <div className="bg-slate-100 rounded-lg p-3">
-          <Link href={`/profile?id=${comment.authorId}`} className="font-semibold text-sm hover:underline">
+          <Link href={`/profile?id=${authorId}`} className="font-semibold text-sm hover:underline">
             {commentUser.full_name}
           </Link>
           <p className="text-sm text-slate-800 whitespace-pre-wrap mt-1">{comment.content}</p>
@@ -102,46 +120,44 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
 
         <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 pl-1">
           <button
-            onClick={() => onReact(comment.id, "like")}
-            className={`font-semibold ${userHasLiked ? "text-blue-600" : "hover:underline"}`}
-            disabled={!currentUser}
-          >
-            Like {likesCount > 0 && `(${likesCount})`}
-          </button>
-          <button
             onClick={() => setShowReplyInput(true)}
             className="font-semibold hover:underline"
             disabled={!currentUser}
+            type="button"
           >
             Reply
           </button>
           <span>·</span>
-          {/* fixed: was comment.created_date */}
-          <span>{format(new Date(comment.createdAt), "MMM d, h:mm a")}</span>
+          <span>{createdLabel}</span>
         </div>
 
         {showReplyInput && (
-          <form onSubmit={handleReplySubmit} className="mt-2">
+          <form onSubmit={handleReply} className="mt-2">
             <div className="flex gap-3">
               <Avatar className="w-8 h-8">
-                <AvatarImage src={currentUser?.profile_image} />
+                <AvatarImage src={currentUser?.profile_image ?? undefined} />
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-emerald-500 text-white text-sm">
                   {currentUser?.full_name?.[0] ?? "U"}
                 </AvatarFallback>
               </Avatar>
+
               <div className="flex-1">
                 <Textarea
                   value={replyContent}
-                  onChange={e => setReplyContent(e.target.value)}
+                  onChange={(e) => setReplyContent(e.target.value)}
                   placeholder={`Replying to ${commentUser.full_name}...`}
                   className="min-h-[60px] border-slate-200 resize-none"
                   autoFocus
                   disabled={isSubmittingReply}
                 />
                 <div className="flex justify-end mt-2 gap-2">
-                  <Button type="button" variant="ghost" size="sm"
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowReplyInput(false)}
-                    disabled={isSubmittingReply}>
+                    disabled={isSubmittingReply}
+                  >
                     Cancel
                   </Button>
                   <Button type="submit" size="sm"
@@ -154,221 +170,188 @@ const CommentItem = ({ comment, onCommentAdded, onReact, currentUser, commentAut
           </form>
         )}
 
-        {comment.replies && comment.replies.length > 0 && (
-          <div className="mt-3 space-y-3 pl-4 border-l-2 border-slate-200">
-            {comment.replies.map(reply => (
+        {comment.replies && comment.replies.length > 0 ? (
+          <div className="mt-3 space-y-3 pl-4 border-l-2">
+            {comment.replies.map((reply) => (
               <CommentItem
                 key={reply.id}
                 comment={reply}
-                onCommentAdded={onCommentAdded}
-                onReact={onReact}
+                onReplySubmit={onReplySubmit}
                 currentUser={currentUser}
                 commentAuthors={commentAuthors}
               />
             ))}
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
 };
 
-// ─── CommentSection ───────────────────────────────────────────────────────────
-
-interface CommentSectionProps {
+type CommentSectionProps = {
   postId: string;
   postCreatorId: string;
   currentUser: CurrentUser | null;
   onCommentAdded?: () => void;
-}
+};
 
-export default function CommentSection({
-  postId,
-  postCreatorId,
-  currentUser,
-  onCommentAdded,
-}: CommentSectionProps) {
-  const { commentPost } = useFeedStore();
-
-  const [comments, setComments]             = useState<CommentData[]>([]);
-  const [newComment, setNewComment]         = useState("");
+export default function CommentSection({ postId, currentUser, onCommentAdded }: CommentSectionProps) {
+  const [comments, setComments] = useState<CommentData[]>([]);
+  const [newComment, setNewComment] = useState("");
   const [commentAuthors, setCommentAuthors] = useState<Record<string, CommentAuthor>>({});
   const [isLoadingComments, setIsLoadingComments] = useState(true);
-  const [isSubmitting, setIsSubmitting]     = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const buildTree = useCallback((flat: CommentData[]) => {
+    const byId = new Map<string, CommentData>(flat.map((c) => [c.id, { ...c, replies: [] }]));
+    const roots: CommentData[] = [];
+
+    for (const c of flat) {
+      const parentId = c.parent_comment_id ?? c.parentCommentId ?? null;
+      if (parentId) {
+        const parent = byId.get(parentId);
+        if (parent) parent.replies!.push(byId.get(c.id)!);
+      } else {
+        roots.push(byId.get(c.id)!);
+      }
+    }
+    roots.forEach((c) =>
+      c.replies?.sort(
+        (a, b) =>
+          +new Date(a.created_date ?? a.createdAt ?? 0) - +new Date(b.created_date ?? b.createdAt ?? 0)
+      )
+    );
+    roots.sort(
+      (a, b) =>
+        +new Date(a.created_date ?? a.createdAt ?? 0) - +new Date(b.created_date ?? b.createdAt ?? 0)
+    );
+
+    return roots;
+  }, []);
 
   const loadComments = useCallback(async () => {
     setIsLoadingComments(true);
     try {
-      // Your API endpoint — adjust to match your actual route
-      const res = await fetch(`/api/posts/${postId}/comments`);
-      const data = await res.json();
-      const fetched: CommentData[] = data.comments ?? [];
+      const res = await fetch(`/api/post/${encodeURIComponent(postId)}/commentPost?page=1&limit=50`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("Failed to load comments");
+      const json = (await res.json()) as { success: boolean; comments: any[] };
+      const normalized = (json.comments ?? []).map(normalizeComment);
 
-      // Collect unique author IDs
-      const authorIds = new Set<string>(fetched.map(c => c.authorId));
+      const authorIds = new Set<string>();
+      for (const c of normalized) {
+        const aid = c.author_id ?? c.authorId;
+        if (aid) authorIds.add(aid);
+      }
       if (currentUser?.id) authorIds.add(currentUser.id);
 
-      // Fetch all author profiles in parallel
       const authorsMap: Record<string, CommentAuthor> = {};
       await Promise.all(
-        Array.from(authorIds).map(async authorId => {
+        Array.from(authorIds).map(async (authorId) => {
           try {
-            const profiles = await PublicUser.filter({ user_id: authorId });
-            authorsMap[authorId] = profiles[0] ?? {
-              user_id: authorId, full_name: "Unknown User",
-              user_type: "guest", profile_image: null, verified: false,
+            const r = await fetch(`/api/user/public?userId=${encodeURIComponent(authorId)}`, {
+              cache: "no-store",
+            });
+            if (!r.ok) throw new Error("author fetch failed");
+            const j = (await r.json()) as { user?: any };
+
+            const u = j.user ?? null;
+            authorsMap[authorId] = {
+              user_id: u?.user_id ?? u?.id ?? authorId,
+              full_name: u?.full_name ?? "Unknown User",
+              user_type: u?.user_type ?? "guest",
+              profile_image: u?.profile_image ?? null,
+              verified: Boolean(u?.verified),
+              role: u?.role ?? null,
             };
           } catch {
             authorsMap[authorId] = {
-              user_id: authorId, full_name: "Unknown User",
-              user_type: "guest", profile_image: null, verified: false,
+              user_id: authorId,
+              full_name: "Unknown User",
+              user_type: "guest",
+              profile_image: null,
+              verified: false,
+              role: null,
             };
           }
         })
       );
+
       setCommentAuthors(authorsMap);
-
-      // Build hierarchical tree using camelCase fields
-      const byId = new Map(fetched.map(c => [c.id, { ...c, replies: [] as CommentData[] }]));
-      const roots: CommentData[] = [];
-
-      fetched.forEach(c => {
-        if (c.parent_comment_id) {          // fixed: was parent_comment_id
-          byId.get(c.parent_comment_id)?.replies?.push(byId.get(c.id)!);
-        } else {
-          roots.push(byId.get(c.id)!);
-        }
-      });
-
-      // Sort replies oldest-first, roots oldest-first
-      roots.forEach(c => c.replies?.sort(
-        (a, b) => +new Date(a.createdAt) - +new Date(b.createdAt)  // fixed: was created_date
-      ));
-      roots.sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));
-
-      setComments(roots);
+      setComments(normalized);
     } catch (e) {
       console.error("Failed to load comments:", e);
     } finally {
       setIsLoadingComments(false);
     }
-  }, [postId, currentUser?.id]);
+  }, [postId, currentUser?.id, buildTree]);
 
-  useEffect(() => { loadComments(); }, [loadComments]);
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
-  const handleCommentSubmit = async (
-    e: React.FormEvent,
-    parentId: string | null = null,
-    submittedReplyContent: string | null = null
-  ) => {
-    e.preventDefault();
-    const content = submittedReplyContent ?? newComment;
-    if (!content.trim() || !currentUser) return;
-    if (!parentId) setIsSubmitting(true);
-
-    try {
-      // Use the store action — it handles the API call and updates posts[].comments_count
-      await commentPost(postId, {
-        content,
-        parent_comment_id: parentId ?? undefined,  // fixed: was parent_comment_id
+  const createComment = useCallback(
+    async (content: string, parentCommentId?: string | null) => {
+      const res = await fetch(`/api/post/${encodeURIComponent(postId)}/commentPost`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ content, ...(parentCommentId ? { parentCommentId } : {}) }),
       });
 
-      // Send notification
-      let recipientId  = postCreatorId;
-      let notifContent = `${currentUser.full_name} commented on your post.`;
-      let notifType    = "comment_reply" as const;
-
-      if (parentId) {
-        const flat: CommentData[] = [];
-        const collect = (cmts: CommentData[]) =>
-          cmts.forEach(c => { flat.push(c); if (c.replies) collect(c.replies); });
-        collect(comments);
-        const parent = flat.find(c => c.id === parentId);
-        if (parent?.authorId) recipientId = parent.authorId;  // fixed: was author_id
-        notifContent = `${currentUser.full_name} replied to your comment.`;
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || "Failed to post comment");
       }
+      return (await res.json()) as any;
+    },
+    [postId]
+  );
 
-      if (currentUser.id !== recipientId) {
-        await Notification.create({
-          recipient_id: recipientId,
-          sender_id:    currentUser.id,
-          type:         notifType,
-          content:      notifContent,
-          related_entity_type: "Post",
-          related_entity_id:   postId,
-          url:  `/feed`,
-          icon: "MessageCircle",
-        });
-      }
+  const handleNewCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    if (!newComment.trim()) return;
 
-      if (!parentId) setNewComment("");
+    setIsSubmitting(true);
+    try {
+      await createComment(newComment.trim(), null);
+      setNewComment("");
       onCommentAdded?.();
       await loadComments();
     } catch (e) {
       console.error("Failed to post comment:", e);
       alert("Failed to post comment. Please try again.");
     } finally {
-      if (!parentId) setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleReactToComment = async (commentId: string, reactionType: string) => {
+  const handleReplySubmit = async (parentId: string, replyContent: string) => {
     if (!currentUser) return;
-
-    const flat: CommentData[] = [];
-    const collect = (cmts: CommentData[]) =>
-      cmts.forEach(c => { flat.push(c); if (c.replies) collect(c.replies); });
-    collect(comments);
-    const target = flat.find(c => c.id === commentId);
-    if (!target) return;
-
-    const currentReactions     = { ...(target.reactions ?? {}) };
-    const currentUserReactions = [...(target.user_reactions ?? [])];
-    const existingIdx = currentUserReactions.findIndex(r => r.user_email === currentUser.email);
-    const existing    = existingIdx > -1 ? currentUserReactions[existingIdx] : null;
-
-    if (existing?.reaction === reactionType) {
-      currentReactions[reactionType] = Math.max(0, (currentReactions[reactionType] ?? 0) - 1);
-      currentUserReactions.splice(existingIdx, 1);
-    } else {
-      if (existing) {
-        currentReactions[existing.reaction] = Math.max(0, (currentReactions[existing.reaction] ?? 0) - 1);
-        currentUserReactions.splice(existingIdx, 1);
-      }
-      currentReactions[reactionType] = (currentReactions[reactionType] ?? 0) + 1;
-      currentUserReactions.push({ user_email: currentUser.email, reaction: reactionType });
-    }
-
-    try {
-      await fetch(`/api/comments/${commentId}/react`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reactions: currentReactions, user_reactions: currentUserReactions }),
-      });
-      await loadComments();
-    } catch {
-      alert("Failed to react. Please try again.");
-    }
+    await createComment(replyContent, parentId);
+    onCommentAdded?.();
+    await loadComments();
   };
 
   return (
-    <div className="px-6 py-4 bg-slate-50/50">
-      {/* New comment form */}
-      <form onSubmit={handleCommentSubmit} className="mb-4">
+    <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+      <form onSubmit={handleNewCommentSubmit} className="mb-4">
         <div className="flex gap-3">
-          {currentUser && (
+          {currentUser ? (
             <Avatar className="w-8 h-8">
-              <AvatarImage src={currentUser.profile_image} />
+              <AvatarImage src={currentUser.profile_image ?? undefined} />
               <AvatarFallback className="bg-gradient-to-br from-blue-500 to-emerald-500 text-white text-sm">
                 {currentUser.full_name?.[0] ?? "U"}
               </AvatarFallback>
             </Avatar>
-          )}
+          ) : null}
+
           <div className="flex-1">
             <Textarea
               value={newComment}
-              onChange={e => setNewComment(e.target.value)}
-              placeholder={currentUser ? "Write a comment..." : "Log in to comment"}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Write a comment..."
               className="min-h-[50px] border-slate-200 resize-none"
               disabled={isSubmitting || !currentUser}
             />
@@ -395,12 +378,11 @@ export default function CommentSection({
         </div>
       ) : comments.length > 0 ? (
         <div className="space-y-4">
-          {comments.map(comment => (
+          {comments.map((comment) => (
             <CommentItem
               key={comment.id}
               comment={comment}
-              onCommentAdded={handleCommentSubmit}
-              onReact={handleReactToComment}
+              onReplySubmit={handleReplySubmit}
               currentUser={currentUser}
               commentAuthors={commentAuthors}
             />

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 import { sendResetPasswordMail } from "@/helpers/sendResetPasswordMail";
+import crypto from "crypto";
 
 
 export async function POST(req:NextRequest){
@@ -19,19 +20,24 @@ export async function POST(req:NextRequest){
       return NextResponse.json({ message: "If this email exists, a reset link has been sent" });
     }
 
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await prisma.user.update({
       where: { email },
       data: {
-        verificationCode: resetCode,
-        verificationCodeExpiry: expiry,
+        passwordResetTokenHash: tokenHash,
+        passwordResetTokenExpiry: expiry,
       },
     });
 
-// sendMail
-await sendResetPasswordMail(email, user.full_name ?? 'User', resetCode)
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
+
+    const resetLink = `${baseUrl.replace(/\/$/, "")}/reset-password?token=${token}`;
+    await sendResetPasswordMail(email, user.full_name ?? "User", resetLink);
 
    
     return NextResponse.json({ message: "If this email exists, a reset link has been sent" });

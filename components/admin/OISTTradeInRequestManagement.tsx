@@ -1,25 +1,20 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { Calendar, Car, ExternalLink, Mail, RefreshCw } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/Select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 
-type TradeInStatus = "pending" | "contacted" | "quoted" | "completed" | "cancelled";
+import { useOistTradeInStore } from "@/store/admin/oistTradeIn";
+import type { TradeInStatus } from "@/services/admin/oistTradeInServices";
 
 type TradeInRequestRow = {
   id: string;
-  created_date: string; // ISO
+  created_date: string;
   status: TradeInStatus;
 
   full_name: string;
@@ -29,56 +24,11 @@ type TradeInRequestRow = {
   vehicle_year: number;
   vehicle_make: string;
   vehicle_model: string;
-  vehicle_mileage: number; // km
-  vehicle_condition: "excellent" | "good" | "fair" | "poor";
+  vehicle_mileage: number;
 
+  vehicle_condition: "excellent" | "good" | "fair" | "poor";
   additional_details?: string | null;
 };
-
-const MOCK: TradeInRequestRow[] = [
-  {
-    id: "ti_001",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-    status: "pending",
-    full_name: "Yuki Tanaka",
-    email: "yuki@example.com",
-    facebook_profile: "https://facebook.com/",
-    vehicle_year: 2015,
-    vehicle_make: "Toyota",
-    vehicle_model: "Aqua",
-    vehicle_mileage: 74000,
-    vehicle_condition: "good",
-    additional_details: "No accidents. Regular service.",
-  },
-  {
-    id: "ti_002",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    status: "contacted",
-    full_name: "Tanmay Ahuja",
-    email: "tanmay@example.com",
-    facebook_profile: null,
-    vehicle_year: 2012,
-    vehicle_make: "Suzuki",
-    vehicle_model: "Jimny",
-    vehicle_mileage: 98000,
-    vehicle_condition: "fair",
-    additional_details: "Some scratches on rear bumper. Interior clean.",
-  },
-  {
-    id: "ti_003",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 18).toISOString(),
-    status: "completed",
-    full_name: "Hiro Sato",
-    email: "hiro@example.com",
-    facebook_profile: "https://facebook.com/",
-    vehicle_year: 2018,
-    vehicle_make: "Honda",
-    vehicle_model: "Fit",
-    vehicle_mileage: 52000,
-    vehicle_condition: "excellent",
-    additional_details: null,
-  },
-];
 
 function getStatusColor(status: TradeInStatus) {
   switch (status) {
@@ -96,8 +46,32 @@ function getStatusColor(status: TradeInStatus) {
 }
 
 export default function OISTTradeInRequestManagementUI() {
-  const [requests, setRequests] = useState<TradeInRequestRow[]>(MOCK);
-  const [isLoading] = useState(false);
+  const { items, isLoading, fetch, refresh, updateStatus } = useOistTradeInStore();
+
+  useEffect(() => {
+    void fetch();
+  }, [fetch]);
+
+  // API -> UI mapping (important: createdAt -> created_date, strings -> numbers)
+  const requests: TradeInRequestRow[] = useMemo(() => {
+    return items.map((it) => ({
+      id: it.id,
+      created_date: it.createdAt,
+      status: it.status,
+
+      full_name: it.full_name,
+      email: it.email,
+      facebook_profile: it.facebook_profile ?? null,
+
+      vehicle_year: Number(it.vehicle_year),
+      vehicle_make: it.vehicle_make,
+      vehicle_model: it.vehicle_model,
+      vehicle_mileage: Number(it.vehicle_mileage),
+      vehicle_condition: it.vehicle_condition,
+
+      additional_details: it.additional_details ?? null,
+    }));
+  }, [items]);
 
   const sorted = useMemo(() => {
     return [...requests].sort(
@@ -105,14 +79,8 @@ export default function OISTTradeInRequestManagementUI() {
     );
   }, [requests]);
 
-  const refresh = () => {
-    setRequests(MOCK);
-  };
-
   const handleStatusChange = (requestId: string, newStatus: TradeInStatus) => {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r)),
-    );
+    void updateStatus(requestId, newStatus);
   };
 
   if (isLoading) {
@@ -127,7 +95,8 @@ export default function OISTTradeInRequestManagementUI() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-slate-800">OIST Trade-In Requests</h2>
-        <Button onClick={refresh} variant="outline" size="sm">
+
+        <Button onClick={() => void refresh()} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
@@ -151,6 +120,7 @@ export default function OISTTradeInRequestManagementUI() {
                       <Car className="w-5 h-5 text-purple-600" />
                       {request.vehicle_year} {request.vehicle_make} {request.vehicle_model}
                     </CardTitle>
+
                     <div className="flex items-center gap-4 mt-2 text-sm text-slate-600">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
@@ -168,6 +138,7 @@ export default function OISTTradeInRequestManagementUI() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="font-semibold text-slate-800 mb-3">Contact Information</h4>
+
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="text-slate-600">Name:</span>{" "}
@@ -211,6 +182,7 @@ export default function OISTTradeInRequestManagementUI() {
                           {request.vehicle_mileage.toLocaleString()} km
                         </span>
                       </div>
+
                       <div>
                         <span className="text-slate-600">Condition:</span>{" "}
                         <span className="font-medium capitalize">{request.vehicle_condition}</span>
@@ -229,16 +201,16 @@ export default function OISTTradeInRequestManagementUI() {
                 ) : null}
 
                 <div className="flex items-center gap-3 pt-4 border-t">
-                  <span className="text-sm font-medium text-slate                  -700">Update Status:</span>
+                  <span className="text-sm font-medium text-slate-700">Update Status:</span>
+
                   <Select
                     value={request.status}
-                    onValueChange={(value) =>
-                      handleStatusChange(request.id, value as TradeInStatus)
-                    }
+                    onValueChange={(value) => handleStatusChange(request.id, value as TradeInStatus)}
                   >
                     <SelectTrigger className="w-48">
                       <SelectValue />
                     </SelectTrigger>
+
                     <SelectContent>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="contacted">Contacted</SelectItem>

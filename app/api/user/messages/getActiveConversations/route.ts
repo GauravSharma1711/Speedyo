@@ -31,11 +31,20 @@ export async function GET(request: NextRequest) {
             primary_image_thumbnail: true,
           },
         },
+        messages: {
+          select: {
+            id: true,
+            content: true,
+            message_type: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
       },
       orderBy: { last_message_at: "desc" },
     });
 
-    // Attach unread count relative to the logged-in user
     const conversationsWithUnread = conversations.map((conv) => ({
       ...conv,
       unread_count: conv.user1Id === session.user.id ? conv.user1_unread : conv.user2_unread,

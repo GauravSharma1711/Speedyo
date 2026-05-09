@@ -5,7 +5,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { Copy, Eye, FileText, Loader2, Plus, Send, XCircle } from "lucide-react";
 
-import { useDealershipAgreementStore } from "@/store/admin/dealership";
+import { DealershipAgreement, useDealershipAgreementStore } from "@/store/admin/dealership";
 
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -34,8 +34,40 @@ type FormState = {
   admin_notes: string;
 };
 
-// ── Badge colours ──────────────────────────────────────────────────────────────
-function statusBadgeClass(status: string) {
+const MOCK: DealershipAgreement[] = [
+  {
+    id: "agr_001",
+    dealership_name: "Taka Cars",
+    representative_name: "Taka",
+    address: "Shibuya, Tokyo",
+    phone: "+81-90-1111-2222",
+    email: "dealership@takacars.jp",
+    license_number: "TK-2025-118",
+    service_fee_amount: null,
+    admin_notes: "High volume partner.",
+    status: "signed",
+    agreement_url: "/SignAgreement/agr_001",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40).toISOString(),
+    signed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 35).toISOString(),
+  },
+  {
+    id: "agr_002",
+    dealership_name: "Ok Motors",
+    representative_name: "Ok",
+    address: "",
+    phone: "",
+    email: "ops@okmotors.jp",
+    license_number: "",
+    service_fee_amount: 200,
+    admin_notes: "",
+    status: "pending_signature",
+    agreement_url: "/SignAgreement/agr_002",
+    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    signed_at: null,
+  },
+];
+
+function statusBadgeClass(status: AgreementStatus) {
   if (status === "signed") return "bg-emerald-100 text-emerald-700";
   if (status === "pending_signature") return "bg-yellow-100 text-yellow-700";
   if (status === "cancelled") return "bg-red-100 text-red-700";
@@ -120,11 +152,14 @@ export default function DealershipAgreementManagerUI() {
         address: formData.address.trim() || undefined,
         phone: formData.phone.trim() || undefined,
         email: formData.email.trim(),
-        license_number: formData.license_number.trim() || undefined,
-        // Only send if non-empty; API/Prisma accepts Decimal as string
-        service_fee_amount: formData.service_fee_amount.trim() || undefined,
-        admin_notes: formData.admin_notes.trim() || undefined,
-      });
+        license_number: formData.license_number.trim() || null,
+        service_fee_amount: Number.isFinite(fee as number) ? fee : null,
+        admin_notes: formData.admin_notes.trim() || null,
+        status: "draft",
+        agreement_url: `/SignAgreement/${id}`,
+        created_date: new Date().toISOString(),
+        signed_at: null,
+      };
 
       setShowCreateModal(false);
       resetForm();
@@ -409,7 +444,7 @@ export default function DealershipAgreementManagerUI() {
         <div className="grid gap-4">
           {agreements.map((a) => {
             const viewHref =
-              a?.status === "signed"
+              a.status === "signed"
                 ? `/ViewDealershipAgreement/${a.id}`
                 : a.agreement_url ?? `/SignAgreement?id=${a.id}`;
 

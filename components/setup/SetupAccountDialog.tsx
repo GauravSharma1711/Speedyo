@@ -1,5 +1,6 @@
+"use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -7,56 +8,107 @@ import { Input } from "@/components/ui/Input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
-import { 
-  X, 
-  CheckCircle, 
-  Circle, 
-  Upload, 
-  User, 
-  MapPin, 
-  Camera,
-  Loader2
-} from "lucide-react";
-import { UserEntity, PublicUser, UploadFile } from "@/api/entities";
+import { useToast } from "@/components/ui/UseToast";
+import { X, CheckCircle, Circle, Upload, User, MapPin, Camera, Loader2 } from "lucide-react";
 
-export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdate }: { user: any, userDisplay: any, onClose: () => void, onUpdate: () => void }) {
-  const [setupData, setSetupData] = useState({
+import { useProfileUpdateStore } from "@/store/profile/profileUpdate";
+import { useSession } from "next-auth/react";
+
+type SetupData = {
+  full_name: string;
+  location: string;
+  profile_image: string; 
+};
+
+type Props = {
+  user: {
+    id?: string;
+    email?: string;
+    full_name?: string;
+    location?: string;
+    profile_image?: string;
+    user_type?: string;
+    verified?: boolean;
+  };
+  userDisplay?: Partial<SetupData> | null;
+  onClose: () => void;
+  onUpdate: () => void;
+};
+
+type StepId = "profile_picture" | "user_name" | "location";
+
+export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdate }: Props) {
+  const { toast } = useToast();
+  const { save } = useProfileUpdateStore();
+  const { update } = useSession();
+
+  const [setupData, setSetupData] = useState<SetupData>(() => ({
     full_name: userDisplay?.full_name || user?.full_name || "",
     location: userDisplay?.location || user?.location || "",
-    profile_image: userDisplay?.profile_image || user?.profile_image || ""
-  });
+    profile_image: userDisplay?.profile_image || user?.profile_image || "",
+  }));
+
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeStep, setActiveStep] = useState<string | null>(null);
+  const [activeStep, setActiveStep] = useState<StepId | null>(null);
 
-  // Calculate completion status
-  const steps = [
-    {
-      id: 'profile_picture',
-      label: 'Add Profile Picture',
-      icon: Camera,
-      completed: !!setupData.profile_image,
-      description: 'Help others recognize you'
-    },
-    {
-      id: 'user_name', 
-      label: 'Set Your Name',
-      icon: User,
-      completed: setupData.full_name && setupData.full_name !== user?.email?.split('@')[0],
-      description: 'Choose how you want to be known'
-    },
-    {
-      id: 'location',
-      label: 'Add Location',
-      icon: MapPin,
-      completed: !!setupData.location,
-      description: 'See vehicles in your area'
-    }
-  ];
+  const emailName = useMemo(() => user?.email?.split("@")[0] || "", [user?.email]);
 
-  const completedCount = steps.filter(step => step.completed).length;
+  const steps = useMemo(() => {
+    return [
+      {
+        id: "profile_picture" as const,
+        label: "Add Profile Picture",
+        icon: Camera,
+        completed: Boolean(setupData.profile_image),
+        description: "Help others recognize you",
+      },
+      {
+        id: "user_name" as const,
+        label: "Set Your Name",
+        icon: User,
+        completed: Boolean(setupData.full_name.trim()) && setupData.full_name.trim() !== emailName,
+        description: "Choose how you want to be known",
+      },
+      {
+        id: "location" as const,
+        label: "Add Location",
+        icon: MapPin,
+        completed: Boolean(setupData.location.trim()),
+        description: "See vehicles in your area",
+      },
+    ];
+  }, [setupData.full_name, setupData.location, setupData.profile_image, emailName]);
+
+  const completedCount = steps.filter((s) => s.completed).length;
   const progressPercentage = (completedCount / steps.length) * 100;
   const isFullyComplete = completedCount === steps.length;
+
+  const initial = useMemo(() => {
+    return {
+      full_name: (userDisplay?.full_name || user?.full_name || "").trim(),
+      location: (userDisplay?.location || user?.location || "").trim(),
+      profile_image: userDisplay?.profile_image || user?.profile_image || "",
+    };
+  }, [userDisplay?.full_name, userDisplay?.location, userDisplay?.profile_image, user?.full_name, user?.location, user?.profile_image]);
+
+  const refreshSessionNameImage = async () => {
+    const meRes = await fetch("/api/user/me");
+    if (!meRes.ok) throw new Error("Failed to refresh session user");
+    const meJson = await meRes.json();
+    const u = meJson.user;
+
+    await update({
+      user: {
+        full_name: u?.full_name,
+        image: u?.profile_image,
+        location: u?.location,
+        setup_completed: u?.setup_completed,
+        user_type: u?.user_type,
+      } as any,
+    });
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,76 +116,95 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
 
     setIsUploading(true);
     try {
-      const { file_url } = await UploadFile({ file });
-      setSetupData(prev => ({ ...prev, profile_image: file_url }));
+      setSelectedImageFile(file);
+      const url = URL.createObjectURL(file);
+      setSetupData((prev) => ({ ...prev, profile_image: url }));
+      toast({ title: "Photo selected", description: "Click Save to upload." });
     } catch (error) {
-      console.error("Profile image upload failed", error);
-      alert("Failed to upload image. Please try again.");
+      console.error("Profile image preview failed", error);
+      toast({ title: "Upload failed", description: "Could not preview image.", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
     }
-    setIsUploading(false);
   };
 
-  const handleSaveStep = async (stepId: string) => {
+  const handleSaveStep = async (stepId: StepId) => {
+    if (isSaving) return;
+
+    const nextFullName = setupData.full_name.trim();
+    const nextLocation = setupData.location.trim();
+
+    const nameChanged = nextFullName !== initial.full_name;
+    const locationChanged = nextLocation !== initial.location;
+    const imageChanged = selectedImageFile !== null;
+
+    const input: {
+      full_name?: string;
+      location?: string;
+      profile_image?: File | null;
+    } = {};
+
+    if (stepId === "user_name" && nameChanged) input.full_name = nextFullName;
+    if (stepId === "location" && locationChanged) input.location = nextLocation;
+    if (stepId === "profile_picture" && imageChanged) input.profile_image = selectedImageFile;
+
+    if (Object.keys(input).length === 0) {
+      toast({ title: "No changes", description: "Nothing to save for this step." });
+      setActiveStep(null);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Update User entity
-      await UserEntity.updateMyUserData(setupData);
-      
-      // Update or create PublicUser entity
-      const publicProfiles = await PublicUser.filter({ user_id: user.id });
-      if (publicProfiles.length > 0) {
-        await PublicUser.update(publicProfiles[0].id, setupData);
-      } else {
-        await PublicUser.create({
-          user_id: user.id,
-          ...setupData,
-          user_type: user.user_type || "guest",
-          verified: user.verified || false
-        });
+      await save(input);
+
+      if (stepId === "user_name" || stepId === "profile_picture") {
+        await refreshSessionNameImage();
       }
-      
+
+      toast({ title: "Saved", description: "Updated successfully." });
       setActiveStep(null);
-      onUpdate(); // Refresh user data in parent
-    } catch (error) {
+      onUpdate();
+    } catch (error: any) {
       console.error("Failed to save setup data:", error);
-      alert("Failed to save. Please try again.");
+      toast({ title: "Failed", description: error?.message ?? "Failed to save. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const handleCompleteSetup = async () => {
+    if (isSaving) return;
+
     setIsSaving(true);
     try {
-      // Mark setup as completed on the main User record
-      await UserEntity.updateMyUserData({ 
-        setup_completed: true 
-      });
-      onUpdate(); // CRITICAL: Refresh the parent component's state to get the new `setup_completed` flag
-      onClose(); // Close the dialog
-    } catch (error) {
+      await save({ setup_completed: true } as any);
+      await refreshSessionNameImage();
+      toast({ title: "Setup complete", description: "Account setup marked complete." });
+      onUpdate();
+      onClose();
+    } catch (error: any) {
       console.error("Failed to complete setup:", error);
-      alert("Failed to complete setup. Please try again.");
+      toast({ title: "Failed", description: error?.message ?? "Failed to complete setup. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const renderStepEditor = () => {
     if (!activeStep) return null;
+    const step = steps.find((s) => s.id === activeStep);
+    if (!step) return null;
 
-    const step = steps.find(s => s.id === activeStep);
-    
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mt-4 p-4 bg-slate-50 rounded-lg border"
-      >
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 bg-slate-50 rounded-lg border">
         <h4 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-          {step?.icon && <step.icon className="w-4 h-4" />}
-          {step?.label}
+          <step.icon className="w-4 h-4" />
+          {step.label}
         </h4>
-        
-        {activeStep === 'profile_picture' && (
+
+        {activeStep === "profile_picture" ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Avatar className="w-16 h-16">
@@ -143,86 +214,77 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <Button asChild variant="outline" disabled={isUploading}>
+                <Button asChild variant="outline" disabled={isUploading || isSaving}>
                   <label htmlFor="setup-profile-upload" className="cursor-pointer">
                     <Upload className="w-4 h-4 mr-2" />
-                    {setupData.profile_image ? 'Change Photo' : 'Upload Photo'}
-                    <input 
+                    {setupData.profile_image ? "Change Photo" : "Upload Photo"}
+                    <input
                       id="setup-profile-upload"
                       type="file"
                       className="sr-only"
                       onChange={handleImageUpload}
                       accept="image/*"
-                      disabled={isUploading}
+                      disabled={isUploading || isSaving}
                     />
                   </label>
                 </Button>
               </div>
             </div>
+
             <div className="flex gap-2">
-              <Button 
-                onClick={() => handleSaveStep('profile_picture')}
-                disabled={isSaving || !setupData.profile_image}
-                size="sm"
-              >
+              <Button onClick={() => handleSaveStep("profile_picture")} disabled={isSaving || !setupData.profile_image} size="sm">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Save
               </Button>
-              <Button variant="outline" onClick={() => setActiveStep(null)} size="sm">
+              <Button variant="outline" onClick={() => setActiveStep(null)} size="sm" disabled={isSaving}>
                 Cancel
               </Button>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {activeStep === 'user_name' && (
+        {activeStep === "user_name" ? (
           <div className="space-y-3">
             <Input
               value={setupData.full_name}
-              onChange={(e) => setSetupData(prev => ({ ...prev, full_name: e.target.value }))}
+              onChange={(e) => setSetupData((prev) => ({ ...prev, full_name: e.target.value }))}
               placeholder="Enter your preferred name"
+              disabled={isSaving}
             />
             <div className="flex gap-2">
-              <Button 
-                onClick={() => handleSaveStep('user_name')}
-                disabled={isSaving || !setupData.full_name.trim()}
-                size="sm"
-              >
+              <Button onClick={() => handleSaveStep("user_name")} disabled={isSaving || !setupData.full_name.trim()} size="sm">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Save
               </Button>
-              <Button variant="outline" onClick={() => setActiveStep(null)} size="sm">
+              <Button variant="outline" onClick={() => setActiveStep(null)} size="sm" disabled={isSaving}>
                 Cancel
               </Button>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {activeStep === 'location' && (
+        {activeStep === "location" ? (
           <div className="space-y-3">
             <Input
               value={setupData.location}
-              onChange={(e) => setSetupData(prev => ({ ...prev, location: e.target.value }))}
+              onChange={(e) => setSetupData((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="City, State/Prefecture, Country"
+              disabled={isSaving}
             />
             <p className="text-xs text-slate-500">
               This helps us show you vehicles in your area and connect you with local sellers.
             </p>
             <div className="flex gap-2">
-              <Button 
-                onClick={() => handleSaveStep('location')}
-                disabled={isSaving || !setupData.location.trim()}
-                size="sm"
-              >
+              <Button onClick={() => handleSaveStep("location")} disabled={isSaving || !setupData.location.trim()} size="sm">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Save
               </Button>
-              <Button variant="outline" onClick={() => setActiveStep(null)} size="sm">
+              <Button variant="outline" onClick={() => setActiveStep(null)} size="sm" disabled={isSaving}>
                 Cancel
               </Button>
             </div>
           </div>
-        )}
+        ) : null}
       </motion.div>
     );
   };
@@ -243,23 +305,22 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
               </div>
               Setup Your Account
             </CardTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} disabled={isSaving}>
               <X className="w-4 h-4" />
             </Button>
           </div>
+
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-600">
                 {completedCount} of {steps.length} completed
               </span>
-              <span className="font-semibold text-blue-600">
-                {Math.round(progressPercentage)}%
-              </span>
+              <span className="font-semibold text-blue-600">{Math.round(progressPercentage)}%</span>
             </div>
-            <Progress value={progressPercentage as number} className="h-2" />
+            <Progress value={progressPercentage} className="h-2" />
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-3">
           {steps.map((step) => (
             <div key={step.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
@@ -270,42 +331,29 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
                   <Circle className="w-5 h-5 text-slate-400" />
                 )}
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <span className={`font-medium ${step.completed ? 'text-emerald-700' : 'text-slate-700'}`}>
+                  <span className={`font-medium ${step.completed ? "text-emerald-700" : "text-slate-700"}`}>
                     {step.label}
                   </span>
-                  {step.completed && (
-                    <Badge className="bg-emerald-100 text-emerald-800 text-xs">
-                      Done
-                    </Badge>
-                  )}
+                  {step.completed ? <Badge className="bg-emerald-100 text-emerald-800 text-xs">Done</Badge> : null}
                 </div>
                 <p className="text-sm text-slate-500">{step.description}</p>
               </div>
-              
-              {!step.completed && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setActiveStep(step.id)}
-                  disabled={activeStep === step.id}
-                >
-                  {activeStep === step.id ? 'Editing...' : 'Setup'}
+
+              {!step.completed ? (
+                <Button variant="outline" size="sm" onClick={() => setActiveStep(step.id)} disabled={activeStep === step.id || isSaving}>
+                  {activeStep === step.id ? "Editing..." : "Setup"}
                 </Button>
-              )}
+              ) : null}
             </div>
           ))}
 
           {renderStepEditor()}
 
-          {isFullyComplete && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200"
-            >
+          {isFullyComplete ? (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="w-5 h-5 text-emerald-500" />
                 <span className="font-semibold text-emerald-800">All Set!</span>
@@ -313,22 +361,18 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
               <p className="text-sm text-emerald-700 mb-3">
                 Your profile is ready! You can now enjoy the full Speedio experience.
               </p>
-              <Button
-                onClick={handleCompleteSetup}
-                className="w-full bg-emerald-500 hover:bg-emerald-600"
-                disabled={isSaving}
-              >
+              <Button onClick={handleCompleteSetup} className="w-full bg-emerald-500 hover:bg-emerald-600" disabled={isSaving}>
                 {isSaving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     Completing...
                   </>
                 ) : (
-                  'Complete Setup'
+                  "Complete Setup"
                 )}
               </Button>
             </motion.div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </motion.div>

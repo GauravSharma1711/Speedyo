@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   AlertCircle,
@@ -10,6 +10,7 @@ import {
   Search,
   Star,
   User as UserIcon,
+  Loader2,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -33,15 +34,8 @@ import {
   DialogFooter,
 } from "@/components/ui/Dialog";
 
-type FeedbackStatus = "new" | "reviewed" | "in_progress" | "resolved";
-type FeedbackCategory =
-  | "general"
-  | "marketplace"
-  | "feed"
-  | "messaging"
-  | "managed_sales"
-  | "dashboard"
-  | "other";
+import { useFeedbackStore } from "@/store/admin/feedback";
+import type { FeedbackCategory, FeedbackStatus } from "@/services/admin/feedbackServices";
 
 type FeedbackRow = {
   id: string;
@@ -56,83 +50,72 @@ type FeedbackRow = {
   admin_notes?: string | null;
 };
 
-const MOCK_FEEDBACK: FeedbackRow[] = [
-  {
-    id: "fb_001",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    user_name: "Yuki Tanaka",
-    user_email: "yuki@example.com",
-    satisfaction_rating: 4,
-    category: "marketplace",
-    feedback_text: "Search filters are good, but need more sorting options.",
-    status: "new",
-    admin_notes: null,
-  },
-  {
-    id: "fb_002",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(),
-    user_name: "Tanmay Ahuja",
-    user_email: "tanmay@example.com",
-    satisfaction_rating: 5,
-    category: "managed_sales",
-    feedback_text: "Managed sales flow is smooth. Great UI.",
-    status: "reviewed",
-    admin_notes: "Good signal—keep as testimonial candidate.",
-  },
-  {
-    id: "fb_003",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 60).toISOString(),
-    user_name: null,
-    user_email: null,
-    satisfaction_rating: 2,
-    category: "messaging",
-    feedback_text: "Messages page sometimes feels slow.",
-    status: "in_progress",
-    admin_notes: "Investigate performance (list virtualization).",
-  },
-];
-
 export default function FeedbackManagementUI() {
-  const [feedbackList, setFeedbackList] = useState<FeedbackRow[]>(MOCK_FEEDBACK);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | FeedbackStatus>("all");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | FeedbackCategory>("all");
+  const {
+    items,
+    isLoading,
+    error,
+    fetch,
+    update,
+    fetchStats,
+    search,
+    statusFilter,
+    categoryFilter,
+    setSearch,
+    setStatusFilter,
+    setCategoryFilter,
+    totalAll,
+    totalNew,
+    avgRatingAll,
+  } = useFeedbackStore();
 
+  const [searchInput, setSearchInput] = useState(search);
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackRow | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
   const [newStatus, setNewStatus] = useState<FeedbackStatus>("new");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const filteredFeedback = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
+  useEffect(() => {
+    void fetchStats();
+  }, [fetchStats]);
 
-    return feedbackList.filter((f) => {
-      const matchesSearch =
-        !q ||
-        (f.user_name ?? "").toLowerCase().includes(q) ||
-        (f.user_email ?? "").toLowerCase().includes(q) ||
-        (f.feedback_text ?? "").toLowerCase().includes(q);
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
-      const matchesStatus = statusFilter === "all" || f.status === statusFilter;
-      const matchesCategory = categoryFilter === "all" || f.category === categoryFilter;
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (searchInput !== search) setSearch(searchInput);
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [searchInput, search, setSearch]);
 
-      return matchesSearch && matchesStatus && matchesCategory;
-    });
-  }, [feedbackList, searchTerm, statusFilter, categoryFilter]);
+  useEffect(() => {
+    void fetch();
+  }, [fetch, search, statusFilter, categoryFilter]);
+
+  const feedbackList: FeedbackRow[] = useMemo(() => {
+    return items.map((it) => ({
+      id: it.id,
+      created_date: it.createdAt,
+      user_name: it.user_name,
+      user_email: it.user_email,
+      satisfaction_rating: it.satisfaction_rating,
+      category: it.category,
+      feedback_text: it.feedback_text,
+      status: it.status,
+      admin_notes: it.admin_notes,
+    }));
+  }, [items]);
 
   const stats = useMemo(() => {
-    const total = feedbackList.length;
-    const newCount = feedbackList.filter((f) => f.status === "new").length;
-    const avgRating =
-      feedbackList.length > 0
-        ? (
-            feedbackList.reduce((sum, f) => sum + f.satisfaction_rating, 0) /
-            feedbackList.length
-          ).toFixed(1)
-        : "0";
+    const total = totalAll;
+    const newCount = totalNew;
+    const avgRating = avgRatingAll;
 
     return { total, newCount, avgRating };
-  }, [feedbackList]);
+  }, [avgRatingAll, totalAll, totalNew]);
 
   const getStatusBadge = (status: FeedbackStatus) => {
     const statusConfig: Record<
@@ -193,20 +176,17 @@ export default function FeedbackManagementUI() {
     setShowDetailsModal(true);
   };
 
-  const handleUpdateFeedback = () => {
+  const handleUpdateFeedback = async () => {
     if (!selectedFeedback) return;
-
-    setFeedbackList((prev) =>
-      prev.map((f) =>
-        f.id === selectedFeedback.id
-          ? { ...f, status: newStatus, admin_notes: adminNotes || null }
-          : f,
-      ),
-    );
-
-    setShowDetailsModal(false);
-    setSelectedFeedback(null);
-    setAdminNotes("");
+    setIsSaving(true);
+    try {
+      await update(selectedFeedback.id, { status: newStatus, admin_notes: adminNotes || null });
+      setShowDetailsModal(false);
+      setSelectedFeedback(null);
+      setAdminNotes("");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -268,15 +248,15 @@ export default function FeedbackManagementUI() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <Input
                   placeholder="Search by name, email, or feedback text..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="pl-10"
                 />
               </div>
 
               <Select
-                value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as any)}
+                value={statusFilter || "all"}
+                onValueChange={(v) => setStatusFilter(v === "all" ? "" : (v as FeedbackStatus))}
               >
                 <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder="Filter by status" />
@@ -291,8 +271,10 @@ export default function FeedbackManagementUI() {
               </Select>
 
               <Select
-                value={categoryFilter}
-                onValueChange={(v) => setCategoryFilter(v as any)}
+                value={categoryFilter || "all"}
+                onValueChange={(v) =>
+                  setCategoryFilter(v === "all" ? "" : (v as FeedbackCategory))
+                }
               >
                 <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder="Filter by category" />
@@ -311,7 +293,20 @@ export default function FeedbackManagementUI() {
             </div>
 
             <div className="space-y-3">
-              {filteredFeedback.map((feedback) => (
+
+              {isLoading && feedbackList.length === 0 ? (
+                <div className="py-14 flex items-center justify-center text-slate-500">
+                  <div className="inline-flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  </div>
+                </div>
+              ) : null}
+
+              {error ? (
+                <div className="text-sm text-red-600">{error}</div>
+              ) : null}
+
+              {feedbackList.map((feedback) => (
                 <div
                   key={feedback.id}
                   className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
@@ -367,7 +362,7 @@ export default function FeedbackManagementUI() {
                 </div>
               ))}
 
-              {filteredFeedback.length === 0 ? (
+              {!isLoading && feedbackList.length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   <MessageSquare className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p>No feedback found</p>
@@ -465,7 +460,16 @@ export default function FeedbackManagementUI() {
             <Button variant="outline" onClick={() => setShowDetailsModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateFeedback}>Save Changes</Button>
+            <Button onClick={() => void handleUpdateFeedback()} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

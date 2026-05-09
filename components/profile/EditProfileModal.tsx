@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -8,10 +8,13 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/TextArea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { X, Upload, Loader2, User as UserIcon } from "lucide-react";
-import { PublicUser, UploadFile, UserEntity as User } from "@/api/entities";
 
-// Client-side image to WebP converter with size tracking
-const convertImageToWebP = (file: File): Promise<{
+import { useProfileUpdateStore } from "@/store/profile/profileUpdate";
+import { useSession } from "next-auth/react";
+
+const convertImageToWebP = (
+  file: File,
+): Promise<{
   file: File;
   originalSize: number;
   webpSize: number;
@@ -27,33 +30,32 @@ const convertImageToWebP = (file: File): Promise<{
         const canvas = document.createElement("canvas");
         canvas.width = img.width;
         canvas.height = img.height;
+
         const ctx = canvas.getContext("2d");
         ctx?.drawImage(img, 0, 0);
 
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const webpFile = new File(
-              [blob],
-              file.name.replace(/\.[^.]+$/, ".webp"),
-              { type: "image/webp" }
-            );
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject(new Error("Failed to convert image to WebP"));
 
-            const compressionRatio = (
-              (1 - blob.size / originalSize) *
-              100
-            ).toFixed(1);
+            const webpFile = new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
+              type: "image/webp",
+            });
 
-            console.log(`📊 WebP Conversion Stats:
-  Original: ${file.name} (${(originalSize / 1024).toFixed(2)} KB)
-  WebP: ${webpFile.name} (${(blob.size / 1024).toFixed(2)} KB)
-  Compression: ${compressionRatio}% smaller`);
+            const compressionRatio = ((1 - blob.size / originalSize) * 100).toFixed(1);
 
-            resolve({ file: webpFile, originalSize, webpSize: blob.size, compressionRatio });
-          } else {
-            reject(new Error("Failed to convert image to WebP"));
-          }
-        }, "image/webp", 0.85);
+            resolve({
+              file: webpFile,
+              originalSize,
+              webpSize: blob.size,
+              compressionRatio,
+            });
+          },
+          "image/webp",
+          0.85,
+        );
       };
+
       img.onerror = reject;
       img.src = e.target?.result as string;
     };
@@ -63,27 +65,61 @@ const convertImageToWebP = (file: File): Promise<{
   });
 };
 
-interface EditProfileModalProps {
-  user: any;
+type EditProfileModalProps = {
+  user: {
+    id?: string;
+    full_name?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    profile_image?: string | null;
+  };
   onClose: () => void;
   onSave: () => void;
-}
+};
 
-export default function EditProfileModal({
-  user,
-  onClose,
-  onSave,
-}: EditProfileModalProps) {
+export default function EditProfileModal({ user, onClose, onSave }: EditProfileModalProps) {
+  const { isSaving, error, save } = useProfileUpdateStore();
+  const { update } = useSession();
+
   const [formData, setFormData] = useState({
     full_name: user.full_name || "",
     bio: user.bio || "",
     location: user.location || "",
-    profile_image: user.profile_image || "",
   });
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (field: string, value: string) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>(user.profile_image || "");
+
+  const initial = useMemo(() => {
+    return {
+      full_name: (user.full_name ?? "").trim(),
+      bio: (user.bio ?? "").trim(),
+      location: (user.location ?? "").trim(),
+      profile_image: user.profile_image ?? "",
+    };
+  }, [user.full_name, user.bio, user.location, user.profile_image]);
+
+  const nextNormalized = useMemo(() => {
+    return {
+      full_name: formData.full_name.trim(),
+      bio: formData.bio.trim(),
+      location: formData.location.trim(),
+    };
+  }, [formData.full_name, formData.bio, formData.location]);
+
+  const nameChanged = nextNormalized.full_name !== initial.full_name;
+  const bioChanged = nextNormalized.bio !== initial.bio;
+  const locationChanged = nextNormalized.location !== initial.location;
+  const imageChanged = selectedImageFile !== null;
+
+  const isDirty = nameChanged || bioChanged || locationChanged || imageChanged;
+
+  const canSubmit = useMemo(() => {
+    return isDirty && nextNormalized.full_name.length > 0 && !isUploading && !isSaving;
+  }, [isDirty, nextNormalized.full_name, isUploading, isSaving]);
+
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -93,15 +129,15 @@ export default function EditProfileModal({
 
     setIsUploading(true);
     try {
-      // Convert to WebP (smaller) then upload (currently mocked in `api/entities.ts`)
       const { file: webpFile } = await convertImageToWebP(file);
-      const { file_url } = await UploadFile({ file: webpFile });
-      if (!file_url) throw new Error("No file URL returned from upload");
-      handleInputChange("profile_image", file_url);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      console.error("Profile image upload failed", error);
-      alert(`Failed to upload image: ${message}. Please try again.`);
+      setSelectedImageFile(webpFile);
+
+      const url = URL.createObjectURL(webpFile);
+      setPreviewUrl(url);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("Profile image conversion failed", err);
+      alert(`Failed to process image: ${message}`);
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -110,45 +146,41 @@ export default function EditProfileModal({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      // Update "me" (currently logs in mock layer)
-      await User.updateMe({
-        full_name: formData.full_name,
-        bio: formData.bio,
-        location: formData.location,
-        profile_image: formData.profile_image,
-      });
+    if (!canSubmit) return;
 
-      // Update or create public profile
-      const publicProfiles = await PublicUser.filter({ user_id: user.id });
-      if (publicProfiles.length > 0) {
-        await PublicUser.update(publicProfiles[0].id, {
-          full_name: formData.full_name,
-          bio: formData.bio,
-          location: formData.location,
-          profile_image: formData.profile_image,
-        });
-      } else {
-        await PublicUser.create({
-          user_id: user.id,
-          full_name: formData.full_name,
-          bio: formData.bio,
-          location: formData.location,
-          profile_image: formData.profile_image,
-          user_type: user.user_type || "guest",
-          verified: user.verified || false,
-          role: user.role || "user",
+    try {
+      const input: {
+        full_name?: string;
+        bio?: string;
+        location?: string;
+        profile_image?: File | null;
+      } = {};
+
+      if (nameChanged) input.full_name = nextNormalized.full_name;
+      if (bioChanged) input.bio = nextNormalized.bio;
+      if (locationChanged) input.location = nextNormalized.location;
+      if (imageChanged) input.profile_image = selectedImageFile;
+
+      if (Object.keys(input).length === 0) return;
+
+      await save(input);
+
+      if (nameChanged || imageChanged) {
+        const meRes = await fetch("/api/user/me");
+        if (!meRes.ok) throw new Error("Failed to refresh session user");
+        const meJson = await meRes.json();
+        const updatedUser = meJson.user;
+
+        await update({
+          user: {
+            full_name: updatedUser?.full_name ?? nextNormalized.full_name,
+            image: updatedUser?.profile_image ?? undefined,
+          },
         });
       }
 
       onSave();
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      console.error("Failed to update profile:", error);
-      alert(`Failed to update profile: ${message}. Please try again.`);
-    } finally {
-      setIsSubmitting(false);
+    } catch (e) {
     }
   };
 
@@ -170,33 +202,35 @@ export default function EditProfileModal({
         <Card className="bg-white/95 backdrop-blur-md border-0 shadow-2xl">
           <CardHeader className="flex flex-row items-center justify-between pb-4 border-b">
             <CardTitle>Edit Your Profile</CardTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} disabled={isSaving}>
               <X className="w-5 h-5" />
             </Button>
           </CardHeader>
+
           <CardContent className="p-6">
+            {error ? (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">
+                {error}
+              </div>
+            ) : null}
+
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Avatar Upload */}
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Avatar className="w-24 h-24">
-                    <AvatarImage src={formData.profile_image} />
+                    <AvatarImage src={previewUrl} />
                     <AvatarFallback className="text-3xl bg-slate-200">
-                      {isUploading ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <UserIcon />
-                      )}
+                      {isUploading || isSaving ? <Loader2 className="animate-spin" /> : <UserIcon />}
                     </AvatarFallback>
                   </Avatar>
+
                   <Button
                     size="icon"
                     variant="secondary"
                     asChild
                     className="absolute bottom-0 right-0 rounded-full cursor-pointer"
-                    disabled={isUploading}
+                    disabled={isUploading || isSaving}
                   >
-                    {/* Next.js: <label> inside asChild works fine; no changes needed */}
                     <label htmlFor="profile-image-upload">
                       <Upload className="w-4 h-4" />
                       <input
@@ -205,69 +239,59 @@ export default function EditProfileModal({
                         className="sr-only"
                         onChange={handleImageSelect}
                         accept="image/*"
-                        disabled={isUploading}
+                        disabled={isUploading || isSaving}
                       />
                     </label>
                   </Button>
                 </div>
+
                 <div className="flex-1 space-y-1">
                   <p className="font-semibold text-slate-800">Profile Picture</p>
                   <p className="text-sm text-slate-500">
-                    Upload a new photo. It will be converted to WebP.
+                    Upload a new photo. It will be converted to WebP and saved.
                   </p>
                 </div>
               </div>
 
-              {/* Full Name */}
               <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Full Name
-                </label>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Full Name</label>
                 <Input
                   value={formData.full_name}
                   onChange={(e) => handleInputChange("full_name", e.target.value)}
                   placeholder="Your full name"
                   required
+                  disabled={isSaving}
                 />
               </div>
 
-              {/* Location */}
               <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Location
-                </label>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Location</label>
                 <Input
                   value={formData.location}
                   onChange={(e) => handleInputChange("location", e.target.value)}
                   placeholder="City, State"
+                  disabled={isSaving}
                 />
               </div>
 
-              {/* Bio */}
               <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">
-                  Bio
-                </label>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Bio</label>
                 <Textarea
                   value={formData.bio}
                   onChange={(e) => handleInputChange("bio", e.target.value)}
                   placeholder="Tell us a little about yourself"
                   className="h-24"
+                  disabled={isSaving}
                 />
               </div>
 
-              {/* Actions */}
               <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                >
+                <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting || isUploading}>
-                  {isSubmitting ? (
+
+                <Button type="submit" disabled={!canSubmit}>
+                  {isSaving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Saving...

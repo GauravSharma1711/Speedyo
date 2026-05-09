@@ -17,7 +17,7 @@ export type SignUpData = {
 };
 
 export type ResetPasswordData = {
-  password: string;
+  token: string;
   newPassword: string;
 };
 
@@ -103,7 +103,10 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           set({
             isLoading: false,
-            error: error?.response?.data?.message ?? "Failed to send reset email",
+            error:
+              error?.response?.data?.message ??
+              error?.response?.data?.error ??
+              "Failed to send reset email",
           });
           throw error;
         }finally{
@@ -147,7 +150,10 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           set({
             isLoading: false,
-            error: error?.response?.data?.message ?? "Password reset failed",
+            error:
+              error?.response?.data?.message ??
+              error?.response?.data?.error ??
+              "Password reset failed",
           });
           throw error;
         }
