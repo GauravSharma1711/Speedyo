@@ -2367,7 +2367,7 @@ export default function RequestFormUI(props: Props) {
           >
             <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-500 to-emerald-500">
               <div>
-                <h2 className="text-2xl font-bold text-white">Request Managed Sale Service (UI-only)</h2>
+                <h2 className="text-2xl font-bold text-white">Request Managed Sale Service</h2>
                 <p className="text-white/90 mt-1">
                   Step {currentStep} of {steps.length}: {steps[currentStep - 1].title}
                 </p>

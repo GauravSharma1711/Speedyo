@@ -12,6 +12,8 @@ import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { motion } from "framer-motion";
 import { CheckCircle, Send, Phone, Mail, MapPin, Loader2 } from "lucide-react";
 import Footer from "@/components/layout/Footer";
+import { useSupportTicketSubmitStore } from "@/store/supportTicket";
+import type { SupportTicketType } from "@/services/supportTicketServices";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface FormData {
@@ -19,7 +21,7 @@ interface FormData {
   email: string;
   subject: string;
   message: string;
-  ticket_type: string;
+  ticket_type: SupportTicketType;
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -32,10 +34,11 @@ export default function ContactPage() {
     message: "",
     ticket_type: "general",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(null);
   const [createdTicketId, setCreatedTicketId] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState<string>("");
+
+  const { submit, isSubmitting, error } = useSupportTicketSubmitStore();
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -43,7 +46,6 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setSubmitStatus(null);
     setCreatedTicketId(null);
 
@@ -51,28 +53,22 @@ export default function ContactPage() {
       const emailForReceipt = formData.email;
       setSubmittedEmail(emailForReceipt);
 
-      // TODO: Replace with your real API call
-      // e.g. POST to /api/contact which creates a support ticket + sends emails
-      // await fetch("/api/contact", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // });
+      const ticket = await submit({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        ticket_type: formData.ticket_type,
+        priority: "medium",
+      });
 
-      console.log("[ submitting (dummy):", formData);
-
-      await new Promise((res) => setTimeout(res, 900));
-      const dummyId = `TICKET-${Date.now().toString(36).toUpperCase()}`;
-      console.log(" dummy ticket id:", dummyId);
-      setCreatedTicketId(dummyId);
+      setCreatedTicketId(ticket.id);
 
       setSubmitStatus("success");
       setFormData({ name: "", email: "", subject: "", message: "", ticket_type: "general" });
     } catch (err) {
       console.error("Support ticket submission failed:", err);
       setSubmitStatus("error");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -213,7 +209,9 @@ export default function ContactPage() {
                       </label>
                       <Select
                         value={formData.ticket_type}
-                        onValueChange={(value) => handleInputChange("ticket_type", value)}
+                        onValueChange={(value) =>
+                          handleInputChange("ticket_type", value as SupportTicketType)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -257,7 +255,7 @@ export default function ContactPage() {
                     {submitStatus === "error" && (
                       <Alert variant="destructive">
                         <AlertDescription>
-                          Failed to send message. Please try again later.
+                          {error || "Failed to send message. Please try again later."}
                         </AlertDescription>
                       </Alert>
                     )}

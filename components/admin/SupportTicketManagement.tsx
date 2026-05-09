@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
@@ -20,9 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/UseToast";
-
-type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
-type TicketType = "general" | "payments" | "technical" | "other";
+import { Loader2 } from "lucide-react";
+import { useSupportTicketsStore } from "@/store/admin/supportTickets";
+import type { TicketStatus, TicketType, SupportTicketApi } from "@/services/admin/supportTicketServices";
 
 type SupportTicketRow = {
   id: string;
@@ -34,39 +34,6 @@ type SupportTicketRow = {
   ticket_type: TicketType;
   status: TicketStatus;
 };
-
-const MOCK_TICKETS: SupportTicketRow[] = [
-  {
-    id: "t_1001",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    name: "Yuki Tanaka",
-    email: "yuki@example.com",
-    subject: "Can't upload documents",
-    message: "Business license upload gets stuck at 0%. Tried two browsers.",
-    ticket_type: "technical",
-    status: "open",
-  },
-  {
-    id: "t_1002",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
-    name: "Tanmay Ahuja",
-    email: "tanmay@example.com",
-    subject: "Subscription question",
-    message: "When does the free month end and how do I upgrade to tier2?",
-    ticket_type: "payments",
-    status: "in_progress",
-  },
-  {
-    id: "t_1003",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
-    name: "Hiro Sato",
-    email: "hiro@example.com",
-    subject: "Account verification",
-    message: "Verification status still pending after 3 days.",
-    ticket_type: "general",
-    status: "resolved",
-  },
-];
 
 function statusBadge(status: TicketStatus) {
   const colors: Record<TicketStatus, string> = {
@@ -85,9 +52,25 @@ function statusBadge(status: TicketStatus) {
 
 export default function SupportTicketManagementUI() {
   const { toast } = useToast();
+  const { items, isLoading, fetch, updateStatus } = useSupportTicketsStore();
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
-  const [tickets, setTickets] = useState<SupportTicketRow[]>(MOCK_TICKETS);
-  const [isLoading] = useState(false);
+  useEffect(() => {
+    void fetch();
+  }, [fetch]);
+
+  const tickets: SupportTicketRow[] = useMemo(() => {
+    return items.map((t: SupportTicketApi) => ({
+      id: t.id,
+      created_date: t.createdAt,
+      name: t.name,
+      email: t.email,
+      subject: t.subject,
+      message: t.message,
+      ticket_type: t.ticket_type,
+      status: t.status,
+    }));
+  }, [items]);
 
   const sortedTickets = useMemo(() => {
     return [...tickets].sort(
@@ -95,20 +78,24 @@ export default function SupportTicketManagementUI() {
     );
   }, [tickets]);
 
-  const handleStatusChange = (ticket: SupportTicketRow, newStatus: TicketStatus) => {
-    setTickets((prev) =>
-      prev.map((t) => (t.id === ticket.id ? { ...t, status: newStatus } : t)),
-    );
-
-    toast({
-      title: "Status Updated",
-      description: `Ticket #${ticket.id} → ${newStatus.replace("_", " ")}. Email/API wiring pending.`,
-    });
+  const handleStatusChange = async (ticket: SupportTicketRow, newStatus: TicketStatus) => {
+    setIsUpdating(ticket.id);
+    try {
+      await updateStatus(ticket.id, newStatus);
+      toast({
+        title: "Status Updated",
+        description: `Ticket #${ticket.id} status changed to ${newStatus.replace("_", " ")}. Email sent to user.`,
+      });
+    } catch (_e) {
+      toast({
+        title: "Update failed",
+        description: "Could not update ticket status. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(null);
+    }
   };
-
-  if (isLoading) {
-    return <div className="p-8 text-center">Loading support tickets...</div>;
-  }
 
   return (
     <Card className="bg-white shadow-md">
@@ -117,7 +104,8 @@ export default function SupportTicketManagementUI() {
       </CardHeader>
 
       <CardContent>
-        <Table>
+        <div>
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Ticket</TableHead>
@@ -128,6 +116,16 @@ export default function SupportTicketManagementUI() {
           </TableHeader>
 
           <TableBody>
+            {isLoading && sortedTickets.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-10">
+                  <div className="flex items-center justify-center text-slate-500">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : null}
+
             {sortedTickets.map((ticket) => (
               <TableRow key={ticket.id}>
                 <TableCell>
@@ -151,6 +149,7 @@ export default function SupportTicketManagementUI() {
                   <div>
                     <Select
                       value={ticket.status}
+                      disabled={isUpdating === ticket.id}
                       onValueChange={(value) =>
                         handleStatusChange(ticket, value as TicketStatus)
                       }
@@ -170,7 +169,7 @@ export default function SupportTicketManagementUI() {
               </TableRow>
             ))}
 
-            {sortedTickets.length === 0 ? (
+            {!isLoading && sortedTickets.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-slate-500 py-10">
                   No support tickets yet.
@@ -178,7 +177,8 @@ export default function SupportTicketManagementUI() {
               </TableRow>
             ) : null}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

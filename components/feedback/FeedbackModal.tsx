@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/TextArea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Star, Send, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useFeedbackSubmitStore } from "@/store/feedback";
+import type { FeedbackCategory } from "@/services/feedbackServices";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface FeedbackModalProps {
@@ -14,24 +16,15 @@ interface FeedbackModalProps {
   onClose: () => void;
 }
 
-// ── Dummy current user (replace with real auth later) ─────────────────────────
-const DUMMY_USER = {
-  id: "user_123",
-  full_name: "John Doe",
-  email: "john@example.com",
-};
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [feedbackText, setFeedbackText] = useState("");
-  const [category, setCategory] = useState("general");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [category, setCategory] = useState<FeedbackCategory>("general");
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // TODO: Replace with real auth (NextAuth, Clerk, etc.)
-  const currentUser = DUMMY_USER;
+  const { submit, reset, isSubmitting } = useFeedbackSubmitStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,34 +38,18 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
-      const feedbackData = {
+      await submit({
         satisfaction_rating: rating,
-        feedback_text: feedbackText,
+        feedback_text: feedbackText.trim(),
         category,
-        user_id: currentUser?.id ?? null,
-        user_email: currentUser?.email ?? null,
-        user_name: currentUser?.full_name ?? "Anonymous",
-      };
-
-      // TODO: Replace with your real API call, e.g.:
-      // await fetch("/api/feedback", { method: "POST", body: JSON.stringify(feedbackData) });
-      console.log("Submitting feedback (dummy):", feedbackData);
-      await new Promise((res) => setTimeout(res, 1000)); // Simulate network delay
-
-      // TODO: Replace with real email notification, e.g. via Resend/SendGrid Route Handler:
-      // await fetch("/api/send-feedback-email", { method: "POST", body: JSON.stringify({ rating, feedbackText, category, currentUser }) });
-      console.log("Email notification would be sent to admin (dummy)");
+      });
 
       setSubmitSuccess(true);
       setTimeout(() => handleClose(), 2000);
     } catch (error) {
       console.error("Failed to submit feedback:", error);
-      alert("Failed to submit feedback. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      alert(error instanceof Error ? error.message : "Failed to submit feedback. Please try again.");
     }
   };
 
@@ -82,6 +59,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     setFeedbackText("");
     setCategory("general");
     setSubmitSuccess(false);
+    reset();
     onClose();
   };
 
@@ -165,7 +143,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             <label className="text-sm font-semibold text-slate-700 mb-2 block">
               What area is your feedback about?
             </label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={(v) => setCategory(v as FeedbackCategory)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
@@ -194,9 +172,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               required
             />
             <p className="text-xs text-slate-500 mt-2">
-              {currentUser
-                ? "Your feedback will be associated with your account."
-                : "You can submit feedback anonymously."}
+              Your feedback will be associated with your account if you're signed in.
             </p>
           </div>
 

@@ -1,7 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Vehicle } from "@/api/entities";
+import React, { useEffect, useMemo, useState } from "react";
 import { Search, Car, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -11,103 +10,44 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import VehicleCard from "../marketplace/VehicleCard";
 import SearchFilters from "../marketplace/SearchFilters";
+import { useMarketplaceVehiclesStore } from "@/store/marketplace/vehicles";
 
-type MarketplaceVehicle = {
-  id: string;
-  title?: string;
-  make?: string;
-  model?: string;
-  description?: string;
-  condition?: string;
-  fuel_type?: string;
-  location?: string;
-  price?: number;
-  status?: string;
-  featured?: boolean;
-  verified?: boolean;
-  views?: number;
-  created_by_id?: string;
-};
+const SEARCH_DEBOUNCE_MS = 400;
 
 export default function Marketplace() {
-  const [vehicles, setVehicles] = useState<MarketplaceVehicle[]>([]);
-  const [filteredVehicles, setFilteredVehicles] = useState<MarketplaceVehicle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState({
-    make: "",
-    priceRange: "",
-    condition: "",
-    fuelType: "",
-    location: ""
-  });
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    const allVehiclesData = (await Vehicle.list("-created_date", 100)) as MarketplaceVehicle[]; // Fetch all vehicles
-    const filteredByStatus = allVehiclesData.filter(
-      (v) => v.status === "available" || v.status === "unavailable"
-    );
-    setVehicles(filteredByStatus);
-    setFilteredVehicles(filteredByStatus);
-    setIsLoading(false);
-  };
+  const items = useMarketplaceVehiclesStore((s) => s.items);
+  const total = useMarketplaceVehiclesStore((s) => s.total);
+  const isLoading = useMarketplaceVehiclesStore((s) => s.isLoading);
+  const error = useMarketplaceVehiclesStore((s) => s.error);
+  const sort = useMarketplaceVehiclesStore((s) => s.sort);
+  const filters = useMarketplaceVehiclesStore((s) => s.filters);
+  const setFilters = useMarketplaceVehiclesStore((s) => s.setFilters);
+  const setSort = useMarketplaceVehiclesStore((s) => s.setSort);
+  const setSearch = useMarketplaceVehiclesStore((s) => s.setSearch);
+  const fetch = useMarketplaceVehiclesStore((s) => s.fetch);
 
-  const filterVehicles = useCallback(() => {
-    let filtered = vehicles;
-
-    // Search term filter
-    if (searchTerm) {
-      filtered = filtered.filter((vehicle) =>
-        vehicle.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vehicle.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Apply filters
-    if (filters.make) {
-      filtered = filtered.filter((vehicle) => vehicle.make === filters.make);
-    }
-    if (filters.condition) {
-      filtered = filtered.filter((vehicle) => vehicle.condition === filters.condition);
-    }
-    if (filters.fuelType) {
-      filtered = filtered.filter((vehicle) => vehicle.fuel_type === filters.fuelType);
-    }
-    if (filters.location) {
-      filtered = filtered.filter((vehicle) =>
-        vehicle.location?.toLowerCase().includes(filters.location.toLowerCase())
-      );
-    }
-    if (filters.priceRange) {
-      const [min, max] = filters.priceRange.split('-').map(Number);
-      filtered = filtered.filter((vehicle) => {
-        const price = vehicle.price ?? 0;
-        if (max) {
-          return price >= min && price <= max;
-        }
-        return price >= min;
-      });
-    }
-
-    setFilteredVehicles(filtered);
-  }, [vehicles, searchTerm, filters]);
+  const vehiclesForMakeOptions = useMemo(() => items, [items]);
 
   useEffect(() => {
-    loadData();
-    // Set initial filter visibility based on screen size, but don't add a resize listener
-    // that would interfere with the mobile keyboard.
-    if (window.innerWidth >= 768) { // md breakpoint
+    fetch();
+    if (window.innerWidth >= 768) {
       setIsFiltersOpen(true);
     }
   }, []);
 
   useEffect(() => {
-    filterVehicles();
-  }, [filterVehicles]);
+    const t = setTimeout(() => {
+      setSearch(searchTerm);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [searchTerm, setSearch]);
+
+  useEffect(() => {
+    fetch();
+  }, [filters, sort, fetch]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30 p-2 sm:p-4">
@@ -127,7 +67,11 @@ export default function Marketplace() {
                   className="pl-10 h-12 text-base sm:text-lg border-slate-200 focus:ring-2 focus:ring-blue-500" />
 
               </div>
-              <Button className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 h-12 px-6 sm:px-8">
+              <Button
+                className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 h-12 px-6 sm:px-8"
+                onClick={() => fetch()}
+                disabled={isLoading}
+              >
                 <Search className="w-5 h-5 mr-2" />
                 Search
               </Button>
@@ -136,12 +80,17 @@ export default function Marketplace() {
         </Card>
 
         {/* Filters */}
-        <SearchFilters filters={filters} setFilters={setFilters} vehicles={vehicles} isOpen={isFiltersOpen} />
+        <SearchFilters
+          filters={filters}
+          setFilters={setFilters}
+          vehicles={vehiclesForMakeOptions}
+          isOpen={isFiltersOpen}
+        />
 
         {/* Results Summary & Filter Toggle for Mobile */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <p className="text-slate-600 text-sm sm:text-base">
-            Showing {filteredVehicles.length} of {vehicles.length} vehicles
+            Showing {items.length} of {total} vehicles
           </p>
           <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Button
@@ -152,7 +101,7 @@ export default function Marketplace() {
               <Filter className="w-4 h-4" />
               <span>{isFiltersOpen ? 'Hide' : 'Show'} Filters</span>
             </Button>
-            <Select defaultValue="recent">
+            <Select value={sort} onValueChange={(v) => setSort(v as any)}>
               <SelectTrigger className="flex-1 sm:w-48 h-10 text-sm">
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
@@ -167,11 +116,16 @@ export default function Marketplace() {
           </div>
         </div>
 
+        {error && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+            {error}
+          </div>
+        )}
 
         {/* Vehicle Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence>
-            {filteredVehicles.map((vehicle, index) =>
+            {items.map((vehicle, index) =>
               <motion.div
                 key={vehicle.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -188,7 +142,7 @@ export default function Marketplace() {
           </AnimatePresence>
         </div>
 
-        {filteredVehicles.length === 0 && !isLoading &&
+        {items.length === 0 && !isLoading &&
           <div className="text-center py-16">
             <Car className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-slate-600 mb-2">No vehicles found</h3>

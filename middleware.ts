@@ -19,7 +19,8 @@ export async function middleware(request:NextRequest) {
         url.pathname.startsWith('/Dashboard') ||
         url.pathname.startsWith('/Feed') ||
         url.pathname.startsWith('/Messages') ||
-        url.pathname.startsWith('/Managed-Sales')   
+        url.pathname.startsWith('/Managed-Sales')  ||
+        url.pathname.startsWith('/Profile') 
     )) {
         return NextResponse.redirect(new URL('/signIn', request.url))
     }

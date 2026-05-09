@@ -79,6 +79,8 @@ model User {
   verificationCodeExpiry           DateTime
   isVerified                       Boolean                      @default(false)
   password                         String
+  passwordResetTokenHash           String?
+  passwordResetTokenExpiry         DateTime?
   verification_status              VerificationStatus           @default(prnding_review)
   comments                         Comment[]
   conversations1                   Conversation[]               @relation("ConversationUser1")

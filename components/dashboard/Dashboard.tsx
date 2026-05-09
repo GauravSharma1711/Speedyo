@@ -2,35 +2,58 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { User, Vehicle, Message, ManagedSaleRequest, VehicleEditRequest } from "@/api/entities"; // Add new entities
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import {
   LogIn,
-  Loader2 // Add Loader2
+  Loader2 
 } from "lucide-react";
 
 import GuestDashboard from "../../components/dashboard/GuestDashboard";
 import SellerDashboard from "../../components/dashboard/SellerDashboard";
+import { useRouter } from "next/navigation";
 
-// Helper function to create page URLs
-const createPageUrl = (pageName) => {
-  switch (pageName) {
-    case "Contact":
-      return "/contact"; // Or whatever your contact page URL is
-    // Add other cases for different page names if needed
-    default:
-      return "/";
-  }
+type UserData = {
+  id: string;
+  email: string;
+  user_type?: "private_seller" | "guest" | "dealership";
+  [key: string]: any;
+};
+ 
+type AnyRecord = Record<string, any>;
+
+const User = {
+  me: async (): Promise<UserData> => ({
+    id: "user-1",
+    email: "demo@example.com",
+    user_type: "private_seller",
+  }),
+};
+ 
+const Vehicle = {
+  filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
+};
+ 
+const ManagedSaleRequest = {
+  filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
+};
+ 
+const Message = {
+  filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
+};
+ 
+const VehicleEditRequest = {
+  filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
 };
 
 export default function Dashboard() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [vehicles, setVehicles] = useState([]); // New state
-  const [managedSales, setManagedSales] = useState([]); // New state
-  const [testDrives, setTestDrives] = useState([]); // New state
-  const [editRequests, setEditRequests] = useState([]); // New state
+  const [vehicles, setVehicles] = useState<AnyRecord[]>([]);
+  const [managedSales, setManagedSales] = useState<AnyRecord[]>([]);
+  const [testDrives, setTestDrives] = useState<AnyRecord[]>([]);
+  const [editRequests, setEditRequests] = useState<AnyRecord[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,12 +61,9 @@ export default function Dashboard() {
       try {
         const user = await User.me();
         setCurrentUser(user);
-
-        // Fetch user's data relevant to their role
         const userType = user.user_type || 'guest';
         
         if (userType === 'private_seller' || userType === 'dealership') {
-          // Fetch user's vehicles
           const vehiclesData = await Vehicle.filter({ created_by: user.email }, '-created_date');
           setVehicles(vehiclesData);
 
@@ -102,7 +122,7 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-slate-800 mb-4">Welcome to Your Dashboard</h1>
             <p className="text-slate-600 mb-6">Please log in to access your personalized dashboard and manage your vehicle activities.</p>
             <Button
-              onClick={() => window.location.href = "https://speedio.app/login"}
+              onClick={() => router.push("/signIn")}
               size="lg"
               className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
               <LogIn className="w-5 h-5 mr-2" />
