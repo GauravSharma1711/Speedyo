@@ -44,7 +44,7 @@ const faqs = {
     {
       question: "What are the fees for selling a car?",
       answer:
-        "Private sellers can list a single vehicle for a one-time fee of $50. Dealerships have monthly subscription plans with different listing limits and features. For our Managed Sale service, we add a 6% service fee to your asking price, which is paid by the buyer.",
+        "Private sellers can list a single vehicle for a one-time fee of  ¥50. Dealerships have monthly subscription plans with different listing limits and features. For our Managed Sale service, we add a 6% service fee to your asking price, which is paid by the buyer.",
     },
   ],
 } as const;

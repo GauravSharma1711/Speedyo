@@ -5,6 +5,8 @@ import { sendPurchaseMail } from "@/helpers/purchaseMail";
 import { sendAdminGuestPurchaseNotificationMail } from "@/helpers/sendAdminGuestPurchaseNotificationMail";
 import { randomUUID } from "crypto";
 
+
+
 export async function POST(request: NextRequest) {
   try {
     const { email, fullName, quantity, promoCode, paymentToken } = await request.json();
@@ -25,7 +27,7 @@ export async function POST(request: NextRequest) {
       idempotencyKey: randomUUID(),
       amountMoney: {
         amount: BigInt(totalAmount),
-        currency: "USD",
+        currency: "JPY",
       },
       buyerEmailAddress: email,
       note: `Speedio Guest - ${quantity} vehicle slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,

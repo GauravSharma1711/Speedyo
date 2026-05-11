@@ -98,7 +98,7 @@ export default function OrderSummaryModal({ plan, onClose }: { plan: any, onClos
               
               {isPrivateSeller ? (
                 <>
-                  <p className="text-sm text-slate-500 mt-2">$50 per vehicle slot</p>
+                  <p className="text-sm text-slate-500 mt-2"> ¥50 per vehicle slot</p>
                   
                   <div className="mt-4 space-y-3">
                     <label className="text-sm font-medium text-slate-700">How many vehicles do you want to sell?</label>
@@ -186,18 +186,18 @@ export default function OrderSummaryModal({ plan, onClose }: { plan: any, onClos
               <div className="pt-4 border-t space-y-2">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal:</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span> ¥{subtotal.toFixed(2)}</span>
                 </div>
                 {promoApplied && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount (20%):</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                    <span> ¥{discountAmount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="text-slate-800 font-semibold">Total:</span>
                   <div className="text-right">
-                    <span className="text-3xl font-extrabold text-blue-600">${totalPrice.toFixed(2)}</span>
+                    <span className="text-3xl font-extrabold text-blue-600"> ¥{totalPrice.toFixed(2)}</span>
                     <p className="text-xs text-slate-500 mt-1">
                       One-time payment for {quantity} vehicle slot{quantity > 1 ? 's' : ''}
                     </p>

@@ -836,7 +836,7 @@ model PaymentTransaction {
   
   transaction_type PaymentTransactionType
   amount           Decimal             @db.Decimal(12, 2)
-  currency         String              @default("USD")
+  currency         String              @default("JPY")
   status           PaymentStatus       @default(pending)
 
   // Square specific
@@ -869,7 +869,7 @@ model Invoice {
 
   invoice_number      String         @unique  // e.g. "INV-2026-0001"
   amount              Decimal        @db.Decimal(12, 2)
-  currency            String         @default("USD")
+  currency            String         @default("JPY")
   status              InvoiceStatus  @default(unpaid)
   description         String
   due_date            DateTime?

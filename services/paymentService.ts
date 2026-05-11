@@ -6,7 +6,7 @@ export type SlotPurchaseData = {
   paymentToken: string;  // tokenized card from Square Web SDK
   quantity: number;
   promoCode?: string;
-  amount: number;        // in cents
+  amount: number;        // in yen
 };
 
 export type GuestSlotPurchaseData = {
@@ -49,6 +49,26 @@ export type Invoice = {
   invoice_url: string | null;
 };
 
+export type SlotDetails = {
+  remaining: number;
+  used: number;
+  purchased: number;
+};
+
+
+
+export type DealershipSubscription = {
+  id: string;
+  userId: string;
+  tier: string;
+  expires_at: string | null;
+  next_billing_date: string | null;
+  last_payment_at: string | null;
+  last_payment_amount: number | null;
+  square_customer_id: string | null;
+  vehicles_sold_this_year: number;
+} | null;
+
 export type SubscriptionDetails = {
   id: string;
   status: string;
@@ -77,7 +97,17 @@ const paymentService = {
 
   verifyDealership: async (data: { paymentToken: string; tierId: string }) => {
   const res = await api.post("/api/payment/createCheckout", {
+     type: "dealership_verification",
     purpose: "dealership_verification",
+    paymentToken: data.paymentToken,
+    tierId: data.tierId,
+  });
+  return res.data;
+},
+
+verifySubscriptionPayment: async (data: { paymentToken: string; tierId: string }) => {
+  const res = await api.post("/api/payment/createCheckout", {
+     type: "dealership",
     paymentToken: data.paymentToken,
     tierId: data.tierId,
   });
@@ -96,6 +126,17 @@ const paymentService = {
     });
     return res.data;
   },
+
+  getSlotDetails: async (): Promise<SlotDetails> => {
+  const res = await api.get("/api/payment/getSlotDetails");
+  return res.data.slots;
+},
+
+
+fetchDealershipSubscription: async (): Promise<DealershipSubscription> => {
+  const res = await api.get("/api/payment/getDealershipSubscription");
+  return res.data.dealershipSubscription;
+},
 
   // Verify a payment by ID
   verifyPayment: async (paymentId: string) => {

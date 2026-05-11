@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Badge } from "@/components/ui/Badge";
+
 import {
   Loader2, ShoppingCart, Check, Tag, X,
   ArrowLeft, Building,
@@ -23,15 +24,25 @@ export default function Checkout() {
   const purposeParam  = searchParams.get("purpose") ?? "";
   const quantityParam = parseInt(searchParams.get("quantity") ?? "1");
   const promoParam    = searchParams.get("promoCode") ?? "";
-  const tierIdParam   = searchParams.get("tier") ?? "";
+
+
+  const tierIdParam   = searchParams.get("tierId") ?? "";
+  const priceParam = searchParams.get('price')??"0";
+  const planNameParam = searchParams.get('name') ?? "";
+
+
 
   // Determine payment mode
   const isDealershipVerification = purposeParam === "dealership_verification";
   const isPrivateSeller = typeParam === "private_seller" || (!isDealershipVerification && !typeParam);
+  const isDealershipSubscription = typeParam === 'dealership' || (!isDealershipVerification && !isPrivateSeller);
+
+
 
   const {
     purchaseSlots,
     verifyDealership,
+    verifySubscriptionPayment,
     isProcessing: isProcessingSlots,
     paymentError,
     paymentSuccess,
@@ -54,7 +65,7 @@ export default function Checkout() {
 
   // ── Pricing ──────────────────────────────────────────────────────────
   const pricePerSlot      = 50;
-  const pricePerSlotCents = 100;
+  const pricePerSlotCents = 50;
   const discount          = appliedPromo ? 0.2 : 0;
   const subtotal          = quantity * pricePerSlot;
   const discountAmount    = subtotal * discount;
@@ -67,9 +78,15 @@ export default function Checkout() {
   // ── Navigate on payment success ──────────────────────────────────────
 useEffect(() => {
   if (paymentSuccess) {
-    router.push(
-      `/OrderConfirmation?payment_id=${lastPaymentId}&payment_type=private_seller_payment&quantity=${quantity}&user_email=${encodeURIComponent(currentUser?.email ?? "")}`
-    );
+    if (isDealershipVerification) {
+      router.push("/DealershipRegistration");
+    }else if(isDealershipSubscription){
+      router.push("/Dashboard");
+    }else {
+      router.push(
+        `/OrderConfirmation?payment_id=${lastPaymentId}&payment_type=private_seller_payment&quantity=${quantity}&user_email=${encodeURIComponent(currentUser?.email ?? "")}`
+      );
+    }
   }
 }, [paymentSuccess]);
 
@@ -85,39 +102,80 @@ useEffect(() => {
   }, []);
 
   // ── Init Square SDK ──────────────────────────────────────────────────
-  useEffect(() => {
-    const initSquare = async () => {
-      const sq = (window as any).Square;
-      if (!sq) {
-        setErrorMessage("Square payment SDK failed to load. Please refresh.");
-        return;
-      }
-      try {
-        const payments = sq.payments(
-          process.env.NEXT_PUBLIC_SQUARE_APP_ID!,
-          process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!
-        );
-        const card = await payments.card();
-        await card.attach(cardRef.current!);
-        cardInstance.current = card;
-        setSdkReady(true);
-      } catch {
-        setErrorMessage("Failed to initialize payment form. Please refresh.");
-      }
-    };
+  // useEffect(() => {
+  //   const initSquare = async () => {
+    
+  //     const sq = (window as any).Square;
+  //     if (!sq) {
+  //       setErrorMessage("Square payment SDK failed to load. Please refresh.");
+  //       return;
+  //     }
+  //     try {
+  //       const payments = sq.payments(
+  //         process.env.NEXT_PUBLIC_SQUARE_APP_ID!,
+  //         process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!
+  //       );
+  //       const card = await payments.card();
+  //       await card.attach(cardRef.current!);
+  //       cardInstance.current = card;
+  //       setSdkReady(true);
+  //     } catch {
+   
+  //       setErrorMessage("Failed to initialize payment form. Please refresh.");
+  //     }
+  //   };
 
-    if ((window as any).Square) {
-      initSquare();
-    } else {
-      const interval = setInterval(() => {
-        if ((window as any).Square) {
-          clearInterval(interval);
-          initSquare();
-        }
-      }, 300);
-      return () => clearInterval(interval);
+  //   if ((window as any).Square) {
+  //     initSquare();
+  //   } else {
+  //     const interval = setInterval(() => {
+  //       if ((window as any).Square) {
+  //         clearInterval(interval);
+  //         initSquare();
+  //       }
+  //     }, 300);
+  //     return () => clearInterval(interval);
+  //   }
+  // }, []);
+
+
+
+  useEffect(() => {
+  if (isLoadingUser) return; // ← wait for user to load first
+
+  const initSquare = async () => {
+    const sq = (window as any).Square;
+    if (!sq) {
+      setErrorMessage("Square payment SDK failed to load. Please refresh.");
+      return;
     }
-  }, []);
+    try {
+      const payments = sq.payments(
+        process.env.NEXT_PUBLIC_SQUARE_APP_ID!,
+        process.env.NEXT_PUBLIC_SQUARE_LOCATION_ID!
+      );
+      const card = await payments.card();
+      await card.attach(cardRef.current!);
+      cardInstance.current = card;
+      setSdkReady(true);
+    } catch (e) {
+      console.error("Square init error:", e);
+      setErrorMessage("Failed to initialize payment form. Please refresh.");
+    }
+  };
+
+  if ((window as any).Square) {
+    initSquare();
+  } else {
+    const interval = setInterval(() => {
+      if ((window as any).Square) {
+        clearInterval(interval);
+        initSquare();
+      }
+    }, 300);
+    return () => clearInterval(interval);
+  }
+}, [isLoadingUser]); 
 
   // ── Handle submit ────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
@@ -141,8 +199,9 @@ useEffect(() => {
       setErrorMessage(tokenResult.errors?.[0]?.message ?? "Card tokenization failed.");
       return;
     }
-
-    if (isDealershipVerification) {
+if(isDealershipSubscription){
+  await handleDealershipSubscriptionPayment(tokenResult.token);
+}else if (isDealershipVerification) {
       await handleDealershipVerificationPayment(tokenResult.token);
     } else {
       await handlePrivateSellerPayment(tokenResult.token);
@@ -174,6 +233,19 @@ useEffect(() => {
       setErrorMessage(paymentError ?? "Payment failed.");
     }
   };
+
+  // dealerhip subscription payment 
+
+  const handleDealershipSubscriptionPayment = async (paymentToken:string)=>{
+         const result = await verifySubscriptionPayment({
+      paymentToken,
+      tierId: tierIdParam,
+    });
+
+    if (!result.success) {
+      setErrorMessage(paymentError ?? "Payment failed.");
+    }
+  }
 
   const handleApplyPromo = () => {
     if (promoCode.toUpperCase().trim() === "SELLER20") {
@@ -218,7 +290,16 @@ useEffect(() => {
               </h1>
               <p className="text-slate-600">One-time fee to verify your dealership</p>
             </>
-          ) : (
+          ) : isDealershipSubscription ? (
+            <>
+              <Building className="w-12 h-12 text-blue-600 mx-auto mb-3" />
+              <h1 className="text-4xl font-bold text-slate-800 mb-3"> 
+                Dealership Subscription
+              </h1>
+              <p className="text-slate-600">Monthly subscription for dealership accounts</p>
+            </>
+           )
+          : (
             <>
               <h1 className="text-4xl font-bold text-slate-800 mb-3">
                 Complete Your Purchase
@@ -255,7 +336,7 @@ useEffect(() => {
                       disabled={activeIsProcessing}
                       onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                     />
-                    <p className="text-xs text-slate-500 mt-1">${pricePerSlot} per slot</p>
+                    <p className="text-xs text-slate-500 mt-1">¥{pricePerSlot} per slot</p>
                   </div>
                 )}
               </CardContent>
@@ -290,8 +371,10 @@ useEffect(() => {
                     ) : (
                       <><ShoppingCart className="w-5 h-5 mr-2" />
                         {isDealershipVerification
-                          ? `Pay $${dealershipFee}.00 Verification Fee`
-                          : `Complete Purchase — $${total.toFixed(2)}`}
+                          ? `Pay  ¥${dealershipFee}.00 Verification Fee`:
+                          isDealershipSubscription
+                            ? `Subscribe for ${planNameParam} at ${priceParam}`
+                            : `Complete Purchase —  ¥${total.toFixed(2)}`}
                       </>
                     )}
                   </Button>
@@ -315,7 +398,7 @@ useEffect(() => {
                     </div>
                     <div className="flex justify-between py-3 border-b">
                       <span>Verification Fee</span>
-                      <span>$149.00</span>
+                      <span> ¥149.00</span>
                     </div>
                     <div className="flex justify-between py-3 border-b text-emerald-600">
                       <span>First Month Subscription</span>
@@ -323,14 +406,35 @@ useEffect(() => {
                     </div>
                     <div className="flex justify-between items-center py-4 bg-gradient-to-r from-blue-50 to-emerald-50 px-4 rounded-lg">
                       <span className="text-lg font-bold">Total Today</span>
-                      <span className="text-2xl font-bold text-blue-600">$149.00</span>
+                      <span className="text-2xl font-bold text-blue-600"> ¥149.00</span>
                     </div>
                     <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
                       <p className="font-semibold mb-1">What happens next?</p>
                       <p>Our team will review your application within 2-3 business days and activate your dealership account.</p>
                     </div>
                   </>
-                ) : (
+                ) : isDealershipSubscription ?(
+                  <>
+                   <div className="flex justify-between py-3 border-b">
+                      <span>Dealership Subscription</span>
+                      <span>Monthly</span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b">
+                      <span>Subscription Fee</span>
+                      <span>{priceParam}</span>
+                    </div>
+                    <div className="flex justify-between py-3 border-b text-emerald-600">
+                      <span>Plan</span>
+                      <span>{planNameParam}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-4 bg-gradient-to-r from-blue-50 to-emerald-50 px-4 rounded-lg">
+                      <span className="text-lg font-bold">Total</span>
+                      <span className="text-2xl font-bold text-blue-600">{priceParam}</span>
+                    </div>
+                  
+                  </>
+                ):
+                 (
                   <>
                     <div className="flex justify-between py-3 border-b">
                       <span>Additional Slots</span>
@@ -338,23 +442,23 @@ useEffect(() => {
                     </div>
                     <div className="flex justify-between py-3 border-b">
                       <span>Price per slot</span>
-                      <span>${pricePerSlot.toFixed(2)}</span>
+                      <span> ¥{pricePerSlot.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between py-3 border-b">
                       <span>Subtotal</span>
-                      <span>${subtotal.toFixed(2)}</span>
+                      <span> ¥{subtotal.toFixed(2)}</span>
                     </div>
                     {appliedPromo && (
                       <div className="flex justify-between py-3 border-b text-emerald-600">
                         <span className="flex items-center gap-2">
                           <Tag className="w-4 h-4" />Promo Discount
                         </span>
-                        <span>-${discountAmount.toFixed(2)}</span>
+                        <span> ¥{discountAmount.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center py-4 bg-gradient-to-r from-blue-50 to-emerald-50 px-4 rounded-lg">
                       <span className="text-lg font-bold">Total</span>
-                      <span className="text-2xl font-bold text-blue-600">${total.toFixed(2)}</span>
+                      <span className="text-2xl font-bold text-blue-600"> ¥{total.toFixed(2)}</span>
                     </div>
 
                     <div className="pt-4">

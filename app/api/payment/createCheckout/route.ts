@@ -7,18 +7,17 @@ import { sendPaymentConfirmationMail } from "@/helpers/sendPaymentConfirmationMa
 import { sendDealershipVerificationPaymentMail } from "@/helpers/sendDealershipVerificationPaymentMail";
 import { sendDealershipSubscriptionConfirmationMail } from "@/helpers/sendDealershipSubscriptionConfirmationMail";
 import { randomUUID } from "crypto";
+import { CURRENCY, formatCurrency } from "@/lib/payment/square";
 
-const TIER_PRICES: Record<string, { amount: number; name: string }> = {
-  tier1: { amount: 9900,  name: "Standard Dealership Plan" },
-  tier2: { amount: 19900, name: "Professional Dealership Plan" },
-  tier3: { amount: 34900, name: "Enterprise Dealership Plan" },
+type TierId = "tier1" | "tier2" | "tier3";
+
+const TIER_PRICES = {
+  tier1: { amount: 15555, name: "Standard Dealership Plan" },
+  tier2: { amount: 31267, name: "Professional Dealership Plan" },
+  tier3: { amount: 54835, name: "Enterprise Dealership Plan" },
 };
 
-const TIER_PLAN_IDS: Record<string, string> = {
-  tier1: process.env.SQUARE_TIER1_PLAN_ID!,
-  tier2: process.env.SQUARE_TIER2_PLAN_ID!,
-  tier3: process.env.SQUARE_TIER3_PLAN_ID!,
-};
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,6 +39,8 @@ export async function POST(request: NextRequest) {
     
     const { type, tierId, purpose, quantity = 1, promoCode, paymentToken, cardId } = parsed;
 
+    const tier = tierId as TierId;
+
     // const { type, tierId, purpose, quantity = 1, promoCode, paymentToken, cardId } =
     //   await request.json();
 
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // ── Private Seller — one-time slot purchase ──
     if (type === "private_seller") {
-      const pricePerSlot = 100; // $1.00 in cents (testing)
+      const pricePerSlot = 50; 
       const hasPromo = promoCode && promoCode.toUpperCase() === "SELLER20";
       const subtotal = pricePerSlot * quantity;
       const discountAmount = hasPromo ? Math.round(subtotal * 0.2) : 0;
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       const response = await squareClient.payments.create({
         sourceId: paymentToken,
         idempotencyKey: randomUUID(),
-        amountMoney: { amount: BigInt(totalAmount), currency: "USD" },
+        amountMoney: { amount: BigInt(totalAmount), currency: CURRENCY },
         buyerEmailAddress: userEmail,
         note: `Speedio Private Seller - ${quantity} slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,
         referenceId: `private_seller_${Date.now()}`,
@@ -104,8 +105,8 @@ export async function POST(request: NextRequest) {
         data: {
           userId,
           transaction_type: "slot_purchase",
-          amount: totalAmount / 100,
-          currency: "USD",
+          amount: totalAmount,
+            currency: CURRENCY,  
           status: "completed",
           square_payment_id: payment.id!,
           square_receipt_url: payment.receiptUrl ?? null,
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
           userEmail,
           user.full_name ?? "Customer",
           quantity,
-          (totalAmount / 100).toFixed(2),
+          formatCurrency(totalAmount), 
           payment.id!
         );
       } catch (e) {
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest) {
       const response = await squareClient.payments.create({
         sourceId: paymentToken,
         idempotencyKey: randomUUID(),
-        amountMoney: { amount: BigInt(totalAmount), currency: "USD" },
+        amountMoney: { amount: BigInt(totalAmount), currency: CURRENCY },
         buyerEmailAddress: userEmail,
         note: "Speedio Dealership Verification Fee",
         referenceId: `dealership_verification_${Date.now()}`,
@@ -169,8 +170,8 @@ export async function POST(request: NextRequest) {
           data: {
             userId,
             transaction_type: "one_time_service",
-            amount: totalAmount / 100,
-            currency: "USD",
+            amount: totalAmount,
+            currency: CURRENCY,
             status: "completed",
             square_payment_id: payment.id!,
             square_receipt_url: payment.receiptUrl ?? null,
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
         await sendDealershipVerificationPaymentMail(
           userEmail,
           user.full_name ?? "Customer",
-          (totalAmount / 100).toFixed(2),
+          formatCurrency(totalAmount),
           payment.id!
         );
       } catch (e) {
@@ -198,19 +199,20 @@ export async function POST(request: NextRequest) {
 
     // ── Dealership Subscription — recurring via Square Subscriptions ──
     if (type === "dealership") {
-      if (!tierId || !TIER_PRICES[tierId]) {
+
+
+      if (!tierId || !TIER_PRICES[tier]) {
         return NextResponse.json({ error: "Invalid tier selected" }, { status: 400 });
       }
 
-      // Need square_customer_id to create subscription
-      let squareCustomerId = user.seller_subscription?.square_customer_id;
-if (!squareCustomerId) {
-  const customerResponse = await squareClient.customers.create({
-    emailAddress: userEmail,
-    givenName: user.full_name ?? undefined,
-  });
+  let squareCustomerId = user.seller_subscription?.square_customer_id;
+  if (!squareCustomerId) {
+    const customerResponse = await squareClient.customers.create({
+      emailAddress: userEmail,
+      givenName: user.full_name ?? undefined,
+    });
 
-  squareCustomerId = customerResponse.customer?.id;
+    squareCustomerId = customerResponse.customer?.id;
 
   if (!squareCustomerId) {
     return NextResponse.json(
@@ -220,61 +222,80 @@ if (!squareCustomerId) {
   }
 }
 
-      // Create subscription
-      const subResponse = await squareClient.subscriptions.create({
-        idempotencyKey: randomUUID(),
-        locationId: process.env.SQUARE_LOCATION_ID!,
-        planVariationId: TIER_PLAN_IDS[tierId],
-        customerId: squareCustomerId,
-        cardId, // card on file ID from Square
-        startDate: new Date().toISOString().split("T")[0],
-      });
 
-      const squareSub = subResponse.subscription;
+  const paymentResponse = await squareClient.payments.create({
+    idempotencyKey: randomUUID(),
+    sourceId: paymentToken,            
+    customerId: squareCustomerId,
+    locationId: process.env.SQUARE_LOCATION_ID!,
+    amountMoney: {
+      amount: BigInt(TIER_PRICES[tier].amount),
+      currency: CURRENCY,
+    },
+    note: TIER_PRICES[tier].name,
+  });
 
-      await prisma.$transaction([
-        prisma.user.update({
-          where: { id: userId },
-          data: {
-            user_type: "dealership",
-            dealership_verification_status: "approved",
-          },
-        }),
-        prisma.sellerSubscription.upsert({
-          where: { userId },
-          update: {
-            tier: tierId as any,
-            square_subscription_id: squareSub?.id,
-            square_customer_id: squareCustomerId,
-            expires_at: squareSub?.chargedThroughDate
-              ? new Date(squareSub.chargedThroughDate)
-              : null,
-            next_billing_date: squareSub?.chargedThroughDate
-              ? new Date(squareSub.chargedThroughDate)
-              : null,
-          },
-          create: {
-            userId,
-            tier: tierId as any,
-            square_subscription_id: squareSub?.id,
-            square_customer_id: squareCustomerId,
-            expires_at: squareSub?.chargedThroughDate
-              ? new Date(squareSub.chargedThroughDate)
-              : null,
-          },
-        }),
-        prisma.paymentTransaction.create({
-          data: {
-            userId,
-            transaction_type: "subscription_purchase",
-            amount: TIER_PRICES[tierId].amount / 100,
-            currency: "USD",
-            status: "completed",
-            square_customer_id: squareCustomerId,
-            subscription_tier: tierId as any,
-          },
-        }),
-      ]);
+     const payment = paymentResponse.payment;
+
+     console.log("Square dealership_subscription payment response:", paymentResponse);
+
+  if (!payment || payment.status !== "COMPLETED") {
+    return NextResponse.json(
+      { error: "Payment failed" },
+      { status: 400 }
+    );
+  }
+
+    const now = new Date();
+  const expiresAt = new Date(now);
+  expiresAt.setDate(expiresAt.getDate() + 30);
+
+
+   
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: {
+        user_type: "dealership",
+        dealership_verification_status: "approved",
+      },
+    }),
+    prisma.sellerSubscription.upsert({
+      where: { userId },
+      update: {
+        tier: tierId as any,
+        square_customer_id: squareCustomerId,
+        expires_at: expiresAt,
+        next_billing_date: expiresAt,
+        last_payment_at: now,
+        last_payment_amount: TIER_PRICES[tier].amount,
+      },
+      create: {
+        userId,
+        tier: tierId as any,
+        square_customer_id: squareCustomerId,
+        expires_at: expiresAt,
+        next_billing_date: expiresAt,
+        last_payment_at: now,
+        last_payment_amount: TIER_PRICES[tier].amount,
+      },
+    }),
+    prisma.paymentTransaction.create({
+      data: {
+        userId,
+        transaction_type: "subscription_purchase",
+        amount: TIER_PRICES[tier].amount,
+        currency: CURRENCY,
+        status: "completed",
+        square_payment_id: payment.id,
+        square_customer_id: squareCustomerId,
+        subscription_tier: tierId as any,
+      },
+    }),
+  ]);
+
+
+     
 
       const tierNames: Record<string, string> = {
         tier1: "Standard",
@@ -287,8 +308,8 @@ if (!squareCustomerId) {
           userEmail,
           user.full_name ?? "Customer",
           tierNames[tierId] ?? "Unknown",
-          (TIER_PRICES[tierId].amount / 100).toFixed(2),
-          squareSub?.id ?? ""
+          formatCurrency(TIER_PRICES[tier].amount),
+           payment.id ?? ""
         );
       } catch (e) {
         console.error("Failed to send subscription email:", e);
@@ -296,7 +317,7 @@ if (!squareCustomerId) {
 
       return NextResponse.json({
         success: true,
-        subscriptionId: squareSub?.id,
+         paymentId: payment.id,
         tier: tierId,
       });
     }
@@ -311,3 +332,5 @@ if (!squareCustomerId) {
     );
   }
 }
+
+

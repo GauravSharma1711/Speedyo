@@ -22,10 +22,10 @@ export default function BuyMoreSlotsModal({ isOpen, onClose, currentSlots }) {
     const params = new URLSearchParams({
       type: 'private_seller',
       name: 'Private Seller Vehicle Slots',
-      price: '$50',
+      price: ' ¥50',
       quantity: quantity.toString()
     });
-  return `/checkout?${params.toString()}`;
+  return `/Checkout?${params.toString()}`;
   };
 
   if (!isOpen) return null;
@@ -135,7 +135,7 @@ export default function BuyMoreSlotsModal({ isOpen, onClose, currentSlots }) {
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-2">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-700">Price per slot:</span>
-                      <span className="font-medium text-slate-900">${pricePerSlot}</span>
+                      <span className="font-medium text-slate-900">¥{pricePerSlot}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-700">Quantity:</span>
@@ -144,7 +144,7 @@ export default function BuyMoreSlotsModal({ isOpen, onClose, currentSlots }) {
                     <div className="pt-2 border-t border-blue-300">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-900 font-semibold">Total:</span>
-                        <span className="text-3xl font-bold text-blue-600">${totalPrice}</span>
+                        <span className="text-3xl font-bold text-blue-600">¥{totalPrice}</span>
                       </div>
                       <p className="text-xs text-slate-600 mt-1 text-right">One-time payment</p>
                     </div>

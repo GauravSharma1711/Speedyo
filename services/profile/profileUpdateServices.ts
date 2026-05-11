@@ -33,3 +33,8 @@ export async function updateMe(input: UpdateUserInput) {
 
   return res.data;
 }
+
+export async function downgradeToGuest() {
+  const res = await axios.post("/api/user/downgrade");
+  return res.data;
+}

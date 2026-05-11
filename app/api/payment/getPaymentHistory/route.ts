@@ -101,7 +101,7 @@ const subResponse = await squareClient.subscriptions.get({
           payments.push({
             id: purchase.payment_id,
             amount: Number(purchase.amount_paid),
-            currency: "USD",
+            currency: "JPY",
             status: "completed",
             description: `Private Seller Slots - ${purchase.slots_purchased} slot${purchase.slots_purchased > 1 ? "s" : ""}`,
             created: purchase.createdAt,

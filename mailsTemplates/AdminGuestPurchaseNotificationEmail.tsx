@@ -63,7 +63,7 @@ export default function AdminGuestPurchaseNotificationEmail({
                       <strong>Slots Purchased:</strong> ${quantity}
                     </p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
-                      <strong>Amount Paid:</strong> $${amount_paid} USD
+                      <strong>Amount Paid:</strong> $${amount_paid} JPY
                     </p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
                       <strong>Purchase Date:</strong> ${purchaseDate}
