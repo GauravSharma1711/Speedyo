@@ -59,6 +59,13 @@ export const vehicleDetailsService = {
     const res = await api.get<GetVehicleDetailsResponse>(`/api/vehicles/${vehicleId}`);
     return res.data;
   },
+
+  getSellerVehicles : async ()=>{
+    const res =  await api.get('/api/vehicles/seller-vehicles');
+    return res.data;
+  },
+
+
   incrementViews: async (body: IncrementVehicleViewsBody) => {
     const res = await api.post<IncrementVehicleViewsResponse>("/api/vehicles/incrementVehicleViews", body);
     return res.data;

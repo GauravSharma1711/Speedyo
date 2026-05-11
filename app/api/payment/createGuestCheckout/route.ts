@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       idempotencyKey: randomUUID(),
       amountMoney: {
         amount: BigInt(totalAmount),
-        currency: "USD",
+        currency: "JPY",
       },
       buyerEmailAddress: email,
       note: `Speedio Guest - ${quantity} vehicle slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,

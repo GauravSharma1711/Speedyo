@@ -7,6 +7,7 @@ import paymentService, {
   SlotPurchaseData,
   GuestSlotPurchaseData,
   SlotDetails,
+  DealershipSubscription,
 } from "@/services/paymentService";
 
 // ── State Type ─────────────────────────────────────────────────────────────
@@ -47,6 +48,11 @@ interface PaymentState {
   receiptUrl?: string;
 }>;
 
+  verifySubscriptionPayment: (data: { paymentToken: string; tierId: string }) => Promise<{
+  success: boolean;
+  paymentId?: string;
+  receiptUrl?: string;
+}>;
 
   purchaseSlotsAsGuest: (data: GuestSlotPurchaseData) => Promise<{
     success: boolean;
@@ -57,8 +63,11 @@ interface PaymentState {
 
 
   slotDetails: SlotDetails | null;
+  dealershipSubscriptionDetails:  DealershipSubscription | null;
 isLoadingSlots: boolean;
+isLoadingdealershipDetails:boolean
 fetchSlotDetails: () => Promise<void>;
+fetchDealershipSubscription:()=>Promise<void>
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────
@@ -71,9 +80,12 @@ export const usePaymentStore = create<PaymentState>()(
     lastPaymentId: null,
     lastReceiptUrl: null,
     paymentSuccess: false,
+dealershipSubscriptionDetails: null,
 
         slotDetails: null,
 isLoadingSlots: false,
+isLoadingdealershipDetails:false,
+
 
     payments: [],
     invoices: [],
@@ -160,6 +172,25 @@ isLoadingSlots: false,
 },
 
 
+   async verifySubscriptionPayment(data) {
+  set({ isProcessing: true, paymentError: null, paymentSuccess: false });
+  try {
+    const result = await paymentService.verifySubscriptionPayment(data);
+    set({
+      isProcessing: false,
+      paymentSuccess: true,
+      lastPaymentId: result.paymentId ?? null,
+      lastReceiptUrl: result.receiptUrl ?? null,
+    });
+    return { success: true, paymentId: result.paymentId, receiptUrl: result.receiptUrl };
+  } catch (error: any) {
+    const msg = error?.response?.data?.error ?? error?.message ?? "Payment failed.";
+    set({ isProcessing: false, paymentError: msg, paymentSuccess: false });
+    return { success: false };
+  }
+},
+
+
 async fetchSlotDetails() {
   set({ isLoadingSlots: true });
   try {
@@ -167,6 +198,18 @@ async fetchSlotDetails() {
     set({ slotDetails: result, isLoadingSlots: false });
   } catch (error: any) {
     set({ isLoadingSlots: false });
+  }
+},
+
+
+
+async fetchDealershipSubscription() {
+  set({ isLoadingdealershipDetails: true });
+  try {
+    const result = await paymentService.fetchDealershipSubscription();
+    set({ dealershipSubscriptionDetails: result, isLoadingdealershipDetails: false });
+  } catch (error: any) {
+    set({ isLoadingdealershipDetails: false });
   }
 },
 

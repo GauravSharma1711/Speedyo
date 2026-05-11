@@ -1,4 +1,6 @@
 "use client";
+import { useDealershipRegistrationStore } from "@/store/dealership/dealershipRegistrationStore";
+
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -14,7 +16,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { UserEntity as User, UploadFile } from "@/api/entities";
+// import { UserEntity as User, UploadFile } from "@/api/entities";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -23,6 +25,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Progress } from "@/components/ui/Progress";
+import { profileService } from "@/services/profile/profileServices";
+// import { useProfileStore } from "@/store/profile/profile";
 
 type TierId = "tier1" | "tier2" | "tier3";
 
@@ -74,6 +78,11 @@ type FormDataState = {
   business_zip: string;
   tax_id_number: string;
   business_license_urls: string[];
+
+     dealership_verification_status?: string | null;
+  verification_fee_paid?: boolean | null;
+  admin_verification_notes?: string | null;
+
 };
 
 type StatusInfo =
@@ -89,9 +98,14 @@ export default function DealershipRegistration() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
+
+  const [licenseFiles, setLicenseFiles] = useState<File[]>([]);
+
+  const { register, isSaving } = useDealershipRegistrationStore();
+
+
 
   const [formData, setFormData] = useState<FormDataState>({
     dealership_selected_tier: "",
@@ -102,28 +116,33 @@ export default function DealershipRegistration() {
     business_zip: "",
     tax_id_number: "",
     business_license_urls: [],
+
+      dealership_verification_status:"",
+  verification_fee_paid: false,
+  admin_verification_notes: "",
   });
 
   useEffect(() => {
     const fetchUser = async () => {
       setIsLoading(true);
       try {
-        const user = await User.me();
+         const user = await profileService.me();
         setCurrentUser(user);
 
-        if (user?.business_name || user?.dealership_selected_tier) {
-          setFormData((prev) => ({
-            ...prev,
-            dealership_selected_tier: user.dealership_selected_tier || "",
-            business_name: user.business_name || "",
-            business_address: user.business_address || "",
-            business_city: user.business_city || "",
-            business_state: user.business_state || "",
-            business_zip: user.business_zip || "",
-            tax_id_number: user.tax_id_number || "",
-            business_license_urls: user.business_license_urls || [],
-          }));
-        }
+
+if (user?.business_name || user?.dealership_selected_tier) {
+  setFormData((prev) => ({
+    ...prev,
+    dealership_selected_tier: (user.dealership_selected_tier as TierId) || "" as "" | TierId,
+    business_name: user.business_name ?? "",
+    business_address: user.business_address ?? "",
+    business_city: user.business_city ?? "",
+    business_state: user.business_state ?? "",
+    business_zip: user.business_zip ?? "",
+    tax_id_number: user.tax_id_number ?? "",
+    business_license_urls: user.business_license_urls ?? [],
+  } satisfies FormDataState));
+}
 
         if (user?.dealership_verification_status === "pending_payment" && !user?.verification_fee_paid) {
           setCurrentStep(4);
@@ -152,26 +171,24 @@ export default function DealershipRegistration() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingFile(true);
-    try {
-      const result = await UploadFile({ file });
-      handleInputChange("business_license_urls", [
-        ...formData.business_license_urls,
-        result.file_url,
-      ]);
-    } catch (error) {
-      console.error("File upload failed:", error);
-      alert("Failed to upload file. Please try again.");
-    } finally {
-      setUploadingFile(false);
-    }
+    setLicenseFiles((prev) => [...prev, file]);
+
+    const previewUrl = URL.createObjectURL(file);
+    handleInputChange("business_license_urls", [
+      ...formData.business_license_urls,
+      previewUrl,
+    ]);
   };
 
-  const handleRemoveFile = (urlToRemove: string) => {
+    const handleRemoveFile = (urlToRemove: string) => {
+    const idx = formData.business_license_urls.indexOf(urlToRemove);
+    if (idx !== -1) {
+      setLicenseFiles((prev) => prev.filter((_, i) => i !== idx));
+    }
     handleInputChange(
       "business_license_urls",
       formData.business_license_urls.filter((url) => url !== urlToRemove)
@@ -220,32 +237,36 @@ export default function DealershipRegistration() {
       return;
     }
 
-    if (currentStep === 3) {
-      if (formData.business_license_urls.length === 0) {
-        alert("Please upload at least one business document.");
-        return;
-      }
-      if (!termsAgreed) {
-        alert("Please agree to the terms and conditions.");
-        return;
-      }
-
-      setIsSaving(true);
-      try {
-        await User.updateMyUserData({
-          ...formData,
-          dealership_verification_status: "pending_payment",
-          verification_fee_paid: false,
-        });
-
-        window.location.href = getVerificationFeeCheckoutUrl();
-      } catch (error) {
-        console.error("Failed to submit application:", error);
-        alert("Failed to submit application. Please try again.");
-      } finally {
-        setIsSaving(false);
-      }
+      if (currentStep === 3) {
+    if (formData.business_license_urls.length === 0) {
+      alert("Please upload at least one business document.");
+      return;
     }
+    if (!termsAgreed) {
+      alert("Please agree to the terms and conditions.");
+      return;
+    }
+
+    try {
+      await register({
+        dealership_selected_tier: formData.dealership_selected_tier,
+        business_name: formData.business_name,
+        business_address: formData.business_address,
+        business_city: formData.business_city,
+        business_state: formData.business_state,
+        business_zip: formData.business_zip,
+        tax_id_number: formData.tax_id_number,
+        business_license_files: licenseFiles,  
+        existing_urls: [],
+      });
+
+      window.location.href = getVerificationFeeCheckoutUrl();
+    } catch (error: any) {
+      alert(error.message ?? "Failed to submit application. Please try again.");
+    }
+  }
+
+   
   };
 
   const statusInfo: StatusInfo = useMemo(() => {
@@ -592,7 +613,7 @@ export default function DealershipRegistration() {
                 </Button>
                 <Button
                   onClick={handleSaveAndContinue}
-                  disabled={isSaving || uploadingFile || !termsAgreed}
+                  disabled={isSaving  || !termsAgreed}
                 >
                   {isSaving ? "Submitting..." : "Submit Application"}
                   <ArrowRight className="w-4 h-4 ml-2" />

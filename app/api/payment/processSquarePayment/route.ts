@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         idempotencyKey,
         amountMoney: {
           amount: BigInt(totalAmount),
-          currency: "USD",
+          currency: "JPY",
         },
         buyerEmailAddress: email,
         note: `Speedio Private Seller - ${quantity} vehicle slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% discount applied)" : ""}`,

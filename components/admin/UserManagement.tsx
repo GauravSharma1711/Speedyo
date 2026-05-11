@@ -51,7 +51,8 @@ type VerificationStatus =
   'pending_review'|
   'not_submitted'|
   'approved'|
-  'declined'
+  'declined'|
+  'pending_payment'
   
 type UserType = "guest" | "private_seller" | "dealership";
 
@@ -63,54 +64,7 @@ type SellerSubscription = {
 
 
 
-const MOCK_USERS: User[] = [
-  {
-    id: "u_001",
-    full_name: "Yuki Tanaka",
-    email: "yuki@example.com",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 6).toISOString(),
-    user_type: "guest",
-    dealership_verification_status: "pending_review",
-    dealership_selected_tier: "tier1",
-    business_name: "Yuki Cars",
-    business_license_urls: [
-      "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=900&q=70",
-    ],
-  },
-  {
-    id: "u_002",
-    full_name: "Tanmay Ahuja",
-    email: "tanmay@example.com",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20).toISOString(),
-    user_type: "dealership",
-    dealership_verification_status: "approved",
-    dealership_selected_tier: "tier2",
-    business_name: "Speedyo Motors",
-    tax_id_number: "TX-112233",
-    business_address: "1-2-3 Shibuya",
-    business_city: "Tokyo",
-    business_state: "Tokyo",
-    business_zip: "150-0002",
-    business_license_urls: [],
-    seller_subscription: {
-      tier: "tier2",
-      expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10)
-        .toISOString()
-        .slice(0, 10),
-      vehicles_sold_this_year: 2,
-    },
-  },
-  {
-    id: "u_003",
-    full_name: "Hiro Sato",
-    email: "hiro@example.com",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    user_type: "private_seller",
-    dealership_verification_status: "not_submitted",
-    dealership_selected_tier: null,
-    business_license_urls: null,
-  },
-];
+;
 
 function getStatusBadge(status: VerificationStatus) {
   switch (status) {

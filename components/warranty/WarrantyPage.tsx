@@ -43,7 +43,7 @@ export default function WarrantyPage() {
                 <Badge className="bg-blue-100 text-blue-800 text-sm">Essential</Badge>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-blue-600">$299</span>
+                <span className="text-3xl font-bold text-blue-600">¥299</span>
                 <span className="text-sm text-slate-500">/ ¥44,900</span>
               </div>
               <p className="text-sm text-blue-700 mt-1">
@@ -179,7 +179,7 @@ export default function WarrantyPage() {
                 <Badge className="bg-emerald-100 text-emerald-800 text-sm">Best Value</Badge>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-emerald-600">$499</span>
+                <span className="text-3xl font-bold text-emerald-600">¥499</span>
               </div>
               <p className="text-sm text-emerald-700 mt-1">Extended Mechanical Protection</p>
             </CardHeader>
@@ -347,7 +347,7 @@ export default function WarrantyPage() {
                 <Badge className="bg-purple-100 text-purple-800 text-sm">Add-On</Badge>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-purple-600">+$199</span>
+                <span className="text-3xl font-bold text-purple-600">+¥199</span>
               </div>
               <p className="text-sm text-purple-700 mt-1">Optional coverage add-on</p>
             </CardHeader>

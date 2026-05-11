@@ -320,6 +320,13 @@ export default function SellerDashboard({ user }: { user: UserData }) {
   fetchSlotDetails,
   slotDetails,
   isLoadingSlots,
+
+
+  fetchDealershipSubscription,
+  dealershipSubscriptionDetails,
+  isLoadingdealershipDetails,
+
+
 } = usePaymentStore();
 
 useEffect(() => {
@@ -327,6 +334,13 @@ useEffect(() => {
     fetchSlotDetails();
   }
 }, [user]);
+
+useEffect(() => {
+  if (user?.user_type === "dealership") {
+    fetchDealershipSubscription();
+  }
+}, [user]);
+
 
   const [publicUser, setPublicUser] = useState<PublicUserData | null>(null);
   const [activeTab, setActiveTab] = useState("listings"); // Added for tabs control
@@ -1321,14 +1335,14 @@ const getSalesLimitInfo = () => {
     };
   }
 
-  if (user.user_type === "dealership" && user.seller_subscription) {
-    const vehiclesSoldThisYear = user.seller_subscription.vehicles_sold_this_year || 0;
+  if (user.user_type === "dealership" && dealershipSubscriptionDetails) {
+    const vehiclesSoldThisYear = dealershipSubscriptionDetails.vehicles_sold_this_year || 0;
     const limits: Record<TierKey, { limit: number; name: string }> = {
       tier1: { limit: 10, name: "Standard" },
       tier2: { limit: 25, name: "Professional" },
       tier3: { limit: -1, name: "Enterprise" },
     };
-    const tier = (user.seller_subscription.tier ?? "tier1") as TierKey;
+    const tier = (dealershipSubscriptionDetails?.tier ?? "tier1") as TierKey;
     const tierInfo = limits[tier] ?? limits.tier1;
     return {
       current: vehiclesSoldThisYear,
@@ -1495,7 +1509,13 @@ const getSalesLimitInfo = () => {
       );
     }
 
+    
+
+
+   if(!dealershipSubscriptionDetails?.square_customer_id){
     if (user.dealership_verification_status === 'approved' && !user.seller_subscription?.tier) {
+
+
       return (
         <Alert className="bg-emerald-50 border-emerald-200">
           <AlertDescription className="flex items-center justify-between">
@@ -1512,13 +1532,14 @@ const getSalesLimitInfo = () => {
         </Alert>
       );
     }
+  }
 
     return null;
   };
 
 
  const isGuest =  session?.user?.user_type === 'guest';
-
+console.log("okook",dealershipSubscriptionDetails);
   return (
     <div className="space-y-6">
       {getDealershipVerificationAlert()}
@@ -1624,6 +1645,8 @@ const getSalesLimitInfo = () => {
   })() : null
 )}
 
+
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
@@ -1703,6 +1726,8 @@ const getSalesLimitInfo = () => {
             </TabsTrigger>
           </TabsList>
 
+      
+
           <TabsContent value="listings" className="mt-6">
             <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -1739,16 +1764,17 @@ const getSalesLimitInfo = () => {
                           })()
                           : user.user_type === 'dealership'
                             ? (() => {
-                              const subscription = user.seller_subscription;
+                              const subscription = dealershipSubscriptionDetails;
                               const salesInfo = getSalesLimitInfo();
                               const now = new Date();
-                              if (!subscription || !subscription.expires_at) {
+                              if (!subscription || !subscription?.square_customer_id) {
                                 return 'Your dealership needs an active subscription to list vehicles.';
                               }
-                              const expiresAt = new Date(subscription.expires_at);
-                              if (expiresAt <= now) {
-                                return 'Your dealership subscription has expired. Please renew to continue selling.';
-                              }
+
+                               if (!subscription.expires_at || new Date(subscription.expires_at) <= now) {
+        return 'Your dealership subscription has expired. Please renew to continue selling.';
+      }
+
                               if (salesInfo?.limit === -1) return 'Unlimited sales available.';
                               return `You've reached your sales limit. Current sales: ${salesInfo?.current || 0}/${salesInfo?.limit} for this year.`;
                             })()

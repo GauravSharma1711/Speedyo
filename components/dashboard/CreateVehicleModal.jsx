@@ -433,7 +433,7 @@ export default function CreateVehicleModal({ isOpen, onClose, onVehicleCreated, 
                 <Input id="year" name="year" type="number" value={formData.year} onChange={handleChange} placeholder="e.g. 2020" required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">Price (USD) *</Label>
+                <Label htmlFor="price">Price (JPY) *</Label>
                 <Input id="price" name="price" type="number" value={formData.price} onChange={handleChange} placeholder="e.g. 25000" required />
               </div>
               <div className="space-y-2 md:col-span-2">

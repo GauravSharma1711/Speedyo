@@ -12,23 +12,13 @@ import {
 import GuestDashboard from "../../components/dashboard/GuestDashboard";
 import SellerDashboard from "../../components/dashboard/SellerDashboard";
 import { useRouter } from "next/navigation";
+import { profileService, ProfileUser } from "@/services/profile/profileServices";
 
-type UserData = {
-  id: string;
-  email: string;
-  user_type?: "private_seller" | "guest" | "dealership";
-  [key: string]: any;
-};
+
  
 type AnyRecord = Record<string, any>;
 
-const User = {
-  me: async (): Promise<UserData> => ({
-    id: "user-1",
-    email: "demo@example.com",
-    user_type: "private_seller",
-  }),
-};
+
  
 const Vehicle = {
   filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
@@ -48,7 +38,7 @@ const VehicleEditRequest = {
 
 export default function Dashboard() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
+  const [currentUser, setCurrentUser] = useState<ProfileUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [vehicles, setVehicles] = useState<AnyRecord[]>([]);
   const [managedSales, setManagedSales] = useState<AnyRecord[]>([]);
@@ -59,7 +49,7 @@ export default function Dashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const user = await User.me();
+         const user = await profileService.me();
         setCurrentUser(user);
         const userType = user.user_type || 'guest';
         

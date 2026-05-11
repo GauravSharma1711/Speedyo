@@ -54,18 +54,37 @@ export const authOptions: NextAuthOptions = {
         (token as any).image = (user as any).profile_image ?? (user as any).image ?? undefined;
       }
   
-      if (trigger === "update" && session?.user) {
-        (token as any).full_name = (session.user as any).full_name ?? (token as any).full_name;
-        (token as any).image = (session.user as any).image ?? (token as any).image;
+      // if (trigger === "update" && session?.user) {
+      //   (token as any).full_name = (session.user as any).full_name ?? (token as any).full_name;
+      //   (token as any).image = (session.user as any).image ?? (token as any).image;
   
-        (token as any).location = (session.user as any).location ?? (token as any).location;
-        (token as any).setup_completed =
-          (session.user as any).setup_completed ?? (token as any).setup_completed;
-        (token as any).user_type = (session.user as any).user_type ?? (token as any).user_type;
-      }
+      //   (token as any).location = (session.user as any).location ?? (token as any).location;
+      //   (token as any).setup_completed =
+      //     (session.user as any).setup_completed ?? (token as any).setup_completed;
+      //   (token as any).user_type = (session.user as any).user_type ?? (token as any).user_type;
+      // }
+      
+
+       if (trigger === "update" ) {
+    const freshUser = await prisma.user.findUnique({
+      where: { id: (token as any).id },
+    });
+
+    if (freshUser) {
+      (token as any).full_name = freshUser.full_name;
+      (token as any).image = freshUser.profile_image ?? (token as any).image;
+      (token as any).location = freshUser.location ?? null;
+      (token as any).setup_completed = freshUser.setup_completed ?? false;
+      (token as any).user_type = freshUser.user_type ?? "guest";
+      (token as any).role = freshUser.role;
+      (token as any).isVerified = freshUser.isVerified;
+    }
+  }
   
       return token;
     },
+
+    
   
     async session({ session, token }) {
       session.user.id = ((token as any).id ?? "") as string;

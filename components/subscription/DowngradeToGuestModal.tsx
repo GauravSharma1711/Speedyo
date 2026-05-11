@@ -1,5 +1,5 @@
 "use client";
-
+import { useSession } from "next-auth/react";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -15,7 +15,7 @@ import {
   X,
   AlertTriangle,
   Car,
-  DollarSign,
+  JapaneseYen ,
   TrendingUp,
   Loader2,
   CheckCircle,
@@ -23,6 +23,7 @@ import {
   Info,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useProfileUpdateStore } from "@/store/profile/profileUpdate";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SellerSubscription {
@@ -102,47 +103,62 @@ export default function DowngradeToGuestModal({
   onSuccess,
 }: DowngradeToGuestModalProps) {
   const router = useRouter();
-
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { update } = useSession();
+  // const [isProcessing, setIsProcessing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+
+  const { downgradeToGuest, isDowngrading } = useProfileUpdateStore();
+
+
   const handleDowngrade = async () => {
     if (!confirmed) return;
-
-    setIsProcessing(true);
     try {
-      // 1. Hide all direct listings (not managed sales)
-      const userVehicles = await fetchUserVehicles(currentUser.email);
-      const directListings = userVehicles.filter((v) => !v.website_managed);
-
-      await Promise.all(
-        directListings.map((vehicle) =>
-          updateVehicle(vehicle.id, { status: "hidden" })
-        )
-      );
-
-      // 2. Downgrade the authenticated user to guest
-      await updateCurrentUser({
-        user_type: "guest",
-        seller_subscription: null,
-      });
-
-      // 3. Sync the public profile
-      const publicProfiles = await fetchPublicProfile(currentUser.id);
-      if (publicProfiles.length > 0) {
-        await updatePublicUser(publicProfiles[0].id, { user_type: "guest" });
-      }
-
-      setShowSuccess(true);
-    } catch (error) {
-      console.error("Failed to downgrade:", error);
-      alert(
-        "Failed to downgrade account. Please try again or contact support."
-      );
-      setIsProcessing(false);
+      await downgradeToGuest();  
+      await update();             
+      setShowSuccess(true);       
+    } catch (error: any) {
+      alert(error.message ?? "Failed to downgrade. Please try again or contact support.");
     }
   };
+
+  // const handleDowngrade = async () => {
+  //   if (!confirmed) return;
+
+  //   setIsProcessing(true);
+  //   try {
+  //     // 1. Hide all direct listings (not managed sales)
+  //     const userVehicles = await fetchUserVehicles(currentUser.email);
+  //     const directListings = userVehicles.filter((v) => !v.website_managed);
+
+  //     await Promise.all(
+  //       directListings.map((vehicle) =>
+  //         updateVehicle(vehicle.id, { status: "hidden" })
+  //       )
+  //     );
+
+  //     // 2. Downgrade the authenticated user to guest
+  //     await updateCurrentUser({
+  //       user_type: "guest",
+  //       seller_subscription: null,
+  //     });
+
+  //     // 3. Sync the public profile
+  //     const publicProfiles = await fetchPublicProfile(currentUser.id);
+  //     if (publicProfiles.length > 0) {
+  //       await updatePublicUser(publicProfiles[0].id, { user_type: "guest" });
+  //     }
+
+  //     setShowSuccess(true);
+  //   } catch (error) {
+  //     console.error("Failed to downgrade:", error);
+  //     alert(
+  //       "Failed to downgrade account. Please try again or contact support."
+  //     );
+  //     setIsProcessing(false);
+  //   }
+  // };
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
@@ -325,7 +341,7 @@ export default function DowngradeToGuestModal({
                   },
                   {
                     icon: (
-                      <DollarSign className="w-5 h-5 text-red-600 mt-0.5" />
+                      <JapaneseYen  className="w-5 h-5 text-red-600 mt-0.5" />
                     ),
                     title: "Direct Selling Capabilities",
                     desc: "No ability to manage direct sales, pricing, or negotiations",
@@ -407,15 +423,15 @@ export default function DowngradeToGuestModal({
           </CardContent>
 
           <CardFooter className="flex justify-end gap-3 border-t bg-slate-50">
-            <Button variant="outline" onClick={onClose} disabled={isProcessing}>
+            <Button variant="outline" onClick={onClose} disabled={isDowngrading}>
               Cancel
             </Button>
             <Button
               onClick={handleDowngrade}
-              disabled={!confirmed || isProcessing}
+              disabled={!confirmed || isDowngrading}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isProcessing ? (
+              {isDowngrading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Processing...

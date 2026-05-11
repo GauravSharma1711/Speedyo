@@ -16,7 +16,7 @@ export async function sendDealershipSubscriptionConfirmationMail(
       from: fromEmail,
       to: user_email,
       subject: '✅ Subscription Activated - Dealership Plan',
-      react: DealershipSubscriptionConfirmationEmail({
+      html: DealershipSubscriptionConfirmationEmail({
         full_name,
         tier_name,
         amount_paid,

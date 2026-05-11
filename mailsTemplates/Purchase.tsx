@@ -65,7 +65,7 @@ export default function PurchaseEmail({
                       <strong>Vehicle Slots:</strong> ${quantity}
                     </p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
-                      <strong>Total Amount:</strong> $${formattedAmount} USD
+                      <strong>Total Amount:</strong> $${formattedAmount} JPY
                     </p>
                     ${has_promo ? `
                     <p style="margin:0 0 8px; font-size:15px; color:#10b981;">

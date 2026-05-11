@@ -1,17 +1,21 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-import { updateMe, type UpdateUserInput } from "@/services/profile/profileUpdateServices";
+import { downgradeToGuest, updateMe, type UpdateUserInput } from "@/services/profile/profileUpdateServices";
 
 type State = {
   isSaving: boolean;
+  isDowngrading: boolean;
   error: string | null;
   save: (input: UpdateUserInput) => Promise<void>;
+  downgradeToGuest: () => Promise<{ vehiclesHidden: number }>;
 };
 
 export const useProfileUpdateStore = create<State>()(
   immer((set) => ({
     isSaving: false,
+    isDowngrading: false,
     error: null,
+
 
     async save(input) {
       set((s) => {
@@ -32,5 +36,30 @@ export const useProfileUpdateStore = create<State>()(
         });
       }
     },
+
+
+      async downgradeToGuest() {
+      set((s) => {
+        s.isDowngrading = true;
+        s.error = null;
+      });
+      try {
+        const res = await downgradeToGuest();
+        return res.data;
+      } catch (e: any) {
+        const msg = e?.response?.data?.error ?? e?.message ?? "Failed to downgrade account";
+        set((s) => {
+          s.error = msg;
+        });
+        throw new Error(msg);
+      } finally {
+        set((s) => {
+          s.isDowngrading = false;
+        });
+      }
+    },
+
+  
+  
   }))
 );

@@ -358,7 +358,7 @@ export default function CreateVehicleModalUI({
               </div>
 
               <div>
-                <Label htmlFor="price">Price (USD) *</Label>
+                <Label htmlFor="price">Price (JPY) *</Label>
                 <Input id="price" name="price" type="number" value={formData.price} onChange={handleChange} placeholder="e.g. 9500" />
               </div>
 

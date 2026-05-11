@@ -435,7 +435,7 @@ export default function ListingManagementUI(props: {
                       <div className="mt-2 text-xl font-bold text-slate-900">
                         {new Intl.NumberFormat("en-US", {
                           style: "currency",
-                          currency: "USD",
+                          currency: "JPY",
                         }).format(vehicle.price)}
                       </div>
 
@@ -704,7 +704,7 @@ function EditVehicleForm(props: {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="price">Price (USD)</Label>
+          <Label htmlFor="price">Price (JPY)</Label>
           <Input
             id="price"
             inputMode="numeric"

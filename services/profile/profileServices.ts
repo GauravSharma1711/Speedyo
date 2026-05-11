@@ -11,6 +11,18 @@ export type ProfileUser = {
   role?: "user" | "admin" | null;
   verified?: boolean | null;
   user_id?: string;
+
+    dealership_verification_status?: string | null;
+  dealership_selected_tier?: string | null;
+  business_name?: string | null;
+  business_address?: string | null;
+  business_city?: string | null;
+  business_state?: string | null;
+  business_zip?: string | null;
+  business_license_urls?: string[];
+  tax_id_number?: string | null;
+  verification_fee_paid?: boolean | null;
+  admin_verification_notes?: string | null;
 };
 
 export type ProfileVehicle = {

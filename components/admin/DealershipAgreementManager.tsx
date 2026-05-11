@@ -21,6 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/Dialog";
 import { useToast } from "@/components/ui/UseToast";
+import { AgreementStatus } from "@/lib/generated/prisma/enums";
 
 // ── Local form state ───────────────────────────────────────────────────────────
 type FormState = {
@@ -159,7 +160,7 @@ export default function DealershipAgreementManagerUI() {
         agreement_url: `/SignAgreement/${id}`,
         created_date: new Date().toISOString(),
         signed_at: null,
-      };
+      });
 
       setShowCreateModal(false);
       resetForm();
@@ -372,7 +373,7 @@ export default function DealershipAgreementManagerUI() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="service_fee_amount">Service Fee (USD) per Vehicle</Label>
+                    <Label htmlFor="service_fee_amount">Service Fee (JPY) per Vehicle</Label>
                     <Input
                       id="service_fee_amount"
                       name="service_fee_amount"

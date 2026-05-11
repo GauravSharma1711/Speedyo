@@ -65,7 +65,7 @@ interface Plan {
 const dealershipTiers: DealershipTier[] = [
   {
     name: "Standard",
-    price: "$99",
+    price: "¥99",
     features: [
       "Up to 10 vehicle sales per year",
       "Unlimited active listings",
@@ -79,7 +79,7 @@ const dealershipTiers: DealershipTier[] = [
   },
   {
     name: "Professional",
-    price: "$199",
+    price: "¥199",
     features: [
       "Up to 25 vehicle sales per year",
       "Unlimited active listings",
@@ -95,7 +95,7 @@ const dealershipTiers: DealershipTier[] = [
   },
   {
     name: "Enterprise",
-    price: "$349",
+    price: "¥349",
     features: [
       "Unlimited vehicle sales per year",
       "Unlimited active listings",
@@ -532,7 +532,7 @@ export default function SubscriptionPage() {
                       <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full">
                         <Building className="w-4 h-4" />
                         <span className="font-medium">
-                          $149 one-time registration fee + first month FREE
+                          ¥149 one-time registration fee + first month FREE
                         </span>
                       </div>
                     </div>
