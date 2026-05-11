@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from "react";
+import React, { useEffect,useState } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Loader2 } from "lucide-react";
@@ -9,6 +9,7 @@ import GuestDashboard from "../../components/dashboard/GuestDashboard";
 import SellerDashboard from "../../components/dashboard/SellerDashboard";
 import { useRouter } from "next/navigation";
 import { profileService, ProfileUser } from "@/services/profile/profileServices";
+import { useDashboardStore } from "@/store/dashboard";
 
 
  
@@ -33,13 +34,19 @@ const VehicleEditRequest = {
 };
 
 export default function Dashboard() {
+  const { user, isLoading, loadDashboard } = useDashboardStore();
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<ProfileUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
   const [vehicles, setVehicles] = useState<AnyRecord[]>([]);
   const [managedSales, setManagedSales] = useState<AnyRecord[]>([]);
   const [testDrives, setTestDrives] = useState<AnyRecord[]>([]);
   const [editRequests, setEditRequests] = useState<AnyRecord[]>([]);
+
+
+    useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   useEffect(() => {
     const fetchData = async () => {
