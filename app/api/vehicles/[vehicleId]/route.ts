@@ -79,3 +79,34 @@ export async function GET(_req: NextRequest, context: { params: Promise<{ vehicl
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest, context: { params: Promise<{ vehicleId: string }> }) {
+  try {
+    const { vehicleId } = await context.params;
+    const body = await req.json();
+    const data = { ...body };
+    delete data.id;
+
+    const vehicle = await prisma.vehicle.update({
+      where: { id: vehicleId },
+      data,
+      select: vehicleDetailSelect,
+    });
+
+    return NextResponse.json({ success: true, vehicle });
+  } catch (error) {
+    console.error("[PATCH /api/vehicles/[vehicleId]]", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(_req: NextRequest, context: { params: Promise<{ vehicleId: string }> }) {
+  try {
+    const { vehicleId } = await context.params;
+    await prisma.vehicle.delete({ where: { id: vehicleId } });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[DELETE /api/vehicles/[vehicleId]]", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

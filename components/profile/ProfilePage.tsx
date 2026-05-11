@@ -294,6 +294,7 @@ export default function ProfilePage() {
                 <PostCard
                   key={post.id}
                   post={post as any}
+                  currentUser={me}
                   onReact={async (reactionType) => {
                     const updated = await react(post.id, reactionType as any);
                     if (!updated) return;

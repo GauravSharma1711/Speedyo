@@ -13,7 +13,7 @@ export default function GuestPaymentConfirmationEmail({
   amount_paid,
   quantity,
   transaction_id,
-  login_url = 'https://speedio.app/login',
+  login_url = `${process.env.NEXT_PUBLIC_APP_URL}/signIn`,
 }: EmailTemplateProps): string {
   const paymentDate = new Date().toLocaleString();
   const slotLabel = quantity > 1 ? 'slots' : 'slot';

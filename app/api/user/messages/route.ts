@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
+import { emitNotification } from "@/lib/emitNotification";
 
 
 export async function GET(request: NextRequest) {
@@ -70,12 +71,14 @@ export async function POST(request: NextRequest) {
       vehicleId,
       managedSaleRequestId: _managedSaleRequestId,
       message_type = "general",
+      test_drive_details,
     }: {
       recipientId: string;
       content: string;
       vehicleId?: string | null;
       managedSaleRequestId?: string | null;
       message_type?: string;
+      test_drive_details?: any;
     } = body;
 
     if (!recipientId || !content?.trim()) {
@@ -148,13 +151,14 @@ export async function POST(request: NextRequest) {
         message_type: prismaMessageType,
         conversationId: conversation.id,
         vehicleId: vehicleId ?? null,
+        test_drive_details: test_drive_details ?? undefined,
       },
       include: {
         sender: { select: { id: true, full_name: true, profile_image: true } },
       },
     });
 
-    await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         recipientId,
         senderId: session.user.id,
@@ -162,7 +166,7 @@ export async function POST(request: NextRequest) {
         content: `New message from ${session.user.full_name ?? session.user.email}`,
         related_entity_type: "conversation",
         related_entity_id: conversation.id,
-        url: `/messages?conversationId=${conversation.id}`,
+        url: `/Messages?conversationId=${conversation.id}`,
       },
     });
 
@@ -172,12 +176,10 @@ export async function POST(request: NextRequest) {
         message,
         conversationId: conversation.id,
       });
-      io.to(`user:${recipientId}`).emit("new_notification", {
-        type: "new_message",
-        conversationId: conversation.id,
-        content: `New message from ${session.user.full_name ?? session.user.email}`,
-      });
     }
+
+    // Emit real-time notification via WebSocket
+    emitNotification(recipientId, notification);
 
     return NextResponse.json(
       { success: true, message, conversationId: conversation.id },

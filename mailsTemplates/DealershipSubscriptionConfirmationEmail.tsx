@@ -11,7 +11,7 @@ export default function DealershipSubscriptionConfirmationEmail({
   tier_name,
   amount_paid,
   subscription_id,
-  dashboard_url = 'https://speedio.app/Dashboard',
+  dashboard_url = `${process.env.NEXT_PUBLIC_APP_URL}/Dashboard`,
 }: EmailTemplateProps): string {
   const startDate = new Date().toLocaleString();
 

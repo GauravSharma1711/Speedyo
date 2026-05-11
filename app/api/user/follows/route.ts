@@ -4,6 +4,40 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 import { NotificationType } from "@/lib/generated/prisma/enums";
 
+// GET - Get all users the current user is following
+export async function GET(_req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const userId = session.user.id as string;
+
+  const follows = await prisma.follow.findMany({
+    where: { followerId: userId },
+    select: {
+      id: true,
+      followedId: true,
+      followed: {
+        select: {
+          id: true,
+          full_name: true,
+          profile_image: true,
+          user_type: true,
+        },
+      },
+    },
+  });
+
+  return NextResponse.json({
+    success: true,
+    following: follows.map((f) => ({
+      id: f.id,
+      followed_id: f.followedId,
+      user: f.followed,
+    })),
+  });
+}
+
+// POST - Follow a user
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

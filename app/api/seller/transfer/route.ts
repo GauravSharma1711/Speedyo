@@ -8,7 +8,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.user_type !== "private_seller") {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

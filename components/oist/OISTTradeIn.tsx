@@ -14,7 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { ArrowLeft, RefreshCw, CheckCircle, Loader2 } from "lucide-react";
-import { Notification, OISTTradeInRequest, PublicUser, UserEntity } from "@/api/entities";
+import { notificationService, userService } from "@/services/dashboard";
+import { oistTradeInService } from "@/services/oistTradeInService";
+import AuthButton from "./AuthButton";
 
 type OISTTradeInProps = {
   onBack: () => void;
@@ -40,7 +42,7 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
   useEffect(() => {
     (async () => {
       try {
-        const me = await UserEntity.me();
+        const me = await userService.me();
         setFormData((prev) => ({
           ...prev,
           fullName: prev.fullName || me.full_name || "",
@@ -79,7 +81,7 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
 
     try {
       // Create trade-in request in database
-      await OISTTradeInRequest.create({
+      await oistTradeInService.create({
         full_name: formData.fullName,
         email: formData.email,
         facebook_profile: formData.facebookProfile,
@@ -93,13 +95,13 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
       });
 
       // Get all admin users from PublicUser entity
-      const adminUsers = await PublicUser.filter({ role: "admin" });
+      const adminUsers = await userService.getAdmins();
 
       // Send notification to all admins
       await Promise.all(
-        adminUsers.map(admin =>
-          Notification.create({
-            recipient_id: admin.user_id,
+        adminUsers.map((admin: any) =>
+          notificationService.create({
+            recipientId: admin.id,
             type: "new_managed_sale_request",
             content: `New OIST Trade-In request from ${formData.fullName} for ${formData.vehicleMake} ${formData.vehicleModel} (${formData.vehicleYear})`,
             url: `/admin?tab=oist-trade-in`,
@@ -134,11 +136,9 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
             </p>
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <a href="https://speedio.app/login">
-                  <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
-                    Create Account
-                  </Button>
-                </a>
+                <AuthButton className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
+                  Create Account
+                </AuthButton>
                 <Button asChild variant="outline" className="w-full">
                   <Link href="/Marketplace">Browse Vehicles</Link>
                 </Button>

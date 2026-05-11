@@ -25,6 +25,10 @@ export async function GET(req: NextRequest) {
             isVerified: true,
             setup_completed: true,
             welcome_email_sent: true,
+            dealership_verification_status: true,
+            admin_verification_notes: true,
+            private_seller_slots: true,
+            seller_subscription: true,
             createdAt: true,
 
                 dealership_verification_status: true,
@@ -60,6 +64,10 @@ export async function GET(req: NextRequest) {
             verified: user.isVerified,
             setup_completed: user.setup_completed,
             welcome_email_sent: user.welcome_email_sent,
+            dealership_verification_status: user.dealership_verification_status,
+            admin_verification_notes: user.admin_verification_notes,
+            private_seller_slots: user.private_seller_slots,
+            seller_subscription: user.seller_subscription,
             created_date: user.createdAt,
 
               dealership_verification_status: user.dealership_verification_status,

@@ -20,6 +20,8 @@ export async function middleware(request:NextRequest) {
         url.pathname.startsWith('/Feed') ||
         url.pathname.startsWith('/Messages') ||
         url.pathname.startsWith('/Managed-Sales')  ||
+        url.pathname.startsWith('/Admin-Panel') ||
+        url.pathname.startsWith('/Checkout') ||
         url.pathname.startsWith('/Profile') 
     )) {
         return NextResponse.redirect(new URL('/signIn', request.url))

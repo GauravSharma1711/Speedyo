@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-const TypewriterHint = ({ phrases = [], typingSpeed = 50, deletingSpeed = 40, pauseDuration = 1500 }) => {
+interface TypewriterHintProps {
+  phrases?: string[];
+  typingSpeed?: number;
+  deletingSpeed?: number;
+  pauseDuration?: number;
+}
+
+const TypewriterHint: React.FC<TypewriterHintProps> = ({ phrases = [], typingSpeed = 50, deletingSpeed = 40, pauseDuration = 1500 }) => {
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [currentText, setCurrentText] = useState('');

@@ -112,7 +112,7 @@ export async function POST(
         content: `Your test drive request for "${vehicleTitle}" was successfully submitted.`,
         related_entity_type: "test_drive_request",
         related_entity_id: testDriveRequest.id,
-        url: `/messages?conversationId=${conversation.id}`,
+        url: `/Messages?conversationId=${conversation.id}`,
       },
     });
 

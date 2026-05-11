@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft, Handshake, DollarSign, CheckCircle } from "lucide-react";
+import AuthButton from "./AuthButton";
 
 type OISTSellCarProps = {
   onBack: () => void;
@@ -147,11 +148,9 @@ export default function OISTSellCar({ onBack }: OISTSellCarProps) {
             </div>
           </div>
           <div className="pt-4">
-            <a href="https://speedio.app/login">
-              <Button size="lg" className="w-full bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
-                Create Account & Get Started
-              </Button>
-            </a>
+            <AuthButton size="lg" className="w-full bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
+              Create Account & Get Started
+            </AuthButton>
           </div>
         </CardContent>
       </Card>

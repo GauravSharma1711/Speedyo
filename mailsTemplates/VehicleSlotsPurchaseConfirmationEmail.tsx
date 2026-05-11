@@ -11,7 +11,7 @@ export default function VehicleSlotsPurchaseConfirmationEmail({
   amount_paid,
   quantity,
   transaction_id,
-  dashboard_url = 'https://speedio.app/Dashboard',
+  dashboard_url = `${process.env.NEXT_PUBLIC_APP_URL}/Dashboard`,
 }: EmailTemplateProps): string {
   const paymentDate = new Date().toLocaleString();
   const vehicleLabel = quantity > 1 ? 'vehicles' : 'vehicle';

@@ -8,24 +8,20 @@ import { Textarea } from "@/components/ui/TextArea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
-import { VehicleEditRequest, Notification, User } from "@/api/entities"; // Added User
-import { createPageUrl } from "@/utils";
-import { 
-  Edit, 
-  X,
-  AlertCircle,
-  Send,
-  Clock // Added Clock
-} from "lucide-react";
+import { vehicleEditRequestService } from "@/services/vehicleEditRequestService";
+import { notificationService, userService } from "@/services/dashboard";
+import { Edit, X, AlertCircle, Send, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 
-export default function VehicleEditRequestModal({ 
-  vehicle, 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  currentUser 
-}) {
+type VehicleEditRequestModalProps = {
+  vehicle: any;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  currentUser: any;
+};
+
+export default function VehicleEditRequestModal({ vehicle, isOpen, onClose, onSuccess, currentUser }: VehicleEditRequestModalProps) {
   const [editData, setEditData] = useState({
     title: vehicle?.title || '',
     price: vehicle?.price || '',
@@ -38,20 +34,19 @@ export default function VehicleEditRequestModal({
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Compare original vs new values to determine what changed
-      const changes = {};
-      Object.keys(editData).forEach(key => {
-        // Handle number types specifically to avoid comparing 0 vs '' or actual number vs string
+      const changes: Record<string, any> = {};
+      const editDataAny = editData as any;
+      Object.keys(editData).forEach((key: string) => {
         const originalValue = typeof vehicle[key] === 'number' ? String(vehicle[key]) : vehicle[key];
-        const editedValue = typeof editData[key] === 'number' ? String(editData[key]) : editData[key];
+        const editedValue = typeof editDataAny[key] === 'number' ? String(editDataAny[key]) : editDataAny[key];
 
         if (editedValue !== originalValue) {
-          changes[key] = editData[key];
+          changes[key] = editDataAny[key];
         }
       });
 
@@ -61,21 +56,17 @@ export default function VehicleEditRequestModal({
         return;
       }
 
-      // Create the edit request
-      await VehicleEditRequest.create({
-        vehicle_id: vehicle.id,
-        requested_by_user_id: currentUser.id,
-        requested_changes: changes,
+      await vehicleEditRequestService.create({
+        vehicleId: vehicle.id,
         reason: reason,
-        status: 'pending'
+        requested_changes: changes,
       });
 
-      // Notify admins about the new edit request
-      const adminUsers = await User.filter({ role: 'admin' });
-      const notificationPromises = adminUsers.map(admin =>
-        Notification.create({
-          recipient_id: admin.id,
-          sender_id: currentUser.id,
+      const adminUsers = await userService.getAdmins();
+      const notificationPromises = adminUsers.map((admin: any) =>
+        notificationService.create({
+          recipientId: admin.id,
+          senderId: currentUser.id,
           type: "vehicle_edit_request",
           content: `${currentUser.full_name} requested edits for "${vehicle.title}". Changes: ${Object.keys(changes).join(', ')}.`,
           related_entity_id: vehicle.id,

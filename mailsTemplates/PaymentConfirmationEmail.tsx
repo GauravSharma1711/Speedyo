@@ -15,7 +15,7 @@ export default function PaymentConfirmationEmail({
   total_amount,
   payment_id,
   has_promo = false,
-  register_url = 'https://speedio.app/register',
+  register_url = `${process.env.NEXT_PUBLIC_APP_URL}/signUp`,
 }: EmailTemplateProps): string {
 const formattedAmount = parseFloat(total_amount).toFixed(2);
   const currentYear = new Date().getFullYear();

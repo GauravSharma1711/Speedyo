@@ -22,27 +22,17 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
-      select: {
-        id: true,
-        createdAt: true,
-        updatedAt: true,
-        post_type: true,
-        content: true,
-        images: true,
-        images_thumbnails: true,
-        images_small: true,
-        images_medium: true,
-        video_url: true,
-        video_thumbnail: true,
-        article_title: true,
-        article_excerpt: true,
-        views: true,
-        shares: true,
-        comments_count: true,
-        reactions: true,
-        user_reactions: true,
-        authorId: true,
-        vehicleId: true,
+      include: {
+        author: {
+          select: {
+            id: true,
+            full_name: true,
+            profile_image: true,
+            user_type: true,
+            role: true,
+            isVerified: true,
+          },
+        },
       },
     }),
   ]);
@@ -68,6 +58,7 @@ export async function GET(req: NextRequest) {
     reactions: p.reactions,
     user_reactions: p.user_reactions,
 
+    author: p.author ?? null,
     author_id: p.authorId,
     vehicle_id: p.vehicleId,
   }));

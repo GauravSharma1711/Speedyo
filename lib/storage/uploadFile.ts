@@ -10,14 +10,21 @@ export interface UploadResult {
 }
 
 export async function uploadFile(
-  file: File,
+  file: File | Buffer,
   folder: string = "uploads"
 ): Promise<UploadResult> {
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  let buffer: Buffer;
+  let fileName: string;
 
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const fileName = `${uuidv4()}.${ext}`;
+  if (Buffer.isBuffer(file)) {
+    buffer = file;
+    fileName = `${uuidv4()}.webp`;
+  } else {
+    const bytes = await file.arrayBuffer();
+    buffer = Buffer.from(bytes);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    fileName = `${uuidv4()}.${ext}`;
+  }
 
   const uploadDir = path.join(process.cwd(), "public", folder);
   await mkdir(uploadDir, { recursive: true });
@@ -25,7 +32,6 @@ export async function uploadFile(
   const filePath = path.join(uploadDir, fileName);
   await writeFile(filePath, buffer);
 
-  // Returns a public URL path
   const url = `/${folder}/${fileName}`;
   return { url };
 }

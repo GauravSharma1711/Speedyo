@@ -1,13 +1,9 @@
-
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import {
-  LogIn,
-  Loader2 
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import GuestDashboard from "../../components/dashboard/GuestDashboard";
 import SellerDashboard from "../../components/dashboard/SellerDashboard";
@@ -104,7 +100,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30">
         <Card className="max-w-md w-full mx-4">
@@ -115,7 +111,6 @@ export default function Dashboard() {
               onClick={() => router.push("/signIn")}
               size="lg"
               className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
-              <LogIn className="w-5 h-5 mr-2" />
               Login / Register
             </Button>
           </CardContent>
@@ -124,22 +119,19 @@ export default function Dashboard() {
     );
   }
 
-  const userType = currentUser.user_type || 'guest';
+  const userType = user.user_type || 'guest';
+  const passUser = {
+    ...user,
+    email: user.email ?? "",
+  };
 
-  // Render appropriate dashboard based on user type
   if (userType === 'guest') {
-    return <GuestDashboard user={currentUser} />;
+    return <GuestDashboard user={passUser as any} />;
   }
 
   if (userType === 'private_seller' || userType === 'dealership') {
-    return (
-      <SellerDashboard
-        user={currentUser}
-      />
-    );
+    return <SellerDashboard />;
   }
 
-  // Fallback for unknown user types (e.g., 'admin' or other roles not specifically handled)
-  // These users will see the Guest Dashboard.
-  return <GuestDashboard user={currentUser} />;
+  return <GuestDashboard user={passUser as any} />;
 }

@@ -6,6 +6,9 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 const VALID_POST_TYPES = ["text", "image", "video", "article", "vehicle_promo"] as const;
 
 function isValidUrl(url: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  // Allow absolute URLs and relative paths like /uploads/images/...
+  if (url.startsWith("/") || url.startsWith("http://") || url.startsWith("https://")) return true;
   try {
     new URL(url);
     return true;

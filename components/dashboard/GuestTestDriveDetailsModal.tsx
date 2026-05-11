@@ -12,8 +12,8 @@ import { format } from 'date-fns';
 
 import { useRouter } from "next/navigation";
 
-const TestDriveStatusInfo = ({ status }) => {
-    const statusConfig = {
+const TestDriveStatusInfo = ({ status }: { status: string }) => {
+    const statusConfig: Record<string, { icon: React.ReactNode; text: string; color: string }> = {
         pending_review: { icon: <ClockIcon className="w-4 h-4" />, text: "Pending Seller Approval", color: "bg-amber-100 text-amber-800" },
         approved: { icon: <CheckCircle2 className="w-4 h-4" />, text: "Approved by Seller", color: "bg-emerald-100 text-emerald-800" },
         declined: { icon: <XCircle className="w-4 h-4" />, text: "Declined by Seller", color: "bg-red-100 text-red-800" },
@@ -30,10 +30,28 @@ const TestDriveStatusInfo = ({ status }) => {
     );
 };
 
-export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveMessage, vehicle, seller, onCancelRequest }) {
+export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveMessage, vehicle, seller, onCancelRequest }: {
+    isOpen: boolean;
+    onClose: () => void;
+    testDriveMessage: any;
+    vehicle?: any;
+    seller?: any;
+    onCancelRequest?: (messageId: string) => void;
+}) {
     const router = useRouter();
-    if (!isOpen || !testDriveMessage || !vehicle) return null;
-    const details = testDriveMessage.test_drive_details;
+    if (!isOpen || !testDriveMessage) return null;
+
+    const details = testDriveMessage._parsedTestDriveDetails || testDriveMessage.test_drive_details;
+    const vehicleInfo = vehicle || (details?.vehicle_title ? {
+      title: details.vehicle_title,
+      primary_image: null,
+      price: null,
+      year: null,
+      make: null,
+      model: null,
+    } : null);
+
+    if (!vehicleInfo) return null;
     const canBeCancelled = details?.status === 'pending_review';
 
     return (
@@ -72,8 +90,8 @@ export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveM
                             {/* Vehicle Info */}
                             <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg">
                                 <div className="w-24 h-16 bg-slate-200 rounded-md overflow-hidden flex-shrink-0">
-                                    {vehicle.primary_image ? (
-                                        <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                    {vehicleInfo.primary_image ? (
+                                        <img src={vehicleInfo.primary_image} alt={vehicleInfo.title} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="flex items-center justify-center h-full">
                                             <Car className="w-8 h-8 text-slate-400" />
@@ -81,9 +99,9 @@ export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveM
                                     )}
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="font-semibold text-slate-800">{vehicle.title}</h4>
-                                    <p className="text-lg font-bold text-blue-600">${vehicle.price?.toLocaleString()}</p>
-                                    <p className="text-sm text-slate-500">{vehicle.year} {vehicle.make} {vehicle.model}</p>
+                                    <h4 className="font-semibold text-slate-800">{vehicleInfo.title || 'Test Drive Request'}</h4>
+                                    <p className="text-lg font-bold text-blue-600">${vehicleInfo.price?.toLocaleString() || 'N/A'}</p>
+                                    <p className="text-sm text-slate-500">{vehicleInfo.year || ''} {vehicleInfo.make || ''} {vehicleInfo.model || ''}</p>
                                 </div>
                             </div>
 
@@ -153,9 +171,9 @@ export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveM
                                 )}
                                 
                                 {canBeCancelled && (
-                                    <Button 
-                                        variant="destructive" 
-                                        onClick={() => onCancelRequest(testDriveMessage.id)}
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => onCancelRequest?.(testDriveMessage.id)}
                                         className="flex items-center gap-2"
                                     >
                                         <XCircle className="w-4 h-4" />

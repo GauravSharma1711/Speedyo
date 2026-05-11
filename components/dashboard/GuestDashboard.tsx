@@ -2,148 +2,138 @@
 "use client"
 import Link from "next/link";
 import React, { useState, useEffect, useCallback } from "react";
-import { Vehicle, Message, ManagedSaleRequest, Notification, PublicUser, VehicleTransfer } from "@/api/entities";
-import { Card, CardContent, CardHeader, CardTitle }
-  from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar, AvatarFallback } from "@/components/ui/Avatar";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import {
-  Heart,
-  MessageCircle,
-  Calendar,
-  Eye,
-  Car,
-  TrendingUp,
-  Handshake,
-  Check,
-  Clock,
-  CheckCircle,
-  XCircle,
-  ExternalLink,
-  Edit,
-  Trash2,
-  Info,
-  Plus, // Added Plus icon
-  FileText,
-  X
+  Heart, MessageCircle, Calendar, Eye, Car, TrendingUp, Handshake,
+  Check, Clock, CheckCircle, XCircle, ExternalLink, Edit, Trash2,
+  Info, Plus, FileText, X
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-
 import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/Tooltip";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
 import ManagedSalesRequestForm from "../manageSales/RequestForm";
 import ManagedSaleDetailsModal from "./ManagedSaleDetailsModal";
 import GuestTestDriveDetailsModal from "./GuestTestDriveDetailsModal";
 import ManagedSalesActions from "./ManagedSalesActions";
 import TransferProgressTracker from "./TransferProgressTracker";
 import { useToast } from "@/components/ui/UseToast";
+import { useGuestDashboardStore } from "@/store/dashboard";
+import { managedSaleService, messageService, publicUserService } from "@/services/dashboard";
+import axios from "@/lib/axios";
 
-export default function GuestDashboard({ user }) {
+export default function GuestDashboard({ user }: { user: any }) {
   const router = useRouter();
-  const [recentlyViewed, setRecentlyViewed] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [managedSaleRequests, setManagedSaleRequests] = useState([]);
-  const [sentTestDrives, setSentTestDrives] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
-  const [sellers, setSellers] = useState([]); // State to store user data for seller lookups
-  const [vehiclePerformance, setVehiclePerformance] = useState({});
-  const [vehicleTransfers, setVehicleTransfers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    conversations, transfers, managedSales, sellers, recentlyViewed, isLoading,
+    loadGuestDashboard,
+  } = useGuestDashboardStore() as any;
 
-  // State for Modals
-  const [showNewRequestModal, setShowNewRequestModal] = useState(false); // Renamed from showRequestForm
-  const [editingRequest, setEditingRequest] = useState(null);
-  const [showRequestDetailsModal, setShowRequestDetailsModal] = useState(false); // Renamed from showDetailsModal
-  const [selectedRequest, setSelectedRequest] = useState(null); // Renamed from viewingRequest
-  const [viewingTestDrive, setViewingTestDrive] = useState(null);
-  const [selectedTransfer, setSelectedTransfer] = useState(null);
+  const messagesWithContext = conversations?.flatMap((c: any) =>
+    (c.messages || []).map((m: any) => {
+      let testDriveDetails = m.test_drive_details;
+      if (!testDriveDetails && m.content && m.message_type === 'test_drive_request') {
+        try {
+          const parsed = JSON.parse(m.content);
+          if (parsed.vehicle_title || parsed.requested_date) {
+            testDriveDetails = {
+              status: parsed.status || 'pending_review',
+              preferred_date: parsed.requested_date,
+              preferred_time: parsed.requested_time,
+              location: parsed.location,
+              vehicle_title: parsed.vehicle_title,
+              additional_notes: parsed.additional_notes,
+            };
+          }
+        } catch {
+          // Not JSON, ignore
+        }
+      }
+      return {
+        ...m,
+        _conversation: c,
+        _sender: c.other_user,
+        _parsedTestDriveDetails: testDriveDetails,
+      };
+    })
+  ) || [];
+  const sentTestDrives = messagesWithContext.filter((m: any) =>
+    m?.message_type === 'test_drive_request' ||
+    m?._parsedTestDriveDetails ||
+    m?.test_drive_details ||
+    m?.message_type?.includes('test_drive')
+  );
+
+  const messages = messagesWithContext;
+
+  const [viewingTestDrive, setViewingTestDrive] = useState<any>(null);
+  const [selectedTransfer, setSelectedTransfer] = useState<any>(null);
+  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<any>(null);
+  const [showRequestDetailsModal, setShowRequestDetailsModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [vehiclePerformance, setVehiclePerformance] = useState<Record<string, any>>({});
+
+  // Combine transfers
+  const vehicleTransfers = transfers || [];
 
   const { toast } = useToast();
 
-  const loadDashboardData = useCallback(async () => {
-    if (!user) return;
-
-    setIsLoading(true);
+  // Helper to create notifications via API
+  const createNotification = async (data: {
+    recipient_id: string;
+    sender_id?: string;
+    type: string;
+    content: string;
+    related_entity_type?: string;
+    related_entity_id?: string;
+    url?: string;
+    icon?: string;
+  }) => {
     try {
-      const [allVehicles, allUsers, userMessages, userRequests, userSentTestDrives, userTransfers] = await Promise.all([
-        Vehicle.list("-created_date", 100),
-        PublicUser.list(),
-        Message.filter({ recipient_id: user.id }, "-created_date", 10),
-        user.id ? ManagedSaleRequest.filter({ submitted_by_user_id: user.id }, "-created_date") : [],
-        user.id ? Message.filter({ sender_id: user.id, message_type: 'test_drive_request' }, "-created_date") : [],
-        user.id ? VehicleTransfer.filter({ buyer_id: user.id }, "-created_date") : []
-      ]);
-
-      setVehicles(allVehicles);
-      setSellers(allUsers);
-      setRecentlyViewed(allVehicles.slice(0,5));
-      setMessages(userMessages);
-      setManagedSaleRequests(userRequests || []);
-      setSentTestDrives(userSentTestDrives);
-      setVehicleTransfers(userTransfers || []);
-
-      // Get performance data from the already-fetched vehicles list to prevent errors
-      const performanceData = {};
-      if (Array.isArray(userRequests)) {
-        userRequests
-          .filter(req => req.status === 'listed' && req.created_vehicle_id)
-          .forEach(req => {
-            const vehicle = allVehicles.find(v => v.id === req.created_vehicle_id);
-            if (vehicle) {
-              performanceData[req.id] = { views: vehicle.views || 0 };
-            } else {
-              console.warn(`Could not find vehicle ${req.created_vehicle_id} for request ${req.id} in the loaded list.`);
-            }
-          });
-      }
-      setVehiclePerformance(performanceData);
-
+      await axios.post("/api/notifications", data);
     } catch (error) {
-      console.error("Failed to load dashboard data:", error);
+      console.error("Failed to create notification:", error);
     }
-    setIsLoading(false);
-  }, [user]);
+  };
+
+  const loadDashboardData = useCallback(async () => {
+    if (!user?.id) return;
+    await loadGuestDashboard(user.id);
+  }, [user, loadGuestDashboard]);
 
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  const getVehicleById = (vehicleId) => {
-    return vehicles.find(v => v.id === vehicleId);
-  };
-  
-  const getSellerByEmail = (email) => {
-    return sellers.find(s => s.email === email);
+  const getVehicleById = (vehicleId: string) => {
+    return conversations.find((c: any) => c.vehicle?.id === vehicleId)?.vehicle ?? null;
   };
 
-  const handleEditRequest = (request) => {
+  const getSellerByEmail = (email: string) => {
+    return sellers.find((s: any) => s.email === email);
+  };
+
+  const handleEditRequest = (request: any) => {
     setEditingRequest(request);
-    setShowNewRequestModal(true); // Renamed from setShowRequestForm
-    setShowRequestDetailsModal(false); // Close details modal when opening edit form
+    setShowNewRequestModal(true);
+    setShowRequestDetailsModal(false);
   };
 
-  const handleViewDetails = (request) => {
-    setSelectedRequest(request); // Renamed from setViewingRequest
-    setShowRequestDetailsModal(true); // Renamed from setShowDetailsModal
+  const handleViewDetails = (request: any) => {
+    setSelectedRequest(request);
+    setShowRequestDetailsModal(true);
   };
 
-  const getChanges = (original, updated) => {
-      const changes = {};
-      // Collect all unique keys from both original and updated objects
+  const getChanges = (original: any, updated: any) => {
+      const changes: Record<string, any> = {};
       const allKeys = new Set([...Object.keys(original || {}), ...Object.keys(updated || {})]);
       for (const key of allKeys) {
-        // Compare stringified versions to handle nested objects/arrays correctly
         if (JSON.stringify(original?.[key]) !== JSON.stringify(updated?.[key])) {
           changes[key] = updated?.[key];
         }
@@ -151,17 +141,17 @@ export default function GuestDashboard({ user }) {
       return changes;
   };
 
-  const handleUserUpdateRequest = async (updatedFormData, originalRequest) => {
+  const handleUserUpdateRequest = async (updatedFormData: any, originalRequest: any) => {
     if (!originalRequest || !originalRequest.id) return;
 
-    const vehicleChanges = getChanges(originalRequest.vehicle_details, updatedFormData.vehicle_details);
-    const accessChanges = getChanges(originalRequest.access_arrangements, updatedFormData.access_arrangements);
-    
-    const requested_changes = { vehicle_details: vehicleChanges, access_arrangements: accessChanges };
+    const vehicleChanges = getChanges(originalRequest.vehicle_details || {}, updatedFormData.vehicle_details || {});
+    const accessChanges = getChanges(originalRequest.access_arrangements || {}, updatedFormData.access_arrangements || {});
+
+    const requested_changes: Record<string, any> = { vehicle_details: vehicleChanges, access_arrangements: accessChanges };
 
     // Clean up empty change objects
-    if (Object.keys(requested_changes.vehicle_details).length === 0) delete requested_changes.vehicle_details;
-    if (Object.keys(requested_changes.access_arrangements).length === 0) delete requested_changes.access_arrangements;
+    if (Object.keys(requested_changes.vehicle_details || {}).length === 0) delete requested_changes.vehicle_details;
+    if (Object.keys(requested_changes.access_arrangements || {}).length === 0) delete requested_changes.access_arrangements;
 
     if (Object.keys(requested_changes).length === 0) {
       toast({
@@ -195,18 +185,17 @@ export default function GuestDashboard({ user }) {
         status: 'pending' // Status of this specific edit request (within the array)
       };
 
-      await ManagedSaleRequest.update(originalRequest.id, {
+      await managedSaleService.update(originalRequest.id, {
         status: 'edit_requested', // Overall status of the request
         edit_requests: [...existingEdits, newEditRequestPayload]
       });
 
-      // ADMIN NOTIFICATION: Notify all admins about the edit request
-      const admins = await PublicUser.filter({ role: 'admin' });
+      const admins = await publicUserService.list();
       
       if (admins && admins.length > 0) {
-        const notificationPromises = admins.map(admin =>
-          Notification.create({
-            recipient_id: admin.user_id, // Use user_id from PublicUser
+        const notificationPromises = admins.map((admin: any) =>
+          createNotification({
+            recipient_id: admin.user_id as string,
             sender_id: user.id,
             type: "managed_sale_edit_request",
             content: `${user.full_name} submitted an edit request for managed sale: "${originalRequest.vehicle_details.title}" (${originalRequest.vehicle_details.year} ${originalRequest.vehicle_details.make} ${originalRequest.vehicle_details.model}).`,
@@ -216,7 +205,6 @@ export default function GuestDashboard({ user }) {
             icon: "Edit"
           })
         );
-        await Promise.all(notificationPromises);
       }
 
       toast({
@@ -238,7 +226,7 @@ export default function GuestDashboard({ user }) {
     }
   };
 
-  const handleCancelRequest = async (requestToCancel) => {
+  const handleCancelRequest = async (requestToCancel: any) => {
     if (!requestToCancel || !requestToCancel.id) {
       toast({
         title: "Invalid Request",
@@ -247,30 +235,30 @@ export default function GuestDashboard({ user }) {
       });
       return;
     }
-    
+
     if (window.confirm("Are you sure you want to cancel this request? This action cannot be undone.")) {
       try {
         // Update the ManagedSaleRequest status
-        await ManagedSaleRequest.update(requestToCancel.id, { 
+        await managedSaleService.update(requestToCancel.id, {
           status: 'cancelled',
           cancellation_reason: 'Cancelled by user'
         });
 
         // If the request was listed, also cancel the corresponding vehicle listing
         if (requestToCancel.status === 'listed' && requestToCancel.created_vehicle_id) {
-          await Vehicle.update(requestToCancel.created_vehicle_id, { status: 'cancelled' });
+          await axios.patch(`/api/vehicles/${requestToCancel.created_vehicle_id}`, { status: 'cancelled' });
         }
 
-        // Notify admins about the cancellation, only if admins exist
-        const admins = await PublicUser.filter({ role: 'admin' });
-        
+        // Notify admins about the cancellation
+        const admins = await publicUserService.list();
+
         if (admins && admins.length > 0) {
-          const notificationPromises = admins.map(admin => 
-            Notification.create({
-              recipient_id: admin.user_id, // Use user_id from PublicUser
+          const notificationPromises = admins.map((admin: any) =>
+            createNotification({
+              recipient_id: admin.user_id,
               sender_id: user.id,
               type: "managed_sale_cancellation",
-              content: `${user.full_name} cancelled their managed sale request for "${requestToCancel.vehicle_details.title}" (${requestToCancel.vehicle_details.year} ${requestToCancel.vehicle_details.make} ${requestToCancel.vehicle_details.model})`,
+              content: `${user.full_name} cancelled their managed sale request for "${requestToCancel.vehicle_details?.title || requestToCancel.vehicle_title}" (${requestToCancel.vehicle_details?.year || requestToCancel.vehicle_year} ${requestToCancel.vehicle_details?.make || requestToCancel.vehicle_make} ${requestToCancel.vehicle_details?.model || requestToCancel.vehicle_model})`,
               related_entity_type: "ManagedSaleRequest",
               related_entity_id: requestToCancel.id,
               url: "/Admin-Panel",
@@ -279,14 +267,14 @@ export default function GuestDashboard({ user }) {
           );
           await Promise.all(notificationPromises);
         }
-        
+
         // Refresh UI
-        await loadDashboardData(); // Using the main data loader to refresh everything
-        if(selectedRequest && selectedRequest.id === requestToCancel.id) {
+        await loadDashboardData();
+        if (selectedRequest && selectedRequest.id === requestToCancel.id) {
           setShowRequestDetailsModal(false);
           setSelectedRequest(null);
         }
-        
+
         toast({
           title: "Request Cancelled",
           description: "Your managed sale request has been successfully cancelled.",
@@ -304,34 +292,32 @@ export default function GuestDashboard({ user }) {
     }
   };
 
-  const handleCancelTestDriveRequest = async (messageId) => {
+  const handleCancelTestDriveRequest = async (messageId: string) => {
     if (window.confirm("Are you sure you want to cancel this test drive request?")) {
         try {
-            const messageToUpdate = sentTestDrives.find(msg => msg.id === messageId);
+            const messageToUpdate = sentTestDrives.find((msg: any) => msg.id === messageId);
             if (messageToUpdate && messageToUpdate.test_drive_details) {
                 const updatedDetails = { ...messageToUpdate.test_drive_details, status: 'cancelled' };
-                await Message.update(messageId, { test_drive_details: updatedDetails });
-                
-                await Message.create({
-                    recipient_id: messageToUpdate.recipient_id,
-                    sender_id: user.id,
-                    content: `The test drive request for ${format(new Date(updatedDetails.preferred_date), 'MMM d, yyyy')} has been cancelled by the buyer.`,
-                    message_type: 'confirmation_test_drive', // Use 'confirmation_test_drive' to prevent creating a new request
-                    vehicle_id: messageToUpdate.vehicle_id,
-                    conversation_id: messageToUpdate.conversation_id // Keep it in the same conversation
+                await axios.patch(`/api/user/messages/${messageId}`, { test_drive_details: updatedDetails });
+
+                await axios.post("/api/user/messages", {
+                    recipientId: messageToUpdate.recipient_id || messageToUpdate.recipientId,
+                    content: `The test drive request for ${format(new Date(updatedDetails.preferred_date || Date.now()), 'MMM d, yyyy')} has been cancelled by the buyer.`,
+                    message_type: 'confirmation_test_drive',
+                    vehicleId: messageToUpdate.vehicle_id || messageToUpdate.vehicleId,
                 });
 
                 // ADMIN NOTIFICATION: Notify all admins about test drive cancellation
-                const admins = await PublicUser.filter({ role: 'admin' });
-                
+                const admins = await publicUserService.list();
+
                 if (admins && admins.length > 0) {
-                  const vehicle = getVehicleById(messageToUpdate.vehicle_id);
-                  const notificationPromises = admins.map(admin => 
-                    Notification.create({
-                      recipient_id: admin.user_id, // Use user_id from PublicUser
+                  const vehicle = getVehicleById(messageToUpdate.vehicle_id || messageToUpdate.vehicleId);
+                  const notificationPromises = admins.map((admin: any) =>
+                    createNotification({
+                      recipient_id: admin.user_id as string, // Use user_id from PublicUser
                       sender_id: user.id,
                       type: "test_drive_cancellation",
-                      content: `${user.full_name} cancelled their test drive request for "${vehicle?.title}" scheduled for ${format(new Date(updatedDetails.preferred_date), 'MMM d, yyyy')}`,
+                      content: `${user.full_name} cancelled their test drive request for "${vehicle?.title}" scheduled for ${format(new Date(updatedDetails.preferred_date || Date.now()), 'MMM d, yyyy')}`,
                       related_entity_type: "Message",
                       related_entity_id: messageId,
                       url: "/Admin-Panel",
@@ -354,10 +340,25 @@ export default function GuestDashboard({ user }) {
   const handleFormSuccess = () => {
     setShowNewRequestModal(false);
     setEditingRequest(null);
-    loadDashboardData(); // Reload data after successful form submission (for NEW requests)
+    loadDashboardData();
   };
 
-  const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }) => (
+  const handleSaveRequest = async (payload: any) => {
+    if (editingRequest) {
+      await handleUserUpdateRequest(payload, editingRequest);
+    } else {
+      await managedSaleService.create(payload);
+      handleFormSuccess();
+    }
+  };
+
+  const StatCard = ({ icon: Icon, title, value, subtitle, color = "blue" }: {
+    icon: React.FC<{ className?: string }>;
+    title: string;
+    value: string | number;
+    subtitle?: string;
+    color?: string;
+  }) => (
     <Card className="bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300">
       <CardContent className="p-6">
         <div className="flex items-center gap-4">
@@ -374,7 +375,7 @@ export default function GuestDashboard({ user }) {
     </Card>
   );
 
-  const getStatusInfo = (status) => {
+  const getStatusInfo = (status: string) => {
     switch (status) {
       case 'pending_review':
         return {
@@ -443,7 +444,7 @@ export default function GuestDashboard({ user }) {
     }
   };
 
-  const getTestDriveStatusInfo = (testDriveDetails) => {
+  const getTestDriveStatusInfo = (testDriveDetails: any) => {
     // Make sure we're reading the status from the most current data
     const status = testDriveDetails?.status || 'pending_review';
     
@@ -510,7 +511,7 @@ export default function GuestDashboard({ user }) {
               </span>
             </div>
            <Link href="/DealershipRegistration">
-              <Button variant="destructive_outline" size="sm">Resubmit Application</Button>
+              <Button variant="destructive" size="sm">Resubmit Application</Button>
             </Link>
           </AlertDescription>
         </Alert>
@@ -520,7 +521,7 @@ export default function GuestDashboard({ user }) {
     return null;
   };
 
-  const currentPublicUser = sellers.find(s => s.id === user?.id);
+  const currentPublicUser = sellers.find((s: any) => s.id === user?.id);
 
   return (
     <div className="space-y-6 py-4">
@@ -533,7 +534,7 @@ export default function GuestDashboard({ user }) {
           <div>
             <h1 className="text-3xl font-bold text-slate-800">Guest Dashboard</h1>
             <p className="text-slate-600 mt-1">
-              Welcome back, {currentPublicUser?.full_name}
+              Welcome back, {user?.full_name || currentPublicUser?.full_name || 'Guest'}
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -555,7 +556,7 @@ export default function GuestDashboard({ user }) {
           <StatCard
             icon={MessageCircle}
             title="Active Conversations"
-            value={messages.length}
+            value={conversations.length}
             subtitle="With sellers"
             color="emerald"
           />
@@ -616,7 +617,7 @@ export default function GuestDashboard({ user }) {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {sentTestDrives.slice(0, 4).map((request) => {
+                      {sentTestDrives.slice(0, 4).map((request: any) => {
                         const vehicle = getVehicleById(request.vehicle_id);
                         // FIX: Make sure we're reading the current test drive status
                         const statusInfo = getTestDriveStatusInfo(request.test_drive_details);
@@ -672,21 +673,39 @@ export default function GuestDashboard({ user }) {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {messages.slice(0, 3).map((message) => (
-                        <div key={message.id} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-blue-500 text-white text-sm">S</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 truncate">
-                              {message.content}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {format(new Date(message.created_date), 'MMM d')}
-                            </p>
+                      {messages.slice(0, 3).map((message: any) => {
+                        const sender = message._sender;
+                        // Parse message content - it might be JSON stringified
+                        let displayContent = message.content;
+                        try {
+                          const parsed = JSON.parse(message.content);
+                          if (parsed.vehicle_title) {
+                            displayContent = `Test drive request for ${parsed.vehicle_title}`;
+                          }
+                        } catch {
+                          // Not JSON, use as-is
+                        }
+                        return (
+                          <div key={message.id} className="flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors">
+                            <Avatar className="w-8 h-8">
+                              {sender?.profile_image && (
+                                <img src={sender.profile_image} alt={sender.full_name} className="w-full h-full object-cover rounded-full" />
+                              )}
+                              <AvatarFallback className="bg-blue-500 text-white text-sm">
+                                {sender?.full_name?.[0]?.toUpperCase() || sender?.email?.[0]?.toUpperCase() || 'S'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-800 truncate">
+                                {displayContent}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {format(new Date(message.createdAt), 'MMM d')}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
@@ -711,8 +730,8 @@ export default function GuestDashboard({ user }) {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {vehicleTransfers.map((transfer) => {
-                      const vehicle = vehicles.find(v => v.id === transfer.vehicle_id);
+                    {vehicleTransfers.map((transfer: any) => {
+                      const vehicle = conversations.find((c: any) => c.vehicle?.id === transfer.vehicle_id)?.vehicle;
                       return (
                         <Card key={transfer.id} className="border border-slate-200 hover:shadow-md transition-shadow">
                           <CardContent className="p-4">
@@ -785,7 +804,7 @@ export default function GuestDashboard({ user }) {
               </CardContent>
             </Card>
 
-              {managedSaleRequests.length === 0 && (
+              {managedSales.length === 0 && (
                 <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -803,7 +822,7 @@ export default function GuestDashboard({ user }) {
                 </Card>
               )}
 
-              {managedSaleRequests.length > 0 && (
+              {managedSales.length > 0 && (
                 <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -814,7 +833,7 @@ export default function GuestDashboard({ user }) {
                   <CardContent>
                     <div className="space-y-4">
                       <TooltipProvider>
-                      {managedSaleRequests.map((request) => {
+                      {managedSales.map((request: any) => {
                         const statusInfo = getStatusInfo(request.status);
                         const performance = vehiclePerformance[request.id];
                         return (
@@ -823,8 +842,8 @@ export default function GuestDashboard({ user }) {
                               <CardContent className="p-4">
                                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                   <div className="w-full md:w-32 h-32 md:h-24 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">
-                                    {request.vehicle_details.images && request.vehicle_details.images[0] ? (
-                                      <img src={request.vehicle_details.images[0]} alt={request.vehicle_details.title} className="w-full h-full object-cover" />
+                                    {(request.vehicle_details?.images || request.vehicle_images)?.[0] ? (
+                                      <img src={(request.vehicle_details?.images || request.vehicle_images)?.[0]} alt={request.vehicle_details?.title || request.vehicle_title} className="w-full h-full object-cover" />
                                     ) : (
                                       <div className="flex items-center justify-center h-full">
                                         <Car className="w-10 h-10 text-slate-400" />
@@ -835,7 +854,7 @@ export default function GuestDashboard({ user }) {
                                     {/* Title and Status */}
                                     <div className="flex items-center gap-3 mb-2">
                                       <h4 className="font-semibold text-slate-800">
-                                        {request.vehicle_details.title}
+                                        {request.vehicle_details?.title || request.vehicle_title}
                                       </h4>
                                       <div className="flex items-center">
                                         <Badge className={statusInfo.badgeClass}>
@@ -858,14 +877,14 @@ export default function GuestDashboard({ user }) {
                                     {/* Details and Price */}
                                     <div className="text-sm text-slate-600 space-y-2">
                                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                                        <span>{request.vehicle_details.year} {request.vehicle_details.make} {request.vehicle_details.model}</span>
+                                        <span>{request.vehicle_details?.year || request.vehicle_year} {request.vehicle_details?.make || request.vehicle_make} {request.vehicle_details?.model || request.vehicle_model}</span>
                                         <span className="font-semibold text-emerald-600">
-                                          Your Price: ${request.vehicle_details.seller_asking_price?.toLocaleString()}
+                                          Your Price: ${request.vehicle_details?.seller_asking_price || request.seller_asking_price}
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2 text-xs text-slate-500">
                                         <Calendar className="w-3 h-3" />
-                                        Submitted {format(new Date(request.created_date), 'MMM d, yyyy')}
+                                        Submitted {format(new Date(request.createdAt || request.created_date), 'MMM d, yyyy')}
                                       </div>
                                     </div>
 
@@ -897,7 +916,7 @@ export default function GuestDashboard({ user }) {
                                       View Details
                                     </Button>
                                     {request.status === 'listed' && request.created_vehicle_id && (
-                                      <Link href={`/Vehicle?id=${request.created_vehicle_id}`}>
+                                      <Link href={`/vehicle?id=${request.created_vehicle_id}`}>
                                         <Button size="sm" variant="outline" className="w-full">
                                           <ExternalLink className="w-4 h-4 mr-2" />
                                           View Listing
@@ -913,7 +932,8 @@ export default function GuestDashboard({ user }) {
                             {(request.status === 'listed' || request.status === 'approved') && (
                               <ManagedSalesActions
                                 request={request}
-                                onRequestUpdate={loadDashboardData}
+                                currentUser={user}
+                                onUpdate={loadDashboardData}
                               />
                             )}
                           </div>
@@ -947,8 +967,8 @@ export default function GuestDashboard({ user }) {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {recentlyViewed.slice(0, 3).map((vehicle) => (
-                          <Link key={vehicle.id} href={`/Vehicle?id=${vehicle.id}`}>
+                        {recentlyViewed.slice(0, 3).map((vehicle: any) => (
+                          <Link key={vehicle.id} href={`/vehicle?id=${vehicle.id}`}>
                             <div className="flex gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer border">
                               <div className="w-20 h-16 bg-slate-200 rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {vehicle.primary_image ? (
@@ -1092,13 +1112,12 @@ export default function GuestDashboard({ user }) {
         {showNewRequestModal && (
           <ManagedSalesRequestForm
             requestToEdit={editingRequest}
+            isOpen={showNewRequestModal}
             onClose={() => {
               setShowNewRequestModal(false);
               setEditingRequest(null);
             }}
-            onSuccess={handleFormSuccess} // For new requests, closes and refreshes
-            onUpdateRequest={handleUserUpdateRequest} // Use the new handler for user edits
-            isSubmittingEdit={!!editingRequest}
+            onSave={handleSaveRequest}
           />
         )}
       </AnimatePresence>
@@ -1157,7 +1176,7 @@ export default function GuestDashboard({ user }) {
               
               <TransferProgressTracker 
                 transfer={selectedTransfer} 
-                vehicle={vehicles.find(v => v.id === selectedTransfer.vehicle_id)} 
+                vehicle={conversations.find((c: any) => c.vehicle?.id === selectedTransfer.vehicle_id)?.vehicle} 
                 compact={false} 
               />
             </motion.div>

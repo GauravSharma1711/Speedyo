@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/TextArea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { Skeleton } from "@/components/ui/Skeleton";
+import feedService from "@/services/feedService";
 
 type CurrentUser = {
   id: string;
@@ -232,11 +233,7 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }: 
   const loadComments = useCallback(async () => {
     setIsLoadingComments(true);
     try {
-      const res = await fetch(`/api/post/${encodeURIComponent(postId)}/commentPost?page=1&limit=50`, {
-        cache: "no-store",
-      });
-      if (!res.ok) throw new Error("Failed to load comments");
-      const json = (await res.json()) as { success: boolean; comments: any[] };
+      const json = await feedService.getComments(postId);
       const normalized = (json.comments ?? []).map(normalizeComment);
 
       const authorIds = new Set<string>();
@@ -250,13 +247,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }: 
       await Promise.all(
         Array.from(authorIds).map(async (authorId) => {
           try {
-            const r = await fetch(`/api/user/public?userId=${encodeURIComponent(authorId)}`, {
-              cache: "no-store",
-            });
-            if (!r.ok) throw new Error("author fetch failed");
-            const j = (await r.json()) as { user?: any };
-
-            const u = j.user ?? null;
+            const res = await feedService.getPublicUser(authorId);
+            const u = res.user ?? null;
             authorsMap[authorId] = {
               user_id: u?.user_id ?? u?.id ?? authorId,
               full_name: u?.full_name ?? "Unknown User",
@@ -293,17 +285,8 @@ export default function CommentSection({ postId, currentUser, onCommentAdded }: 
 
   const createComment = useCallback(
     async (content: string, parentCommentId?: string | null) => {
-      const res = await fetch(`/api/post/${encodeURIComponent(postId)}/commentPost`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ content, ...(parentCommentId ? { parentCommentId } : {}) }),
-      });
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || "Failed to post comment");
-      }
-      return (await res.json()) as any;
+      const res = await feedService.addComment(postId, { content, ...(parentCommentId ? { parent_comment_id: parentCommentId } : {}) });
+      return res.comment;
     },
     [postId]
   );
