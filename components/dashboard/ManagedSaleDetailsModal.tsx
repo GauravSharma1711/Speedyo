@@ -19,6 +19,7 @@ type UserRow = {
 type ManagedSaleRequestDetails = {
   id: string;
   created_date: string;
+  createdAt: string | Date | null;
   status: ManagedSaleStatus;
 
   submitted_by_user_id: string;
@@ -26,7 +27,18 @@ type ManagedSaleRequestDetails = {
 
   user_facing_notes?: string | null;
 
+  // Nested vehicle_details (from some records) OR flat fields (from API)
   vehicle_details?: any;
+  // Flat vehicle fields from API response
+  vehicle_title?: string | null;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_year?: number | null;
+  vehicle_condition?: string | null;
+  vehicle_location?: string | null;
+  vehicle_images?: string[];
+  seller_asking_price?: string | number | null;
+
   access_arrangements?: any;
 
   service_fee_amount?: number | string | null;
@@ -103,10 +115,28 @@ export default function ManagedSaleDetailsModal({
   if (!isOpen || !request) return null;
 
   // Safe user lookup with fallback
-  const getUserById = (userId:string) => {
-    if (!users || !Array.isArray(users)) return { full_name: 'Unknown User', email: 'unknown@email.com' };
-    return users.find(user => user.id === userId) || { full_name: 'Unknown User', email: 'unknown@email.com' };
+  const getUserById = (userId: string) => {
+    if (!users || !Array.isArray(users)) return { full_name: "Unknown User", email: "unknown@email.com" };
+    return users.find((user) => user.id === userId) || { full_name: "Unknown User", email: "unknown@email.com" };
   };
+
+  // Build vehicle_details from flat API response for consistent access
+  const vehicleDetails = request.vehicle_details || {
+    title: request.vehicle_title || request.vehicle_make || "Managed Sale Vehicle",
+    year: request.vehicle_year,
+    make: request.vehicle_make,
+    model: request.vehicle_model,
+    condition: request.vehicle_condition,
+    location: request.vehicle_location || "",
+    seller_asking_price: request.seller_asking_price,
+    images: request.vehicle_images || [],
+  };
+
+  // Build access_arrangements from API response
+  const access = request.access_arrangements || {};
+
+  // Flatten recurring_availability for display
+  const firstSlot = access.recurring_availability?.[0] || {};
 
   const isAdminView = currentUser && (currentUser.role === 'admin' || currentUser.email === 'admin@speedio.com');
 
@@ -178,18 +208,21 @@ export default function ManagedSaleDetailsModal({
     }
   };
 
-  const renderChangeValue = (value:any, field:string) => {
-    if (field === 'seller_asking_price' || field === 'price') {
-      // Ensure value is treated as a number before toLocaleString
+  const renderChangeValue = (value: any, field: string) => {
+    if (field === "seller_asking_price" || field === "price") {
       return `$${Number(value)?.toLocaleString()}`;
     }
-    if (typeof value === 'object' && value !== null) {
-      return <pre className="text-xs bg-slate-200 p-2 rounded whitespace-pre-wrap">{JSON.stringify(value, null, 2)}</pre>;
+    if (typeof value === "object" && value !== null) {
+      return (
+        <pre className="text-xs bg-slate-200 p-2 rounded whitespace-pre-wrap">
+          {JSON.stringify(value, null, 2)}
+        </pre>
+      );
     }
-    if (typeof value === 'boolean') {
-      return value ? 'Yes' : 'No';
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
     }
-    return value || 'Not set';
+    return value || "Not set";
   };
 
   const statusInfo = getStatusInfo(request.status);
@@ -226,7 +259,7 @@ export default function ManagedSaleDetailsModal({
           )}
 
           {/* Cancellation Request Section */}
-          {request.status === 'cancellation_requested' && (
+                    {request.status === 'cancellation_requested' && (
             <Card className="border-purple-200 bg-purple-50">
               <CardHeader>
                 <CardTitle className="text-purple-800 flex items-center gap-2">
@@ -249,7 +282,7 @@ export default function ManagedSaleDetailsModal({
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex gap-3 justify-end">
                     <Button
                       variant="outline"
@@ -306,7 +339,7 @@ export default function ManagedSaleDetailsModal({
                         <div className="grid gap-3">
                           {Object.entries(editReq.requested_changes || {}).map(([field, newValue]) => {
                             // Use nullish coalescing operator (??) to correctly handle 0 or false as valid current values
-                            const currentValue = request.vehicle_details?.[field] ?? request.access_arrangements?.[field];
+                            const currentValue = vehicleDetails?.[field] ?? access?.[field];
 
                             return (
                               <div key={field} className="bg-slate-50 p-3 rounded border">
@@ -362,10 +395,10 @@ export default function ManagedSaleDetailsModal({
             <CardContent className="p-4">
               <div className="flex gap-4">
                 <div className="w-24 h-20 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">
-                  {request.vehicle_details?.images && request.vehicle_details.images[0] ? (
+                  {vehicleDetails.images && vehicleDetails.images[0] ? (
                     <img
-                      src={request.vehicle_details.images[0]}
-                      alt={request.vehicle_details.title || 'Vehicle'}
+                      src={vehicleDetails.images[0]}
+                      alt={vehicleDetails.title || "Vehicle"}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -376,12 +409,12 @@ export default function ManagedSaleDetailsModal({
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg text-slate-800 mb-2">
-                    {request.vehicle_details?.title || 'Vehicle Details'}
+                    {vehicleDetails.title || "Vehicle Details"}
                   </h3>
                   <div className="text-sm text-slate-600 space-y-1">
-                    <p>{request.vehicle_details?.year} {request.vehicle_details?.make} {request.vehicle_details?.model}</p>
-                    <p>Condition: {request.vehicle_details?.condition}</p>
-                    <p>Location: {request.vehicle_details?.location}</p>
+                    <p>{vehicleDetails.year} {vehicleDetails.make} {vehicleDetails.model}</p>
+                    <p>Condition: {vehicleDetails.condition || "N/A"}</p>
+                    <p>Location: {vehicleDetails.location || "N/A"}</p>
                   </div>
                 </div>
               </div>
@@ -389,66 +422,66 @@ export default function ManagedSaleDetailsModal({
           </Card>
 
           {/* Access & Handover Arrangements */}
-          {request.access_arrangements && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <KeyRound className="w-5 h-5 text-blue-500" />
-                  Access & Handover Arrangements
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
-                  <div>
-                    <Label className="font-medium text-slate-800">Vehicle Location</Label>
-                    <p className="text-slate-600">{request.access_arrangements.vehicle_location_address || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="font-medium text-slate-800">Vehicle Access Availability</Label>
-                    <p className="text-slate-600">{request.access_arrangements.vehicle_access_availability || 'N/A'}</p>
-                  </div>
-
-                  <div>
-                    <Label className="font-medium text-slate-800">Key Access Method</Label>
-                    <p className="text-slate-600 capitalize">{request.access_arrangements.key_access_method?.replace('_', ' ') || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="font-medium text-slate-800">Key Pickup Location</Label>
-                    <p className="text-slate-600">{request.access_arrangements.key_pickup_location || 'N/A'}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label className="font-medium text-slate-800">Key Pickup Availability / Details</Label>
-                    <p className="text-slate-600">{request.access_arrangements.key_pickup_availability || 'N/A'}</p>
-                    {request.access_arrangements.key_location_details && <p className="text-slate-500 text-xs mt-1">{request.access_arrangements.key_location_details}</p>}
-                  </div>
-
-                  <div>
-                    <Label className="font-medium text-slate-800">Emergency Contact Name</Label>
-                    <p className="text-slate-600">{request.access_arrangements.emergency_contact_name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <Label className="font-medium text-slate-800">Emergency Contact Phone</Label>
-                    <p className="text-slate-600">{request.access_arrangements.emergency_contact_phone || 'N/A'}</p>
-                  </div>
-
-                  <div className="md:col-span-2 border-t pt-4 mt-2">
-                     <Label className="font-medium text-slate-800">Power of Attorney</Label>
-                     <p className={`font-semibold ${request.access_arrangements.power_of_attorney ? 'text-green-600' : 'text-slate-600'}`}>
-                      {request.access_arrangements.power_of_attorney ? 'Yes, provided' : 'Not provided'}
-                     </p>
-                     {request.access_arrangements.power_of_attorney && (
-                       <p className="text-slate-500 text-xs mt-1 whitespace-pre-wrap">{request.access_arrangements.power_of_attorney_details}</p>
-                     )}
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <Label className="font-medium text-slate-800">Special Instructions</Label>
-                    <p className="text-slate-600 whitespace-pre-wrap">{request.access_arrangements.special_instructions || 'None provided'}</p>
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <KeyRound className="w-5 h-5 text-blue-500" />
+                Access & Handover Arrangements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
+                <div>
+                  <Label className="font-medium text-slate-800">Vehicle Location</Label>
+                  <p className="text-slate-600">{access.vehicle_location_address || access.recurring_availability?.[0]?.address || "N/A"}</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div>
+                  <Label className="font-medium text-slate-800">Vehicle Access Availability</Label>
+                  <p className="text-slate-600">
+                    {firstSlot.dayOfWeek ? `${firstSlot.dayOfWeek}, ${firstSlot.startTime}–${firstSlot.endTime}` : "N/A"}
+                  </p>
+                </div>
+
+                <div>
+                  <Label className="font-medium text-slate-800">Key Access Method</Label>
+                  <p className="text-slate-600 capitalize">{(access.key_access_method || "not_specified").replace(/_/g, " ")}</p>
+                </div>
+                <div>
+                  <Label className="font-medium text-slate-800">Key Pickup Location</Label>
+                  <p className="text-slate-600">{access.key_pickup_location || "N/A"}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="font-medium text-slate-800">Key Pickup Availability / Details</Label>
+                  <p className="text-slate-600">{access.key_pickup_availability || "N/A"}</p>
+                  {access.key_location_details && <p className="text-slate-500 text-xs mt-1">{access.key_location_details}</p>}
+                </div>
+
+                <div>
+                  <Label className="font-medium text-slate-800">Emergency Contact Name</Label>
+                  <p className="text-slate-600">{access.emergency_contact_name || "N/A"}</p>
+                </div>
+                <div>
+                  <Label className="font-medium text-slate-800">Emergency Contact Phone</Label>
+                  <p className="text-slate-600">{access.emergency_contact_phone || "N/A"}</p>
+                </div>
+
+                <div className="md:col-span-2 border-t pt-4 mt-2">
+                  <Label className="font-medium text-slate-800">Power of Attorney</Label>
+                  <p className={`font-semibold ${access.power_of_attorney ? "text-green-600" : "text-slate-600"}`}>
+                    {access.power_of_attorney ? "Yes, provided" : "Not provided"}
+                  </p>
+                  {access.power_of_attorney && (
+                    <p className="text-slate-500 text-xs mt-1 whitespace-pre-wrap">{access.power_of_attorney_details}</p>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label className="font-medium text-slate-800">Special Instructions</Label>
+                  <p className="text-slate-600 whitespace-pre-wrap">{access.special_instructions || "None provided"}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Status and Pricing */}
           <div className="grid md:grid-cols-2 gap-4">
@@ -474,15 +507,15 @@ export default function ManagedSaleDetailsModal({
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Your asking price:</span>
-                    <span>${request.vehicle_details?.seller_asking_price?.toLocaleString()}</span>
+                    <span>${vehicleDetails.seller_asking_price ? Number(vehicleDetails.seller_asking_price).toLocaleString() : "0"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Service fee (6%):</span>
-                    <span>${request.service_fee_amount?.toLocaleString()}</span>
+                    <span>${request.service_fee_amount ? Number(request.service_fee_amount).toLocaleString() : "0"}</span>
                   </div>
                   <div className="flex justify-between font-semibold border-t pt-2">
                     <span>Buyer pays:</span>
-                    <span className="text-green-600">${request.calculated_buyer_price?.toLocaleString()}</span>
+                    <span className="text-green-600">${request.calculated_buyer_price ? Number(request.calculated_buyer_price).toLocaleString() : "0"}</span>
                   </div>
                 </div>
               </CardContent>

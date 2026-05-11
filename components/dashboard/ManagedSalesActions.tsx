@@ -2,10 +2,10 @@
 "use client"
 
 import React, { useState } from "react";
-import { ManagedSaleRequest, Notification } from "@/api/entities";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/TextArea";
 import { Label } from "@/components/ui/Label";
+import { managedSaleService, notificationService, userService } from "@/services/dashboard";
 
 
 import {
@@ -31,7 +31,13 @@ import { useToast } from "@/components/ui/UseToast";
 
 import VehicleEditRequestModal from "./VehicleEditRequestModal";
 
-export default function ManagedSalesActions({ request, currentUser, onUpdate }) {
+type ManagedSalesActionsProps = {
+  request: any;
+  currentUser: any;
+  onUpdate: () => void;
+};
+
+export default function ManagedSalesActions({ request, currentUser, onUpdate }: ManagedSalesActionsProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -57,44 +63,39 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }) 
     setIsProcessing(true);
     try {
       // Update the managed sale request
-      await ManagedSaleRequest.update(request.id, {
+      await managedSaleService.update(request.id, {
         status: 'cancellation_requested',
         cancellation_reason: cancelReason
       });
 
-      // Send notification to admins - get all admin users
+      // Send notification to admins
       try {
-        const { User } = await import("@/api/entities");
-        const adminUsers = await User.filter({ role: 'admin' });
-        
-        // Create notifications for all admin users
-        const notificationPromises = adminUsers.map(admin => 
-          Notification.create({
-            recipient_id: admin.id,
-            sender_id: currentUser.id,
+        const adminUsers = await userService.getAdmins();
+
+        const notificationPromises = adminUsers.map((admin: any) =>
+          notificationService.create({
+            recipientId: admin.id,
             type: "managed_sale_status_update",
             content: `User ${currentUser.full_name} has requested to cancel their managed sale for "${request.vehicle_details?.title}". Reason: ${cancelReason}`,
-            related_entity_type: "ManagedSaleRequest", 
+            related_entity_type: "ManagedSaleRequest",
             related_entity_id: request.id,
-           url: "/Admin-Panel?tab=managed_sales",
+            url: "/Admin-Panel?tab=managed_sales",
             icon: "AlertTriangle"
           })
         );
-        
+
         await Promise.all(notificationPromises);
       } catch (error) {
         console.warn("Failed to notify admins:", error);
       }
 
-      // Send notification to user confirming cancellation request
-      await Notification.create({
-        recipient_id: currentUser.id,
-        sender_id: currentUser.id, // Self-notification for confirmation
+      await notificationService.create({
+        recipientId: currentUser.id,
         type: "managed_sale_status_update",
         content: `Your cancellation request for "${request.vehicle_details?.title}" has been submitted and is being reviewed by our team. We'll update you on the status soon.`,
         related_entity_type: "ManagedSaleRequest",
         related_entity_id: request.id,
-         url: "/Dashboard",
+        url: "/Dashboard",
         icon: "AlertTriangle"
       });
 
@@ -231,13 +232,14 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }) 
       {/* Edit Request Modal */}
       {showEditModal && (
         <VehicleEditRequestModal
+          vehicle={request}
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
-          request={request}
-          onSubmit={() => {
+          onSuccess={() => {
             setShowEditModal(false);
             onUpdate();
           }}
+          currentUser={currentUser}
         />
       )}
     </div>

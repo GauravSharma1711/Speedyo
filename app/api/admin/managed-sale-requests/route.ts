@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
 
     const status = (searchParams.get("status") ?? "").trim();
     const search = (searchParams.get("search") ?? "").trim();
+    const userId = searchParams.get("userId") ?? "";
 
     if (status && !VALID_STATUSES.includes(status as (typeof VALID_STATUSES)[number])) {
       return NextResponse.json(
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
 
     const where: any = {};
     if (status) where.status = status;
+    if (userId) where.submittedByUserId = userId;
 
     if (search) {
       where.OR = [

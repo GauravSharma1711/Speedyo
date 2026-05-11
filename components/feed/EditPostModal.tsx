@@ -7,26 +7,32 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/TextArea";
 import { X, Loader2, Trash2, Upload, Edit } from "lucide-react";
-import { Post } from "@/api/entities";
-import { UploadFile } from "@/api/entities";
+import { postService } from "@/services/postService";
+import { uploadService } from "@/services/uploadService";
 
-export default function EditPostModal({ post, onClose, onSave }) {
-  const [content, setContent] = useState(post.content);
-  const [mediaFiles, setMediaFiles] = useState(post.images || []);
+type EditPostModalProps = {
+  post: { id: string; content?: string; images?: string[]; post_type?: string };
+  onClose: () => void;
+  onSave: () => void;
+};
+
+export default function EditPostModal({ post, onClose, onSave }: EditPostModalProps) {
+  const [content, setContent] = useState(post.content || "");
+  const [mediaFiles, setMediaFiles] = useState<string[]>(post.images || []);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = async (e) => {
-    const selectedFiles = Array.from(e.target.files);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
 
     setIsUploading(true);
-    const uploadPromises = selectedFiles.map(file => UploadFile({ file }));
-    
+    const uploadPromises = selectedFiles.map(file => uploadService.uploadImage(file));
+
     try {
       const uploadedFiles = await Promise.all(uploadPromises);
-      const fileUrls = uploadedFiles.map(result => result.file_url);
-      setMediaFiles(prev => [...prev, ...fileUrls]);
+      const fileUrls = uploadedFiles.map(result => result.file_url || result.url);
+      setMediaFiles((prev: string[]) => [...prev, ...fileUrls]);
     } catch (error) {
       console.error("File upload failed", error);
       alert("Failed to upload new media. Please try again.");
@@ -34,19 +40,19 @@ export default function EditPostModal({ post, onClose, onSave }) {
     setIsUploading(false);
   };
 
-  const removeFile = (index) => {
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (index: number) => {
+    setMediaFiles((prev: string[]) => prev.filter((_: string, i: number) => i !== index));
   };
 
-  const handleSave = async (e) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() && mediaFiles.length === 0) return;
 
     setIsUpdating(true);
     try {
-      await Post.update(post.id, { 
+      await postService.update(post.id, {
         content: content.trim(),
-        images: mediaFiles 
+        images: mediaFiles
       });
       onSave();
     } catch (error) {

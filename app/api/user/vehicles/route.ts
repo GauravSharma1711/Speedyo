@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(50, Math.max(1, toInt(searchParams.get("limit"), 24)));
   const skip = (page - 1) * limit;
 
-  // Auto-detect from session if no userId provided
-  if (!userId) {
+  // Auto-detect from session if no userId or "me" provided
+  if (!userId || userId === "me") {
     const session = await getServerSession(authOptions);
     userId = session?.user?.id ?? null;
   }
@@ -66,10 +66,12 @@ export async function GET(req: NextRequest) {
 
   const vehicles = rows.map((v) => {
     const priceNum = v.price ? Number(v.price) : null;
+    const authorId = v.authorId ?? v.original_owner_id;
 
     return {
       id: v.id,
       primary_image: v.primary_image,
+      primary_image_thumbnail: v.primary_image,
       title: v.title,
       year: v.year,
       mileage: v.mileage,
@@ -80,9 +82,14 @@ export async function GET(req: NextRequest) {
       verified: v.verified,
       views: v.views,
       shares: v.shares,
-      created_by_id: v.authorId ?? v.original_owner_id ?? undefined,
+      created_by: authorId,
+      created_by_id: authorId,
+      condition: v.condition,
+      make: v.make,
+      model: v.model,
       likes_count: v._count.vehicleLikes,
       saves_count: v._count.vehicleSaves,
+      createdAt: v.createdAt,
     };
   });
 

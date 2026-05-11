@@ -193,7 +193,7 @@ export async function workflowApproveAndList(
         content: `Great news! Your managed sale request for "${vehicle.title}" has been approved and is now live on the marketplace at $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}. You'll receive $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} when it sells.`,
         related_entity_type: "Vehicle",
         related_entity_id: vehicle.id,
-        url: `/Vehicle?id=${vehicle.id}`,
+        url: `/vehicle?id=${vehicle.id}`,
         icon: "CheckCircle",
         read: false,
       },

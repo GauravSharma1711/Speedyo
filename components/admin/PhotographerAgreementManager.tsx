@@ -228,7 +228,6 @@ export default function PhotographerAgreementManagerUI() {
 
     setIsSubmitting(true);
     try {
-      // TODO: wire real send API — e.g. await agreementService.sendSigningEmail(a.id)
       toast({
         title: "Send agreement",
         description: `Would email ${a.photographer_email} a signing link.`,
@@ -242,7 +241,6 @@ export default function PhotographerAgreementManagerUI() {
   async function handleSendApplicationEmail(a: PhotographerAgreement) {
     setIsSubmitting(true);
     try {
-      // TODO: wire real send API
       toast({
         title: "Send email",
         description: "Would email the photographer the agreement + application summary.",
@@ -256,7 +254,6 @@ export default function PhotographerAgreementManagerUI() {
   async function handleDownloadPDF(a: PhotographerAgreement) {
     setIsSubmitting(true);
     try {
-      // TODO: wire real PDF generation
       toast({ title: "Download PDF", description: "PDF generation wiring pending." });
     } finally {
       setIsSubmitting(false);

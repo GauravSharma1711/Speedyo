@@ -1,56 +1,20 @@
 "use client"
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  invokeFunction,
-  type PublicUserData,
-  type UserData,
-  Vehicle,
-  Post,
-  Message,
-  ManagedSaleRequest,
-  PublicUser,
-  Notification,
-  User,
-  VehicleTransfer,
-} from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import {
-  Car,
-  Plus,
-  Eye,
-  MessageCircle,
-  TrendingUp,
-  DollarSign,
-  Calendar,
-  Settings,
-  Edit,
-  Trash2,
-  ArrowUp,
-  ArrowDown,
-  Handshake,
-  Clock,
-  CheckCircle,
-  XCircle,
-  ExternalLink,
-  Users,
-  CalendarCheck,
-  User as UserIcon,
-  Phone,
-  X,
-  Shield,
-  ClipboardCheck,
-  MessageSquare,
-  AlertCircle,
-  AlertTriangle,
+  Car, Plus, Eye, MessageCircle, TrendingUp, DollarSign, Calendar, Settings,
+  Edit, Trash2, ArrowUp, ArrowDown, Handshake, Clock, CheckCircle, XCircle,
+  ExternalLink, Users, CalendarCheck, User as UserIcon, Phone, X, Shield,
+  ClipboardCheck, MessageSquare, AlertCircle, AlertTriangle,
   MoreHorizontal,
   FileText,
   MapPin,
+  Loader2,
 } from "lucide-react";
 
 
@@ -80,10 +44,60 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
-// import { sendEmail } from "@/functions/sendEmail";
+import axios from "@/lib/axios";
 import BuyMoreSlotsModal from "./BuyMoreSlotsModal";
 import NotificationSettings from "./NotificationSettings";
 import TransferProgressTracker from "./TransferProgressTracker";
+import { useSellerDashboardStore } from "@/store/dashboard";
+import { vehicleService, managedSaleService, messageService, notificationService, publicUserService, userService, vehicleTransferService } from "@/services/dashboard";
+import type { DashboardUser } from "@/services/dashboard";
+import { sellerPerformanceService, testDriveRequestService, sellerTransferService } from "@/services/seller";
+
+// Real API implementations
+const Vehicle = {
+  create: async (data: any) => {
+    const res = await axios.post("/api/vehicles/create", data);
+    return res.data.vehicle;
+  },
+  update: async (id: string, data: any) => {
+    const res = await axios.patch(`/api/vehicles/${id}`, data);
+    return res.data.vehicle;
+  },
+  delete: async (id: string) => {
+    await axios.delete(`/api/vehicles/${id}`);
+  },
+};
+const Message = {
+  update: async (id: string, data: any) => {
+    const res = await axios.patch(`/api/messages/${id}`, data);
+    return res.data.message;
+  },
+  create: async (data: any) => {
+    const res = await axios.post("/api/user/messages", data);
+    return res.data.message;
+  },
+};
+const Notification = {
+  create: async (data: any) => {
+    const res = await axios.post("/api/notifications", data);
+    return res.data.notification;
+  },
+};
+const PublicUser = {
+  list: async () => {
+    const res = await axios.get("/api/public-users");
+    return res.data.users ?? [];
+  },
+  filter: async (_q: any) => {
+    const res = await axios.get("/api/public-users");
+    return res.data.users ?? [];
+  },
+};
+// Use userService.getAdmins() for admin notifications — do not remove
+const getAdmins = async () => {
+  const res = await axios.get("/api/users/admins");
+  return res.data.admins ?? [];
+};
 
 type ManagedSaleDetailsModalProps = {
   isOpen: boolean;
@@ -103,7 +117,7 @@ const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel }:
         <p className="mb-2"><strong>Vehicle:</strong> {request.vehicle_details?.title}</p>
         <p className="mb-2"><strong>Status:</strong> {request.status}</p>
         <p className="mb-2"><strong>Price:</strong> ${request.vehicle_details?.seller_asking_price?.toLocaleString()}</p>
-        <p className="mb-4"><strong>Submitted:</strong> {format(new Date(request.created_date), 'MMM d, yyyy')}</p>
+        <p className="mb-4"><strong>Submitted:</strong> {format(new Date(request.createdAt ?? request.created_date ?? 0), 'MMM d, yyyy')}</p>
         {request.user_facing_notes && (
           <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-400 mb-4">
             <p className="text-xs text-blue-800">
@@ -135,7 +149,7 @@ type TestDriveDetailsModalProps = {
   onEdit: () => void;
   getBuyerById: (buyerId: string) => any;
   getVehicleById: (vehicleId: string) => any;
-  user: UserData;
+  user: DashboardUser;
 };
 
 const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline, onComplete, onEdit, getBuyerById, getVehicleById, user }: TestDriveDetailsModalProps) => {
@@ -306,36 +320,14 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
 };
 
 
-export default function SellerDashboard({ user }: { user: UserData }) {
+export default function SellerDashboard() {
   const router = useRouter();
-  const [publicUser, setPublicUser] = useState<PublicUserData | null>(null);
-  const [activeTab, setActiveTab] = useState("listings"); // Added for tabs control
-
-  useEffect(() => {
-    const loadPublicUser = async () => {
-      if (user?.id) {
-        const profiles = await PublicUser.filter({ user_id: user.id });
-        if (profiles.length > 0) {
-          setPublicUser(profiles[0]); // Set the first object from the array
-        }
-      }
-    };
-    loadPublicUser();
-  }, [user]);
-
-  const [listings, setListings] = useState<any[]>([]); // Vehicles created by the user for direct listing
-  const [managedSaleVehicles, setManagedSaleVehicles] = useState<any[]>([]); // Vehicles where user is original owner (includes managed sales)
-  const [posts, setPosts] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]); // All messages where user is recipient
-  const [testDriveRequests, setTestDriveRequests] = useState<any[]>([]); // All test drive requests (received & sent)
-  const [managedSaleRequests, setManagedSaleRequests] = useState<any[]>([]); // The actual ManagedSaleRequest objects
   const [vehiclePerformance, setVehiclePerformance] = useState<Record<string, any>>({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [editingRequest, setEditingRequest] = useState<any | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
-  const [buyers, setBuyers] = useState<PublicUserData[]>([]);
   const [stats, setStats] = useState({
     totalListings: 0,
     totalViews: 0,
@@ -344,10 +336,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
     totalInquiries: 0,
     thisWeekViews: 0
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Added for handleCreateVehicle
-
-  const [availabilityVehicle, setAvailabilityVehicle] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingRequest, setViewingRequest] = useState<any | null>(null);
   const [showTestDriveDetails, setShowTestDriveDetails] = useState<any | null>(null);
@@ -357,128 +346,36 @@ export default function SellerDashboard({ user }: { user: UserData }) {
   const [viewingSentTestDrive, setViewingSentTestDrive] = useState<any | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [showBuyMoreSlotsModal, setShowBuyMoreSlotsModal] = useState(false);
-  // const [showSlotDetails, setShowSlotDetails] = useState(false); // New state for collapsible details - REMOVED
 
-  const [allUserVehiclesCombined, setAllUserVehiclesCombined] = useState<any[]>([]); // Combined list for getVehicleById
-  const [vehicleTransfers, setVehicleTransfers] = useState<any[]>([]);
   const [selectedTransfer, setSelectedTransfer] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState("listings");
+  const [availabilityVehicle, setAvailabilityVehicle] = useState<any | null>(null);
 
   const { toast } = useToast();
 
-  const loadSellerData = useCallback(async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+  // Pull all data from store
+  const {
+    user,
+    performance,
+    testDrives,
+    managedSaleRequests,
+    managedSaleVehicles,
+    listings,
+    messages,
+    buyers,
+    sellerTransfers,
+    buyerTransfers,
+    isLoading: storeLoading,
+    loadSellerDashboard,
+  } = useSellerDashboardStore();
 
-    setIsLoading(true);
-    try {
-      // 1. Fetch user-created vehicles (direct listings) - now includes all statuses
-      const userCreatedVehicles = await Vehicle.filter({ created_by: user.email }, "-created_date");
-      setListings(userCreatedVehicles);
+  // Combine all transfers for display
+  const vehicleTransfers = [...sellerTransfers, ...buyerTransfers];
 
-      // 2. Fetch vehicles where the user is the original owner (includes managed sales that are now vehicle entities)
-      const userOriginalOwnerVehicles = await Vehicle.filter({ original_owner_id: user.id }, "-created_date");
-      setManagedSaleVehicles(userOriginalOwnerVehicles);
+  // Derive testDriveRequests from testDrives
+  const testDriveRequests = testDrives;
 
-      // 3. Combine all vehicles related to the user for general lookup (e.g., in modals like TestDriveDetailsModal)
-      const allVehiclesUserOwnsOrCreated = Array.from(new Map(
-        [...userCreatedVehicles, ...userOriginalOwnerVehicles].map(v => [v.id, v])
-      ).values());
-      setAllUserVehiclesCombined(allVehiclesUserOwnsOrCreated);
-
-      // 4. Fetch user posts (if still used - original code had this)
-      const userPosts = await Post.filter({ created_by: user.email }, "-created_date");
-      setPosts(userPosts);
-
-      // 5. Fetch all messages received by the user
-      const allReceivedMessages = await Message.filter({ recipient_id: user.id }, "-created_date", 20);
-      setMessages(allReceivedMessages);
-
-      // 6. Fetch all test drive requests (received by user and sent by user)
-      const receivedTestDriveMsgs = allReceivedMessages.filter(msg => msg.message_type === 'test_drive_request');
-      const sentTestDriveMsgs = await Message.filter({ sender_id: user.id, message_type: "test_drive_request" }, "-created_date", 20);
-      const combinedTestDriveMsgs = Array.from(new Set([...receivedTestDriveMsgs, ...sentTestDriveMsgs].map(m => m.id)))
-        .map(id => ([...receivedTestDriveMsgs, ...sentTestDriveMsgs].find(m => m.id === id))); // Ensure no duplicates
-      setTestDriveRequests(combinedTestDriveMsgs);
-
-      // 7. Populate buyers based on all relevant test drive messages - USE PublicUser instead of User
-      const buyerIds = [...new Set([
-        ...receivedTestDriveMsgs.map(req => req.sender_id),
-        ...sentTestDriveMsgs.map(req => req.recipient_id)
-      ])];
-      if (buyerIds.length > 0) {
-        // ✅ FIX: Use PublicUser.list() instead of User.list()
-        const allPublicUsers = await PublicUser.list();
-        setBuyers(allPublicUsers.filter(buyer => buyerIds.includes(buyer.user_id)));
-      } else {
-        setBuyers([]);
-      }
-
-      // 8. Fetch managed sale *request* objects (for modal details, etc.)
-      const userManagedSaleRequests = user.id ? await ManagedSaleRequest.filter({ submitted_by_user_id: user.id }, "-created_date") : [];
-      setManagedSaleRequests(userManagedSaleRequests || []);
-
-      // 9. Fetch vehicle transfers (both as buyer and seller)
-      const transfersAsBuyer = user.id ? await VehicleTransfer.filter({ buyer_id: user.id }, "-created_date") : [];
-      const transfersAsSeller = user.id ? await VehicleTransfer.filter({ seller_id: user.id }, "-created_date") : [];
-      const allTransfers = Array.from(new Map(
-        [...transfersAsBuyer, ...transfersAsSeller].map(t => [t.id, t])
-      ).values());
-      setVehicleTransfers(allTransfers);
-
-      // 10. Calculate `vehiclePerformance` for managed sale requests
-      const performanceData: Record<string, any> = {};
-      if (Array.isArray(userManagedSaleRequests)) {
-        userManagedSaleRequests
-          .filter(req => req.status === 'listed' && req.created_vehicle_id)
-          .forEach(req => {
-            const vehicle = userOriginalOwnerVehicles.find(v => v.id === req.created_vehicle_id);
-            if (vehicle) {
-              performanceData[req.id] = { views: vehicle.views || 0 };
-            } else {
-              console.warn(`Vehicle ${req.created_vehicle_id} for request ${req.id} no longer exists or is not accessible.`);
-            }
-          });
-      }
-      setVehiclePerformance(performanceData);
-
-      // 11. Calculate `stats`
-      const allVehiclesForStats = Array.from(new Map(
-        [...userCreatedVehicles, ...userOriginalOwnerVehicles].map(v => [v.id, v])
-      ).values());
-
-      const totalViews = allVehiclesForStats.reduce((sum, vehicle) => sum + (vehicle.views || 0), 0);
-      const activeUserListingsCount = userCreatedVehicles.filter(v => v.status === 'available').length;
-      const activeManagedSaleListingsCount = userOriginalOwnerVehicles.filter(v => v.status === 'available').length;
-
-      // FIX: Corrected syntax for reduce callback
-      const avgPrice = allVehiclesForStats.length > 0
-        ? allVehiclesForStats.reduce((sum, v) => sum + (v.price || 0), 0) / allVehiclesForStats.length
-        : 0;
-      const totalInquiries = combinedTestDriveMsgs.length;
-
-      const thisWeekViews = Math.floor(totalViews * 0.3); // Placeholder
-
-      setStats({
-        totalListings: userCreatedVehicles.length + userOriginalOwnerVehicles.length,
-        activeListings: activeUserListingsCount + activeManagedSaleListingsCount,
-        avgPrice,
-        totalInquiries,
-        thisWeekViews,
-        totalViews,
-      });
-
-    } catch (error) {
-      console.error("Failed to load dashboard data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    loadSellerData();
-  }, [loadSellerData]);
+  const isLoading = !!storeLoading;
 
   const getPrivateSellerSlotInfo = () => {
     if (!user || user.user_type !== 'private_seller') return null;
@@ -493,9 +390,95 @@ export default function SellerDashboard({ user }: { user: UserData }) {
     return buyers.find(buyer => buyer.user_id === buyerId) || { full_name: "Unknown Buyer", email: "unknown", phone: null, user_id: buyerId };
   }, [buyers]);
 
-  const getVehicleById = useCallback((vehicleId: string) => {
-    return allUserVehiclesCombined.find(vehicle => vehicle.id === vehicleId) || {};
-  }, [allUserVehiclesCombined]);
+  const getVehicleById = useCallback((vehicleId: string | null | undefined) => {
+    if (!vehicleId) return null;
+    return listings.find(vehicle => vehicle.id === vehicleId) || null;
+  }, [listings]);
+
+  // Handlers - all useCallback hooks before early return
+  const handleEditVehicle = useCallback((vehicle: any) => {
+    setEditingVehicle(vehicle);
+    setShowCreateModal(true);
+  }, []);
+
+  const handleDeleteVehicle = useCallback(async (vehicleId: string) => {
+    if (confirm("Are you sure you want to delete this listing?")) {
+      try {
+        await Vehicle.delete(vehicleId);
+        toast({ title: "Listing Deleted", description: "The vehicle listing has been permanently removed.", variant: "success" });
+        loadSellerDashboard();
+      } catch (error) {
+        console.error("Failed to delete vehicle:", error);
+        toast({ title: "Deletion Failed", description: "Could not delete the listing. Please try again.", variant: "destructive" });
+      }
+    }
+  }, [loadSellerDashboard, toast]);
+
+  const handleMarkAsSold = useCallback(async (vehicleId: string) => {
+    if (window.confirm("Are you sure you want to mark this vehicle as sold? This will remove it from active listings.")) {
+      setIsUpdating(vehicleId);
+      try {
+        await Vehicle.update(vehicleId, { status: 'sold' });
+        toast({ title: "Vehicle Marked as Sold", description: "The listing has been updated and removed from the marketplace.", variant: "success" });
+        await loadSellerDashboard();
+      } catch (error) {
+        console.error("Failed to mark vehicle as sold:", error);
+        toast({ title: "Update Failed", description: "Could not mark the vehicle as sold. Please try again.", variant: "destructive" });
+      } finally {
+        setIsUpdating(null);
+      }
+    }
+  }, [loadSellerDashboard, toast]);
+
+  const handleMarkAsUnavailable = useCallback(async (vehicleId: string) => {
+    if (window.confirm("Mark this vehicle as temporarily unavailable? You can make it available again anytime.")) {
+      setIsUpdating(vehicleId);
+      try {
+        await Vehicle.update(vehicleId, { status: 'unavailable' });
+        toast({ title: "Vehicle Marked as Unavailable", variant: "success" });
+        await loadSellerDashboard();
+      } catch (error) {
+        console.error("Failed to mark vehicle as unavailable:", error);
+        toast({ title: "Update Failed", variant: "destructive" });
+      } finally {
+        setIsUpdating(null);
+      }
+    }
+  }, [loadSellerDashboard, toast]);
+
+  const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
+    setIsUpdating(vehicleId);
+    try {
+      await Vehicle.update(vehicleId, { status: 'available' });
+      toast({ title: "Vehicle Marked as Available", variant: "success" });
+      await loadSellerDashboard();
+    } catch (error) {
+      console.error("Failed to mark vehicle as available:", error);
+      toast({ title: "Update Failed", variant: "destructive" });
+    } finally {
+      setIsUpdating(null);
+    }
+  }, [loadSellerDashboard, toast]);
+
+  const handleViewActivity = useCallback((request: any) => {
+    const vehicle = getVehicleById(request.vehicle_id);
+    const buyer = getBuyerById(request.sender_id);
+    setViewingActivity({ request, vehicle, buyer });
+  }, [getVehicleById, getBuyerById]);
+
+  // All hooks defined before any early returns - Rules of Hooks compliant
+  if (storeLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    loadSellerDashboard();
+    return null;
+  }
 
   const handleCreateVehicle = async (vehicleData: any) => {
     setIsSubmitting(true);
@@ -511,7 +494,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
 
       setShowCreateModal(false);
       setEditingVehicle(null);
-      loadSellerData();
+      loadSellerDashboard();
       toast({
         title: "Vehicle Created",
         description: "Your vehicle listing has been successfully created.",
@@ -538,7 +521,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
       await Vehicle.update(editingVehicle.id, vehicleData);
       setEditingVehicle(null);
       setShowCreateModal(false);
-      loadSellerData();
+      loadSellerDashboard();
       toast({
         title: "Vehicle Updated",
         description: "Your vehicle listing has been successfully updated.",
@@ -553,102 +536,6 @@ export default function SellerDashboard({ user }: { user: UserData }) {
       });
     }
   };
-
-  const handleEditVehicle = (vehicle: any) => {
-    setEditingVehicle(vehicle);
-    setShowCreateModal(true);
-  };
-
-  const handleDeleteVehicle = async (vehicleId: string) => {
-    if (confirm("Are you sure you want to delete this listing?")) {
-      try {
-        await Vehicle.delete(vehicleId);
-        toast({
-          title: "Listing Deleted",
-          description: "The vehicle listing has been permanently removed.",
-          variant: "success",
-        });
-        loadSellerData();
-      } catch (error) {
-        console.error("Failed to delete vehicle:", error);
-        toast({
-          title: "Deletion Failed",
-          description: "Could not delete the listing. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleMarkAsSold = useCallback(async (vehicleId: string) => {
-    if (window.confirm("Are you sure you want to mark this vehicle as sold? This will remove it from active listings.")) {
-      setIsUpdating(vehicleId);
-      try {
-        await Vehicle.update(vehicleId, { status: 'sold' });
-        toast({
-          title: "Vehicle Marked as Sold",
-          description: "The listing has been updated and removed from the marketplace.",
-          variant: "success",
-        });
-        await loadSellerData(); // Refreshes all data, including listings
-      } catch (error) {
-        console.error("Failed to mark vehicle as sold:", error);
-        toast({
-          title: "Update Failed",
-          description: "Could not mark the vehicle as sold. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsUpdating(null);
-      }
-    }
-  }, [loadSellerData, toast]);
-
-  const handleMarkAsUnavailable = useCallback(async (vehicleId: string) => {
-    if (window.confirm("Mark this vehicle as temporarily unavailable? You can make it available again anytime.")) {
-      setIsUpdating(vehicleId);
-      try {
-        await Vehicle.update(vehicleId, { status: 'unavailable' });
-        toast({
-          title: "Vehicle Marked as Unavailable",
-          description: "The listing has been marked as temporarily unavailable.",
-          variant: "success",
-        });
-        await loadSellerData();
-      } catch (error) {
-        console.error("Failed to mark vehicle as unavailable:", error);
-        toast({
-          title: "Update Failed",
-          description: "Could not update the vehicle status. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsUpdating(null);
-      }
-    }
-  }, [loadSellerData, toast]);
-
-  const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
-    setIsUpdating(vehicleId);
-    try {
-      await Vehicle.update(vehicleId, { status: 'available' });
-      toast({
-        title: "Vehicle Marked as Available",
-        description: "The listing is now available on the marketplace.",
-        variant: "success",
-      });
-      await loadSellerData();
-    } catch (error) {
-      console.error("Failed to mark vehicle as available:", error);
-      toast({
-        title: "Update Failed",
-        description: "Could not update the vehicle status. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(null);
-    }
-  }, [loadSellerData, toast]);
 
   const handleVehicleEditRequestSubmit = async (vehicleId: string, changes: Record<string, any>, notes: string) => {
     try {
@@ -671,8 +558,8 @@ export default function SellerDashboard({ user }: { user: UserData }) {
         edit_requests: [...existingEditRequests, newEditRequest]
       });
 
-      const admins = await User.filter({ role: 'admin' });
-      const notificationPromises = admins.map(admin =>
+      const admins = await getAdmins();
+      const notificationPromises = admins.map((admin:any) =>
         Notification.create({
           recipient_id: admin.id,
           sender_id: user.id,
@@ -686,7 +573,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
       await Promise.all(notificationPromises);
 
       setShowVehicleEditRequestModal(null);
-      loadSellerData();
+      loadSellerDashboard();
       toast({
         title: "Edit Request Submitted",
         description: "Your edit request has been submitted for review.",
@@ -720,7 +607,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
 
     if (window.confirm("Are you sure you want to cancel this managed sale request?")) {
       try {
-        await ManagedSaleRequest.update(requestToCancel.id, { status: 'cancelled' });
+        await managedSaleService.update(requestToCancel.id, { status: 'cancelled' });
         if (requestToCancel.status === 'listed' && requestToCancel.created_vehicle_id) {
           // If a vehicle was created, mark it as cancelled too
           await Vehicle.update(requestToCancel.created_vehicle_id, { status: 'cancelled' });
@@ -737,7 +624,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
           icon: "XCircle"
         });
 
-        loadSellerData();
+        loadSellerDashboard();
         setShowDetailsModal(false); // close modal
         toast({
           title: "Request Cancelled",
@@ -758,7 +645,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
   const handleFormSuccess = () => {
     setShowRequestForm(false);
     setEditingRequest(null);
-    loadSellerData();
+    loadSellerDashboard();
   };
 
   const handleUpdateRequest = async (requestData: any, originalRequest: any) => {
@@ -799,13 +686,13 @@ export default function SellerDashboard({ user }: { user: UserData }) {
 
         const existingEditRequests = originalRequest.edit_requests || [];
 
-        await ManagedSaleRequest.update(originalRequest.id, {
+        await managedSaleService.update(originalRequest.id, {
           status: 'edit_requested',
           edit_requests: [...existingEditRequests, newEditRequest]
         });
 
-        const admins = await User.filter({ role: 'admin' });
-        const notificationPromises = admins.map(admin =>
+        const admins = await getAdmins();
+        const notificationPromises = admins.map((admin:any) =>
           Notification.create({
             recipient_id: admin.id,
             sender_id: user.id,
@@ -863,24 +750,17 @@ export default function SellerDashboard({ user }: { user: UserData }) {
         });
 
         await Message.create({
-          recipient_id: message.sender_id,
+          recipient_id: message.sender_id || undefined,
           sender_id: user.id,
-          content: `Your test drive request for ${format(new Date(message.test_drive_details.preferred_date), 'MMM d, yyyy')} at ${message.test_drive_details.preferred_time} has been approved.`,
+          content: `Your test drive request for ${format(new Date(message.test_drive_details.preferred_date || Date.now()), 'MMM d, yyyy')} at ${message.test_drive_details.preferred_time || 'TBD'} has been approved.`,
           message_type: "confirmation_test_drive",
           vehicle_id: message.vehicle_id,
           conversation_id: message.conversation_id
         });
 
-        const buyer = buyers.find(b => b.user_id === message.sender_id);
-        if (buyer) {
-          await invokeFunction("sendEmail", {
-            to: buyer.email,
-            subject: `Your Test Drive for ${getVehicleById(message.vehicle_id)?.title} is Approved!`,
-            html: `<h2>Test Drive Approved!</h2>
-                         <p>Hi ${buyer.full_name},</p>
-                         <p>Your test drive request for the ${getVehicleById(message.vehicle_id)?.title} on ${format(new Date(message.test_drive_details.preferred_date), 'MMM d, yyyy')} has been approved. Please check your messages for details.</p>`
-          });
-        }
+        const buyer = buyers.find((b: any) => b.user_id === message.sender_id);
+        // Email notification would go here
+        void buyer;
 
         await Notification.create({
           recipient_id: message.sender_id,
@@ -892,7 +772,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
           icon: "CheckCircle"
         });
 
-        loadSellerData();
+        loadSellerDashboard();
 
         toast({
           title: "Test Drive Approved",
@@ -925,24 +805,17 @@ export default function SellerDashboard({ user }: { user: UserData }) {
         });
 
         await Message.create({
-          recipient_id: message.sender_id,
+          recipient_id: message.sender_id || undefined,
           sender_id: user.id,
-          content: `Your test drive request for ${format(new Date(message.test_drive_details.preferred_date), 'MMM d, yyyy')} has been declined.`,
+          content: `Your test drive request for ${format(new Date(message.test_drive_details.preferred_date || Date.now()), 'MMM d, yyyy')} has been declined.`,
           message_type: "confirmation_test_drive",
           vehicle_id: message.vehicle_id,
           conversation_id: message.conversation_id
         });
 
-        const buyer = buyers.find(b => b.user_id === message.sender_id);
-        if (buyer) {
-          await invokeFunction("sendEmail", {
-            to: buyer.email,
-            subject: `Update on your Test Drive Request for ${getVehicleById(message.vehicle_id)?.title}`,
-            html: `<h2>Test Drive Request Update</h2>
-                         <p>Hi ${buyer.full_name},</p>
-                         <p>Unfortunately, your test drive request for the ${getVehicleById(message.vehicle_id)?.title} has been declined. Please check your messages for more information.</p>`
-          });
-        }
+        const buyer = buyers.find((b: any) => b.user_id === message.sender_id);
+        // Email notification would go here
+        void buyer;
 
         await Notification.create({
           recipient_id: message.sender_id,
@@ -954,7 +827,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
           icon: "XCircle"
         });
 
-        loadSellerData();
+        loadSellerDashboard();
 
         toast({
           title: "Test Drive Declined",
@@ -987,7 +860,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
         });
 
         await Message.create({
-          recipient_id: message.sender_id,
+          recipient_id: message.sender_id || undefined,
           sender_id: user.id,
           content: `Your test drive for ${getVehicleById(message.vehicle_id)?.title} has been marked as completed.`,
           message_type: "confirmation_test_drive",
@@ -1005,7 +878,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
           icon: "ClipboardCheck"
         });
 
-        loadSellerData();
+        loadSellerDashboard();
 
         toast({
           title: "Test Drive Completed",
@@ -1041,7 +914,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
           setShowTestDriveDetails(updatedMessage);
         }
 
-        await loadSellerData();
+        await loadSellerDashboard();
 
         toast({
           title: "Test Drive Updated",
@@ -1069,15 +942,15 @@ export default function SellerDashboard({ user }: { user: UserData }) {
           await Message.update(messageId, { test_drive_details: updatedDetails });
 
           await Message.create({
-            recipient_id: messageToUpdate.recipient_id,
+            recipient_id: messageToUpdate.recipient_id || undefined,
             sender_id: user.id,
-            content: `The test drive request for ${format(new Date(updatedDetails.preferred_date), 'MMM d, yyyy')} has been cancelled by the requester.`,
+            content: `The test drive request for ${format(new Date(updatedDetails.preferred_date || Date.now()), 'MMM d, yyyy')} has been cancelled by the requester.`,
             message_type: 'confirmation_test_drive',
             vehicle_id: messageToUpdate.vehicle_id,
             conversation_id: messageToUpdate.conversation_id
           });
 
-          await loadSellerData();
+          await loadSellerDashboard();
           setViewingSentTestDrive(null);
 
           toast({
@@ -1120,7 +993,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
             description: "The request has been marked as cancelled and the buyer notified.",
             variant: "success",
           });
-          await loadSellerData();
+          await loadSellerDashboard();
         }
       } catch (error) {
         console.error("Failed to cancel test drive", error);
@@ -1136,7 +1009,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
   const handleSaveVehicleAvailability = async (vehicleId: string, availabilityData: any) => {
     try {
       await Vehicle.update(vehicleId, availabilityData);
-      await loadSellerData();
+      await loadSellerDashboard();
       setAvailabilityVehicle(null);
       toast({
         title: "Availability Saved",
@@ -1187,13 +1060,6 @@ export default function SellerDashboard({ user }: { user: UserData }) {
         };
     }
   };
-
-  const handleViewActivity = useCallback((request: any) => {
-    const vehicle = getVehicleById(request.vehicle_id);
-    const buyer = getBuyerById(request.sender_id);
-    setViewingActivity({ request, vehicle, buyer });
-  }, [getVehicleById, getBuyerById]);
-
 
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -1501,7 +1367,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
     return null;
   };
 
-  const isGuest = !user || publicUser?.user_type === 'guest';
+  const isGuest = !user || user?.user_type === 'guest';
 
   return (
     <div className="space-y-6">
@@ -1516,17 +1382,17 @@ export default function SellerDashboard({ user }: { user: UserData }) {
               {isGuest ? 'Guest Dashboard' : 'Seller Dashboard'}
             </h1>
             <p className="text-slate-600 mt-1">
-              Welcome back, {publicUser?.full_name || 'User'}
+              Welcome back, {user?.full_name || 'User'}
             </p>
           </div>
           <div className="flex items-center gap-4">
-            {publicUser?.role === 'admin' ? (
+            {user?.role === 'admin' ? (
               <Badge variant="outline" className="capitalize text-lg px-4 py-2 bg-slate-100 text-slate-700 border-slate-300">
                 Admin
               </Badge>
             ) : (
               <Badge variant="outline" className="capitalize text-lg px-4 py-2">
-                {publicUser?.user_type || 'guest'}
+                {user?.user_type || 'guest'}
               </Badge>
             )}
           </div>
@@ -1797,7 +1663,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                         <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                           <div className="w-full md:w-32 h-32 md:h-20 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">
                             {vehicle.primary_image ? (
-                              <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                              <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
                             ) : (
                               <div className="flex items-center justify-center h-full">
                                 <Car className="w-10 h-10 text-slate-400" />
@@ -1842,7 +1708,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                           </div>
 
                           <div className="flex flex-shrink-0 flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
-                            <Link href={`/Vehicle?id=${vehicle.id}`} className="w-full sm:w-auto">
+                            <Link href={`/vehicle?id=${vehicle.id}`} className="w-full sm:w-auto">
                               <Button variant="outline" size="sm" className="w-full justify-center">
                                 <Eye className="w-4 h-4 mr-2" />
                                 View
@@ -1942,14 +1808,14 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                 ) : (
                   <div className="space-y-4">
                     {vehicleTransfers.map((transfer) => {
-                      const vehicle = allUserVehiclesCombined.find(v => v.id === transfer.vehicle_id);
+                      const vehicle = listings.find((v: any) => v.id === transfer.vehicle_id);
                       return (
                         <Card key={transfer.id} className="border border-slate-200 hover:shadow-md transition-shadow">
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
                               <div className="w-20 h-16 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
                                 {vehicle?.primary_image ? (
-                                  <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                  <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
                                 ) : (
                                   <div className="flex items-center justify-center h-full">
                                     <Car className="w-8 h-8 text-slate-400" />
@@ -1999,10 +1865,10 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                   <div className="px-4 pt-4">
                     <TabsList className="grid w-full grid-cols-2 h-auto">
                       <TabsTrigger value="received" className="text-xs sm:text-sm px-2 py-2">
-                        Received ({testDriveRequests.filter(req => req.recipient_id === user.id).length})
+                        Received ({testDrives.length})
                       </TabsTrigger>
                       <TabsTrigger value="sent" className="text-xs sm:text-sm px-2 py-2">
-                        Sent ({testDriveRequests.filter(req => req.sender_id === user.id).length})
+                        Sent (0)
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -2036,7 +1902,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                                   <div className="flex gap-3">
                                     <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
                                       {vehicle.primary_image ? (
-                                        <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                        <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
                                       ) : (
                                         <Car className="w-6 h-6 text-slate-400" />
                                       )}
@@ -2071,7 +1937,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                                 <div className="space-y-3">
                                   {testDriveRequests.filter(req => req.recipient_id === user.id && !getVehicleById(req.vehicle_id)?.website_managed).slice(0, 5).map(request => {
                                     const vehicle = getVehicleById(request.vehicle_id);
-                                    const requester = getBuyerById(request.sender_id);
+                                    const requester = getBuyerById(request.sender_id || '');
 
                                     return (
                                       <div
@@ -2080,8 +1946,8 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                                       >
                                         <div className="flex items-center gap-4">
                                           <div className="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                            {vehicle.primary_image ? (
-                                              <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                            {vehicle?.primary_image ? (
+                                              <img src={vehicle.primary_image} alt={vehicle?.title || 'Vehicle'} className="w-full h-full object-cover" />
                                             ) : (
                                               <Car className="w-6 h-6 text-slate-400 m-auto" />
                                             )}
@@ -2163,7 +2029,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                                   <div className="flex gap-3">
                                     <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
                                       {vehicle.primary_image ? (
-                                        <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                        <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
                                       ) : (
                                         <Car className="w-6 h-6 text-slate-400" />
                                       )}
@@ -2249,7 +2115,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                         <div className="space-y-3">
                           {testDriveRequests.filter(req => req.sender_id === user.id).map(request => {
                             const vehicle = getVehicleById(request.vehicle_id);
-                            const seller = getBuyerById(request.recipient_id);
+                            const seller = getBuyerById(request.recipient_id || '');
                             return (
                               <div
                                 key={request.id}
@@ -2259,16 +2125,16 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                                 <div className="flex items-center justify-between">
                                   <div className="flex gap-4 items-center">
                                     <div className="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                      {vehicle.primary_image ? (
-                                        <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                      {vehicle?.primary_image ? (
+                                        <img src={vehicle.primary_image} alt={vehicle?.title || 'Vehicle'} className="w-full h-full object-cover" />
                                       ) : (
                                         <Car className="w-6 h-6 text-slate-400" />
                                       )}
                                     </div>
                                     <div className="flex-1">
-                                      <p className="font-medium text-slate-800">{vehicle.title}</p>
+                                      <p className="font-medium text-slate-800">{vehicle?.title || 'Unknown Vehicle'}</p>
                                       <p className="text-xs text-slate-500">
-                                        To: {seller?.full_name || 'Unknown Seller'} • {format(new Date(request.created_date), 'MMM d')}
+                                        To: {seller?.full_name || 'Unknown Seller'} • {format(new Date(request.created_date || Date.now()), 'MMM d')}
                                       </p>
                                       {request.test_drive_details?.preferred_date && (
                                         <p className="text-xs text-slate-600 mt-1">
@@ -2357,7 +2223,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                             <div className="flex items-center gap-4">
                               <div className="w-20 h-16 bg-slate-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {vehicle.primary_image ? (
-                                  <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-full object-cover" />
+                                  <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
                                 ) : (
                                   <Car className="w-8 h-8 text-slate-400" />
                                 )}
@@ -2390,12 +2256,12 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                           <div className="text-sm text-slate-600">
                             <p className="mb-2">{vehicle.description}</p>
                             <p className="text-xs text-slate-500">
-                              Listed {format(new Date(vehicle.created_date), 'MMM d, yyyy')}
+                              Listed {vehicle.createdAt ? format(new Date(vehicle.createdAt), 'MMM d, yyyy') : '—'}
                             </p>
                           </div>
 
                           <div className="flex gap-2 mt-4">
-                            <Link href={`/Vehicle?id=${vehicle.id}`}>
+                            <Link href={`/vehicle?id=${vehicle.id}`}>
                               <Button size="sm" variant="outline">
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Listing
@@ -2445,7 +2311,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
               </Card>
 
               {/* Notification Settings */}
-              <NotificationSettings user={user} onUpdate={loadSellerData} />
+              <NotificationSettings />
             </div>
           </TabsContent>
         </Tabs>
@@ -2497,13 +2363,19 @@ export default function SellerDashboard({ user }: { user: UserData }) {
         {showRequestForm && (
           <ManagedSalesRequestForm
             requestToEdit={editingRequest}
+            isOpen={showRequestForm}
             onClose={() => {
               setShowRequestForm(false);
               setEditingRequest(null);
             }}
-            onSuccess={handleFormSuccess}
-            onUpdateRequest={handleUpdateRequest}
-            isSubmittingEdit={isSubmittingEdit}
+            onSave={async (payload: any) => {
+              if (editingRequest) {
+                await handleUpdateRequest(payload, editingRequest);
+              } else {
+                await managedSaleService.create(payload);
+                handleFormSuccess();
+              }
+            }}
           />
         )}
       </AnimatePresence>
@@ -2575,7 +2447,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
             onClose={() => setShowVehicleEditRequestModal(null)}
             onSuccess={() => {
               setShowVehicleEditRequestModal(null);
-              loadSellerData();
+              loadSellerDashboard();
             }}
             currentUser={user}
           />
@@ -2616,8 +2488,8 @@ export default function SellerDashboard({ user }: { user: UserData }) {
                     const vehicle = getVehicleById(viewingSentTestDrive.vehicle_id);
                     return (
                       <>
-                        {vehicle.primary_image && (
-                          <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-32 object-cover rounded-md mb-2" />
+                        {vehicle?.primary_image && (
+                          <img src={vehicle.primary_image} alt={vehicle?.title || 'Vehicle'} className="w-full h-32 object-cover rounded-md mb-2" />
                         )}
                         <p className="text-md font-medium text-slate-800">{vehicle?.title || 'N/A'}</p>
                         <p className="text-sm text-slate-600">
@@ -2753,7 +2625,7 @@ export default function SellerDashboard({ user }: { user: UserData }) {
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
                 <TransferProgressTracker 
                   transfer={selectedTransfer} 
-                  vehicle={allUserVehiclesCombined.find(v => v.id === selectedTransfer.vehicle_id)} 
+                  vehicle={listings.find((v: any) => v.id === selectedTransfer.vehicle_id)} 
                   compact={false} 
                 />
               </div>

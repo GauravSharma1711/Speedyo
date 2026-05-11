@@ -1,110 +1,22 @@
-
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import {
-  LogIn,
-  Loader2 
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import GuestDashboard from "../../components/dashboard/GuestDashboard";
 import SellerDashboard from "../../components/dashboard/SellerDashboard";
 import { useRouter } from "next/navigation";
-
-type UserData = {
-  id: string;
-  email: string;
-  user_type?: "private_seller" | "guest" | "dealership";
-  [key: string]: any;
-};
- 
-type AnyRecord = Record<string, any>;
-
-const User = {
-  me: async (): Promise<UserData> => ({
-    id: "user-1",
-    email: "demo@example.com",
-    user_type: "private_seller",
-  }),
-};
- 
-const Vehicle = {
-  filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
-};
- 
-const ManagedSaleRequest = {
-  filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
-};
- 
-const Message = {
-  filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
-};
- 
-const VehicleEditRequest = {
-  filter: async (_filters: AnyRecord, _sort?: string): Promise<AnyRecord[]> => [],
-};
+import { useDashboardStore } from "@/store/dashboard";
 
 export default function Dashboard() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [vehicles, setVehicles] = useState<AnyRecord[]>([]);
-  const [managedSales, setManagedSales] = useState<AnyRecord[]>([]);
-  const [testDrives, setTestDrives] = useState<AnyRecord[]>([]);
-  const [editRequests, setEditRequests] = useState<AnyRecord[]>([]);
+  const { user, isLoading, loadDashboard } = useDashboardStore();
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const user = await User.me();
-        setCurrentUser(user);
-        const userType = user.user_type || 'guest';
-        
-        if (userType === 'private_seller' || userType === 'dealership') {
-          const vehiclesData = await Vehicle.filter({ created_by: user.email }, '-created_date');
-          setVehicles(vehiclesData);
-
-          // Fetch managed sales requests
-          const managedSalesData = await ManagedSaleRequest.filter(
-            { submitted_by_user_id: user.id },
-            '-created_date'
-          );
-          setManagedSales(managedSalesData);
-
-          // Fetch test drive requests (both sent and received)
-          const receivedTestDrives = await Message.filter({
-            message_type: 'test_drive_request',
-            recipient_id: user.id
-          }, '-created_date');
-          const sentTestDrives = await Message.filter({
-            message_type: 'test_drive_request',
-            sender_id: user.id
-          }, '-created_date');
-          const allTestDrives = [...receivedTestDrives, ...sentTestDrives];
-          // Deduplicate if a message could appear in both lists
-          const uniqueTestDrives = Array.from(new Map(allTestDrives.map(item => [item.id, item])).values());
-          setTestDrives(uniqueTestDrives);
-
-          // Fetch vehicle edit requests
-          const editRequestsData = await VehicleEditRequest.filter({
-            requested_by_user_id: user.id
-          }, '-created_date');
-          setEditRequests(editRequestsData);
-        }
-
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-        setCurrentUser(null); // Ensure user is null if fetching fails
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []); // Empty dependency array, runs once on mount
+    loadDashboard();
+  }, [loadDashboard]);
 
   if (isLoading) {
     return (
@@ -114,7 +26,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30">
         <Card className="max-w-md w-full mx-4">
@@ -125,7 +37,6 @@ export default function Dashboard() {
               onClick={() => router.push("/signIn")}
               size="lg"
               className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600">
-              <LogIn className="w-5 h-5 mr-2" />
               Login / Register
             </Button>
           </CardContent>
@@ -134,22 +45,19 @@ export default function Dashboard() {
     );
   }
 
-  const userType = currentUser.user_type || 'guest';
+  const userType = user.user_type || 'guest';
+  const passUser = {
+    ...user,
+    email: user.email ?? "",
+  };
 
-  // Render appropriate dashboard based on user type
   if (userType === 'guest') {
-    return <GuestDashboard user={currentUser} />;
+    return <GuestDashboard user={passUser as any} />;
   }
 
   if (userType === 'private_seller' || userType === 'dealership') {
-    return (
-      <SellerDashboard
-        user={currentUser}
-      />
-    );
+    return <SellerDashboard />;
   }
 
-  // Fallback for unknown user types (e.g., 'admin' or other roles not specifically handled)
-  // These users will see the Guest Dashboard.
-  return <GuestDashboard user={currentUser} />;
+  return <GuestDashboard user={passUser as any} />;
 }

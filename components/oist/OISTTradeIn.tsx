@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { ArrowLeft, RefreshCw, CheckCircle, Loader2 } from "lucide-react";
-import { Notification, OISTTradeInRequest, PublicUser, UserEntity } from "@/api/entities";
+import { notificationService, userService } from "@/services/dashboard";
+import { oistTradeInService } from "@/services/oistTradeInService";
 import AuthButton from "./AuthButton";
 
 type OISTTradeInProps = {
@@ -41,7 +42,7 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
   useEffect(() => {
     (async () => {
       try {
-        const me = await UserEntity.me();
+        const me = await userService.me();
         setFormData((prev) => ({
           ...prev,
           fullName: prev.fullName || me.full_name || "",
@@ -80,7 +81,7 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
 
     try {
       // Create trade-in request in database
-      await OISTTradeInRequest.create({
+      await oistTradeInService.create({
         full_name: formData.fullName,
         email: formData.email,
         facebook_profile: formData.facebookProfile,
@@ -94,13 +95,13 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
       });
 
       // Get all admin users from PublicUser entity
-      const adminUsers = await PublicUser.filter({ role: "admin" });
+      const adminUsers = await userService.getAdmins();
 
       // Send notification to all admins
       await Promise.all(
-        adminUsers.map(admin =>
-          Notification.create({
-            recipient_id: admin.user_id,
+        adminUsers.map((admin: any) =>
+          notificationService.create({
+            recipientId: admin.id,
             type: "new_managed_sale_request",
             content: `New OIST Trade-In request from ${formData.fullName} for ${formData.vehicleMake} ${formData.vehicleModel} (${formData.vehicleYear})`,
             url: `/admin?tab=oist-trade-in`,

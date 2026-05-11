@@ -208,7 +208,7 @@ export default function VehicleAnalytics({ vehicles, messages }) {
                   <div>
                     <p className="text-sm font-semibold text-slate-800">Vehicle Inquiry</p>
                     <p className="text-xs text-slate-500">
-                      {format(new Date(inquiry.created_date), 'MMM d, h:mm a')}
+                      {format(new Date(inquiry.createdAt ?? inquiry.created_date ?? 0), 'MMM d, h:mm a')}
                     </p>
                   </div>
                   <Badge variant="outline" className="text-xs">
@@ -240,7 +240,7 @@ export default function VehicleAnalytics({ vehicles, messages }) {
                   <h4 className="font-semibold text-slate-800">{vehicle.title}</h4>
                   <div className="flex items-center gap-4 mt-2">
                     <span className="text-sm text-slate-500">
-                      Listed {format(new Date(vehicle.created_date), 'MMM d')}
+                      Listed {vehicle.createdAt ? format(new Date(vehicle.createdAt), 'MMM d') : '—'}
                     </span>
                     <Badge className={
                       vehicle.status === 'available' ? 'bg-emerald-500' :

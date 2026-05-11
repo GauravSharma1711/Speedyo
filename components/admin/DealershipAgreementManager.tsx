@@ -159,7 +159,7 @@ export default function DealershipAgreementManagerUI() {
         agreement_url: `/SignAgreement/${id}`,
         created_date: new Date().toISOString(),
         signed_at: null,
-      };
+      });
 
       setShowCreateModal(false);
       resetForm();
