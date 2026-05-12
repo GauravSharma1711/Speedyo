@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
 
     // ── Dealership Verification — one-time fee ──
     if (purpose === "dealership_verification") {
-      const totalAmount = 14900; // $149.00
+      const totalAmount = 149; 
 
       const response = await squareClient.payments.create({
         sourceId: paymentToken,

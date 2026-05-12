@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-
+import { profileService, ProfileUser } from "@/services/profile/profileServices";
 import { UserEntity as User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -141,6 +141,8 @@ const guestPlan: Plan = {
   info: "Perfect for buyers looking for their next vehicle.",
   type: "guest",
 };
+
+
 
 // ─── DealershipCard ───────────────────────────────────────────────────────────
 interface DealershipCardProps {
@@ -285,6 +287,17 @@ export default function SubscriptionPage() {
   const [planForSummary, setPlanForSummary] = useState<any>(null);
   const [showDowngradeModal, setShowDowngradeModal] = useState(false);
 
+  //  useEffect(() => {
+  //   profileService.me()
+  //     .then(setCurrentUser)
+  //     .catch(() => setCurrentUser(null))
+  //     .finally(() => setIsLoading(false));
+  // }, []);
+
+
+  console.log("current user",currentUser);
+
+
   useEffect(() => {
     fetchUser();
   }, []);
@@ -329,7 +342,7 @@ export default function SubscriptionPage() {
 
     // ── Dealership selection ─────────────────────────────────────────────────
     if (plan.type === "dealership") {
-      const currentUserType = getCurrentUserType();
+      const currentUserType = currentUser.user_type || "guest";
 
       if (currentUserType !== "dealership") {
         if (!currentUser) {
