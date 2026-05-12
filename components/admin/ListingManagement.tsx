@@ -474,7 +474,7 @@ export default function ListingManagementUI(props: {
                         ) : null}
 
                         <span className="text-sm text-slate-600 whitespace-nowrap">
-                          Listed by: {vehicle.created_by}
+                          Listed by: {vehicle.author?.full_name || vehicle.author?.email || 'N/A'}
                         </span>
                       </div>
 

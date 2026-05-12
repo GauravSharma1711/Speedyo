@@ -50,7 +50,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
       try {
          const user = await profileService.me();
         setCurrentUser(user);
@@ -91,8 +90,6 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setCurrentUser(null); // Ensure user is null if fetching fails
-      } finally {
-        setIsLoading(false);
       }
     };
 

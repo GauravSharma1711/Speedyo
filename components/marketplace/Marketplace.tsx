@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Car, Filter } from "lucide-react";
+import { Search, Car, Filter, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -119,6 +119,13 @@ export default function Marketplace() {
         {error && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
             {error}
+          </div>
+        )}
+
+        {isLoading && items.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-500 mb-4" />
+            <p className="text-slate-500">Loading vehicles...</p>
           </div>
         )}
 

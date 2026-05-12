@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/Label';
 import { Loader2, Trash2, ChevronLeft, ChevronRight, CheckCircle, Upload } from 'lucide-react';
 import { useToast } from "@/components/ui/UseToast";
-import { User } from "@/api/entities";
-import { Dialog, DialogContent } from "@/components/ui/Dialog";
+import { userService } from "@/services/dashboard/userService";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/Dialog";
 
 // Client-side image processor
 const processImageToMultipleSizes = async (file) => {
@@ -136,7 +136,7 @@ export default function CreateVehicleModal({ isOpen, onClose, onVehicleCreated, 
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const userMe = await User.me();
+        const userMe = await userService.me();
         setCurrentUser(userMe);
       } catch (error) {
         console.error("Failed to fetch current user:", error);
@@ -198,96 +198,76 @@ export default function CreateVehicleModal({ isOpen, onClose, onVehicleCreated, 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // const handleImageSelect = async (e) => {
-  //   const files = Array.from(e.target.files);
-  //   if (files.length === 0) return;
+  const handleImageSelect = async (e) => {
+    e.preventDefault();
+    toast({
+      title: "Image Upload",
+      description: "Image upload functionality is coming soon. Please add images after creating the listing.",
+    });
+    e.target.value = '';
+  };
 
-  //   const maxSize = 30 * 1024 * 1024;
-  //   const oversizedFiles = files.filter(file => file.size > maxSize);
+  const handleSubmit = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-  //   if (oversizedFiles.length > 0) {
-  //     toast({
-  //       title: "File too large",
-  //       description: `Some files exceed the 30MB limit: ${oversizedFiles.map(f => f.name).join(', ')}. Please choose smaller files.`,
-  //       variant: "destructive"
-  //     });
-  //     e.target.value = '';
-  //     return;
-  //   }
+    const submitter = user || currentUser;
+    if (!submitter) {
+      toast({ title: "Error", description: "User information missing. Cannot create listing.", variant: "destructive" });
+      return;
+    }
 
-  //   setIsUploading(true);
+    if (!validateStep(1) || !validateStep(2)) {
+      toast({ title: "Please complete all required fields in Step 1 and Step 2.", variant: "destructive" });
+      return;
+    }
 
-  //   try {
-  //     for (const file of files) {
-  //       try {
-  //         console.log(`\n🔄 Processing: ${file.name}`);
-          
-  //         const { files: processedFiles, stats } = await processImageToMultipleSizes(file);
-  //         console.log('📊 Processing complete:', stats);
-          
-  //         // Upload each size individually using base44.integrations.Core.UploadFile
-  //         console.log('📤 Uploading to storage...');
-          
-  //         const [thumbnailResult, smallResult, mediumResult, largeResult] = await Promise.all([
-  //           base44.integrations.Core.UploadFile({ file: processedFiles.thumbnail }),
-  //           base44.integrations.Core.UploadFile({ file: processedFiles.small }),
-  //           base44.integrations.Core.UploadFile({ file: processedFiles.medium }),
-  //           base44.integrations.Core.UploadFile({ file: processedFiles.large })
-  //         ]);
-          
-  //         // Extract URLs from responses
-  //         const imageUrls = {
-  //           thumbnail: thumbnailResult.data?.file_url || thumbnailResult.file_url,
-  //           small: smallResult.data?.file_url || smallResult.file_url,
-  //           medium: mediumResult.data?.file_url || mediumResult.file_url,
-  //           large: largeResult.data?.file_url || largeResult.file_url,
-  //           original: largeResult.data?.file_url || largeResult.file_url
-  //         };
-          
-  //         // Verify all uploads succeeded
-  //         if (!imageUrls.thumbnail || !imageUrls.small || !imageUrls.medium || !imageUrls.large) {
-  //           throw new Error('Failed to upload one or more image sizes to base44 storage.');
-  //         }
-          
-  //         console.log('✅ Upload successful!', imageUrls);
-          
-  //         setFormData(prev => {
-  //           const newImages = [...prev.images, imageUrls];
-  //           const newPrimaryImage = prev.primary_image || imageUrls;
+    setLocalLoading(true);
 
-  //           return {
-  //             ...prev,
-  //             images: newImages,
-  //             primary_image: newPrimaryImage,
-  //           };
-  //         });
+    try {
+      const primaryImgUrl = formData.primary_image ? formData.primary_image.original : null;
 
-  //       } catch (error) {
-  //         console.error(`Failed to process or upload ${file.name}:`, error);
-  //         toast({
-  //           title: "Upload Failed",
-  //           description: `Failed to upload ${file.name}: ${error.message}`,
-  //           variant: "destructive"
-  //         });
-  //       }
-  //     }
-  //     toast({
-  //       title: "Images processed and uploaded!",
-  //       description: `Successfully uploaded and optimized images.`,
-  //     });
+      const vehicleData = {
+        title: `${formData.year} ${formData.make} ${formData.model}`,
+        make: formData.make,
+        model: formData.model,
+        year: parseInt(formData.year),
+        price: parseFloat(formData.price),
+        mileage: parseInt(formData.mileage),
+        condition: formData.condition,
+        description: formData.description,
+        primary_image: primaryImgUrl,
+        location: formData.location,
+        fuel_type: formData.fuel_type,
+        transmission: formData.transmission,
+        status: formData.status,
+        author_id: submitter.id,
+        author_name: submitter.full_name,
+        author_avatar: submitter.profile_image,
+        author_user_type: submitter.user_type,
+        author_verified: submitter.verified,
+        author_bio: submitter.bio,
+        author_location: submitter.location
+      };
 
-  //   } catch (error) {
-  //     console.error("Error during image selection/upload process:", error);
-  //     toast({
-  //       title: "Error",
-  //       description: `An error occurred during file selection: ${error.message || "An unknown error occurred."}`,
-  //       variant: "destructive"
-  //     });
-  //   } finally {
-  //     setIsUploading(false);
-  //     e.target.value = '';
-  //   }
-  // };
+      let resultVehicle;
+      if (vehicleToEdit) {
+        resultVehicle = await onVehicleCreated(vehicleToEdit.id, vehicleData);
+        toast({ title: "Success!", description: "Vehicle listing updated successfully." });
+      } else {
+        resultVehicle = await onVehicleCreated(vehicleData);
+        toast({ title: "Success!", description: "Vehicle listing submitted successfully." });
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to submit vehicle:', error);
+      toast({ title: "Submission Failed", description: `Could not save the vehicle listing: ${error.message || "An unknown error occurred."}`, variant: "destructive" });
+    } finally {
+      setLocalLoading(false);
+    }
+  };
 
   const removeImage = (indexToRemove) => {
     setFormData((prev) => {
@@ -628,6 +608,9 @@ export default function CreateVehicleModal({ isOpen, onClose, onVehicleCreated, 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-full max-h-[90vh] flex flex-col p-0">
+        <DialogTitle className="sr-only">
+          {vehicleToEdit ? 'Edit Vehicle Listing' : 'Create New Vehicle Listing'}
+        </DialogTitle>
         <div className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white p-6 rounded-t-lg">
           <div className="flex items-center gap-3">
             <div>
