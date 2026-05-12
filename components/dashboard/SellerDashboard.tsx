@@ -1559,7 +1559,7 @@ console.log("okook",dealershipSubscriptionDetails);
           <StatCard
             icon={JapaneseYenIcon}
             title="Avg. List Price"
-            value={`$${Math.round(stats.avgPrice).toLocaleString()}`}
+            value={`¥${Math.round(stats.avgPrice).toLocaleString()}`}
             subtitle="Your listings"
             color="amber"
           />

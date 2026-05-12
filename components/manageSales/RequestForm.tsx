@@ -350,17 +350,17 @@ export default function RequestFormUI(props: Props) {
     setFormData({
       requester_contact_info: {
         ...base.requester_contact_info,
-        ...(r.requester_contact_info || {}),
+        ...((r?.requester_contact_info) || {}),
       },
       vehicle_details: {
         ...base.vehicle_details,
-        ...(r.vehicle_details || {}),
+        ...((r?.vehicle_details) || {}),
       },
       access_arrangements: {
         ...base.access_arrangements,
-        ...(r.access_arrangements || {}),
+        ...((r?.access_arrangements) || {}),
       },
-      terms_agreed: r.terms_agreed ?? base.terms_agreed,
+      terms_agreed: r?.terms_agreed ?? base.terms_agreed,
     });
 
     setCurrentStep(1);

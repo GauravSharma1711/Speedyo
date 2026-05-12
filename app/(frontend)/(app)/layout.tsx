@@ -14,7 +14,6 @@ import {
   Bell,
   LogOut,
   LogIn,
-  DollarSign,
   Handshake,
   MessageSquare,
   ClipboardList,
