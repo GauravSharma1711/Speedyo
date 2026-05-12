@@ -1,59 +1,35 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckCircle, FileText } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle, FileText, Loader2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import Footer from "@/components/layout/Footer";
-
-type AgreementStatus = "draft" | "sent" | "signed";
-
-type DealershipAgreement = {
-  id: string;
-  status: AgreementStatus;
-
-  dealership_name: string;
-  representative_name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  license_number?: string;
-
-  service_fee_amount?: number | null;
-
-  signed_by_name?: string | null;
-  signed_at?: string | null; // ISO
-};
-
-const MOCK_AGREEMENTS: DealershipAgreement[] = [
-  {
-    id: "agr_001",
-    status: "signed",
-    dealership_name: "Taka Cars",
-    representative_name: "Kevin Phillips",
-    email: "dealer@takacars.jp",
-    phone: "+81 000 000 000",
-    address: "Okinawa, JP",
-    license_number: "LIC-12345",
-    service_fee_amount: 300,
-    signed_by_name: "Kevin Phillips",
-    signed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
-  },
-];
+import { useDealershipAgreementStore } from "@/store/admin/dealership";
 
 export default function ViewDealershipAgreementUI() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
 
-  const agreement = useMemo(() => {
-    const id = params?.id;
-    if (!id) return null;
-    return MOCK_AGREEMENTS.find((a) => a.id === id) ?? null;
+  const { agreements, isLoading, error, getById } = useDealershipAgreementStore();
+
+  useEffect(() => {
+    if (params?.id) getById(params.id);
   }, [params?.id]);
 
-  if (!agreement) {
+  const agreement = agreements.find((a) => a.id === params?.id) ?? null;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  if (error || !agreement) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex flex-col">
         <div className="flex-1 flex items-center justify-center py-12 px-4">
@@ -62,7 +38,7 @@ export default function ViewDealershipAgreementUI() {
               <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-slate-800 mb-2">Agreement Not Found</h2>
               <p className="text-slate-600 mb-6">
-                The agreement you are looking for does not exist.
+                {error ?? "The agreement you are looking for does not exist."}
               </p>
               <Button onClick={() => router.push("/")}>Return to Home</Button>
             </CardContent>
@@ -156,8 +132,8 @@ export default function ViewDealershipAgreementUI() {
                     <div>
                       <span className="text-slate-600">Service Fee:</span>
                       <p className="font-medium">
-                        {typeof agreement.service_fee_amount === "number"
-                          ? `$${agreement.service_fee_amount.toLocaleString()} per vehicle`
+                        {agreement.service_fee_amount
+                          ? `¥${Number(agreement.service_fee_amount).toLocaleString()} per vehicle`
                           : "Varies per vehicle listing"}
                       </p>
                     </div>

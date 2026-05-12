@@ -9,7 +9,7 @@ import {
   ChevronDown,
   ClipboardCheck,
   Clock,
-  DollarSign,
+  JapaneseYen ,
   Edit,
   Eye,
   Handshake,
@@ -189,7 +189,7 @@ function getStatusBadge(status: ManagedSaleStatus) {
     approved: { color: "bg-emerald-100 text-emerald-800", icon: CheckCircle },
     declined: { color: "bg-red-100 text-red-800", icon: XCircle },
     listed: { color: "bg-blue-100 text-blue-800", icon: CheckCircle },
-    sold: { color: "bg-slate-100 text-slate-800", icon: DollarSign },
+    sold: { color: "bg-slate-100 text-slate-800", icon: JapaneseYen  },
     edit_requested: { color: "bg-orange-100 text-orange-800", icon: Edit },
     cancellation_requested: { color: "bg-purple-100 text-purple-800", icon: XCircle },
     cancelled: { color: "bg-red-200 text-red-900", icon: XCircle },
@@ -984,7 +984,7 @@ export default function ManagedSalesAdminUI() {
                                   {request.status === "approved" || request.status === "listed" ? (
                                     <>
                                       <DropdownMenuItem onClick={() => markSold(request)}>
-                                        <DollarSign className="w-4 h-4 mr-2 text-emerald-500" />
+                                        <JapaneseYen  className="w-4 h-4 mr-2 text-emerald-500" />
                                         Mark as Sold
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => setAvailability(request.id)}>
@@ -1141,7 +1141,7 @@ export default function ManagedSalesAdminUI() {
                                 {request.status === "approved" || request.status === "listed" ? (
                                   <>
                                     <DropdownMenuItem onClick={() => markSold(request)}>
-                                      <DollarSign className="w-4 h-4 mr-2 text-emerald-500" />
+                                      <JapaneseYen className="w-4 h-4 mr-2 text-emerald-500" />
                                       Mark as Sold
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setAvailability(request.id)}>
