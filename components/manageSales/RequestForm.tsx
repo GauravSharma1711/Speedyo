@@ -25,6 +25,7 @@ import {
   Sparkles,
   Shield,
   Wifi,
+  JapaneseYenIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -2263,7 +2264,7 @@ export default function RequestFormUI(props: Props) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-500" />
+              <JapaneseYenIcon className="w-5 h-5 text-emerald-500" />
               Pricing Summary
             </CardTitle>
           </CardHeader>

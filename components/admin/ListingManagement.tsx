@@ -7,6 +7,7 @@ import {
   Car,
   CheckCircle,
   DollarSign,
+  JapaneseYenIcon,
   Edit,
   Loader2,
   Star,
@@ -289,17 +290,10 @@ export default function ListingManagementUI(props: {
   formData.append("transmission", patch.transmission);
   formData.append("status", patch.status);
 
+  // Images already uploaded via /api/upload/uploadImage in CreateVehicleModalUI
+  patch.images.forEach((url) => formData.append("images", url));
 
-  patch.imageFiles.forEach((file) => formData.append("images", file));
-
-  const primaryIsNew = patch.primary_image?.startsWith("blob:");
-  if (primaryIsNew) {
-    // Find the matching file by index
-    const idx = patch.images.findIndex((url) => url === patch.primary_image);
-    if (idx !== -1 && patch.imageFiles[idx]) {
-      formData.append("primary_image", patch.imageFiles[idx]);
-    }
-  } else if (patch.primary_image) {
+  if (patch.primary_image) {
     formData.append("primary_image", patch.primary_image);
   }
 
@@ -537,7 +531,7 @@ export default function ListingManagementUI(props: {
                           onClick={() => handleMarkAsSold(vehicle.id)}
                           className="text-slate-700 border-slate-300 hover:bg-slate-100"
                         >
-                          <DollarSign className="w-4 h-4 mr-2" />
+                          <JapaneseYenIcon className="w-4 h-4 mr-2" />
                           Mark as Sold
                         </Button>
                       ) : null}

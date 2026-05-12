@@ -27,6 +27,7 @@ import {
   ShoppingCart,
   TrendingUp,
   ArrowRight,
+  JapaneseYenIcon,
 } from "lucide-react";
 import {
   Sidebar,
@@ -174,7 +175,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   UserCheck,
   Car,
   Handshake,
-  DollarSign,
+  JapaneseYenIcon,
   Bell,
 };
 
@@ -473,7 +474,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
       <DropdownMenuItem asChild><Link href={createPageUrl("Profile")} className="cursor-pointer"><User className="mr-2 h-4 w-4" />Profile</Link></DropdownMenuItem>
       <DropdownMenuItem asChild><Link href={createPageUrl("Dashboard")} className="cursor-pointer"><LayoutDashboard className="mr-2 h-4 w-4" />Dashboard</Link></DropdownMenuItem>
       <DropdownMenuItem asChild><Link href={createPageUrl("ManagedSales")} className="cursor-pointer"><Handshake className="mr-2 h-4 w-4" />Managed Sales</Link></DropdownMenuItem>
-      <DropdownMenuItem asChild><Link href={createPageUrl("Subscription")} className="cursor-pointer"><DollarSign className="mr-2 h-4 w-4" />Pricing</Link></DropdownMenuItem>
+      <DropdownMenuItem asChild><Link href={createPageUrl("Subscription")} className="cursor-pointer"><JapaneseYenIcon className="mr-2 h-4 w-4" />Pricing</Link></DropdownMenuItem>
       {currentUserDisplay?.role === "admin" && (
         <>
           <DropdownMenuSeparator />

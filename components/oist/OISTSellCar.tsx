@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { ArrowLeft, Handshake, DollarSign, CheckCircle } from "lucide-react";
+import { ArrowLeft, Handshake, DollarSign, CheckCircle, JapaneseYenIcon } from "lucide-react";
 import AuthButton from "./AuthButton";
 
 type OISTSellCarProps = {
@@ -76,7 +76,7 @@ export default function OISTSellCar({ onBack }: OISTSellCarProps) {
         <Card className="bg-gradient-to-br from-blue-50 to-white shadow-xl border-2 border-blue-200 hover:shadow-2xl transition-all">
           <CardHeader>
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-              <DollarSign className="w-8 h-8 text-white" />
+              <JapaneseYenIcon className="w-8 h-8 text-white" />
             </div>
             <CardTitle className="text-2xl text-center">Private Seller</CardTitle>
             <p className="text-center text-slate-600">List and manage your own sale</p>

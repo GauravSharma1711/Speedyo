@@ -19,7 +19,8 @@ import {
   MapPin,
   User as UserIcon, 
   ArrowLeft, 
-  Info
+  Info,
+  JapaneseYenIcon
 } from "lucide-react";
 
 import Link from "next/link";
@@ -257,7 +258,7 @@ export default function ManagedSalesPage() {
               <Card className="bg-white/80 backdrop-blur-sm shadow-lg sm:col-span-2 md:col-span-1">
                 <CardContent className="p-4 sm:p-6 text-center">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                    <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+                    <JapaneseYenIcon className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
                   </div>
                   <h3 className="font-bold text-slate-800 mb-2 text-sm sm:text-base">Secure Transactions</h3>
                   <p className="text-slate-600 text-xs sm:text-sm">

@@ -305,6 +305,44 @@ export default function CreateVehicleModalUI({
 
     const title = `${year || ""} ${formData.make} ${formData.model}`.trim();
 
+    // Upload new images (blob URLs) to server
+    let finalImages: string[] = [];
+    let finalPrimary: string | null = null;
+
+    if (formData.imageFiles.length > 0) {
+      toast({ title: "Uploading images...", description: "Please wait" });
+
+      const uploadPromises = formData.imageFiles.map(async (file) => {
+        const formDataUpload = new FormData();
+        formDataUpload.append("file", file);
+
+        const res = await fetch("/api/upload/uploadImage", {
+          method: "POST",
+          body: formDataUpload,
+        });
+
+        if (!res.ok) throw new Error("Image upload failed");
+        const data = await res.json();
+        return data.url; // large image URL
+      });
+
+      try {
+        finalImages = await Promise.all(uploadPromises);
+      } catch {
+        toast({ title: "Error", description: "Failed to upload images", variant: "destructive" });
+        return;
+      }
+
+      // Find primary image
+      const primaryBlob = formData.primary_image?.original;
+      if (primaryBlob && finalImages.length > 0) {
+        const idx = formData.images.findIndex(img => img.original === primaryBlob);
+        finalPrimary = idx !== -1 ? finalImages[idx] : finalImages[0];
+      } else {
+        finalPrimary = finalImages[0];
+      }
+    }
+
     const patch: CreateVehiclePatch = {
       title,
       make: formData.make,
@@ -318,8 +356,8 @@ export default function CreateVehicleModalUI({
       fuel_type: formData.fuel_type,
       transmission: formData.transmission,
       status: formData.status,
-      images: formData.images.map((img) => img.original).filter(Boolean),
-      primary_image: formData.primary_image?.original ?? null,
+      images: finalImages.length > 0 ? finalImages : formData.images.map((img) => img.original).filter(Boolean),
+      primary_image: finalPrimary || formData.primary_image?.original || null,
       imageFiles: formData.imageFiles,
     };
 
@@ -327,7 +365,7 @@ export default function CreateVehicleModalUI({
 
     toast({
       title: vehicleToEdit ? "Vehicle listing updated" : "Vehicle listing created",
-      description: "Saved to local state.",
+      description: "Saved successfully.",
     });
     onClose();
   };

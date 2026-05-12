@@ -89,7 +89,8 @@ import {
   XCircle,
   KeyRound,
   AlertTriangle,
-  User as UserIcon // Added for Admin Info section
+  User as UserIcon, // Added for Admin Info section
+  JapaneseYenIcon
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -543,7 +544,7 @@ export default function ManagedSaleDetailsModal({
                     disabled={isLoading}
                     className="bg-emerald-600 hover:bg-emerald-700"
                   >
-                    <DollarSign className="w-4 h-4 mr-2" />
+                    <JapaneseYenIcon className="w-4 h-4 mr-2" />
                     Mark as Sold
                   </Button>
                 )}

@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, MessageCircle, Car, DollarSign } from "lucide-react";
+import { Eye, MessageCircle, Car, DollarSign ,JapaneseYenIcon} from "lucide-react";
 import VehicleAnalytics from "./VehicleAnalytics";
 
 export default function SellerPerformance({ vehicles, messages, posts }) {
@@ -42,7 +42,7 @@ export default function SellerPerformance({ vehicles, messages, posts }) {
 
         <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/20">
           <CardContent className="p-4 text-center">
-            <DollarSign className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+            <JapaneseYenIcon className="w-8 h-8 text-amber-600 mx-auto mb-2" />
             <div className="text-2xl font-bold text-amber-700">${Math.round(avgPrice).toLocaleString()}</div>
             <div className="text-sm text-slate-600">Avg. Price</div>
             <div className="text-xs text-slate-500">your listings</div>
