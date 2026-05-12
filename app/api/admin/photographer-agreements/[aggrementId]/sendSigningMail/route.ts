@@ -1,9 +1,8 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
-import { sendPhotographerAgreementMail } from "@/helpers/sendPhotographerAgreementMail";
+import { sendPhotographerSendAgreementMail } from "@/helpers/sendPhotographerSigningMail";
 
 export async function POST(
   request: NextRequest,
@@ -19,31 +18,39 @@ export async function POST(
 
     const agreement = await prisma.photographerAgreement.findUnique({
       where: { id: aggrementId },
-      include: { application: true },
     });
 
     if (!agreement) {
       return NextResponse.json({ error: "Agreement not found" }, { status: 404 });
     }
 
-    if (!agreement.application) {
-      return NextResponse.json({ error: "No application linked to this agreement" }, { status: 400 });
+    if (!agreement.photographer_email) {
+      return NextResponse.json({ error: "No email linked to this agreement" }, { status: 400 });
     }
 
-    await sendPhotographerAgreementMail(
-      agreement.application.email,
-      agreement.application.full_name,
+    if (!agreement.agreement_url) {
+      return NextResponse.json({ error: "No agreement URL found" }, { status: 400 });
+    }
+
+    await sendPhotographerSendAgreementMail(
+      agreement.photographer_email,
       agreement.position_title,
       Number(agreement.fixed_percentage),
-      agreement.status,
-      agreement.application.phone,
-      agreement.application.photography_experience_years,
-      aggrementId,
+      agreement.agreement_url,
+      agreement.id,
     );
 
-    return NextResponse.json({ success: true, message: "Photographer agreement email sent successfully" });
+    await prisma.photographerAgreement.update({
+      where: { id: aggrementId },
+      data: { status: "pending_signature" },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Agreement sent successfully",
+    });
   } catch (error) {
-    console.error("Failed to send photographer agreement mail", error);
+    console.error("Failed to send photographer send-agreement mail", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

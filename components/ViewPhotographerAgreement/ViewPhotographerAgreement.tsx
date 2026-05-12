@@ -1,6 +1,6 @@
 "use client";
-
-import React, { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -51,30 +51,7 @@ type PhotographerApplicationRow = {
   sample_work_urls: string[];
 };
 
-const MOCK_AGREEMENTS: PhotographerAgreementRow[] = [
-  {
-    id: "ph_001",
-    status: "draft",
-    agreement_title: "Speedio Photographer Partnership Agreement",
-    position_title: "Automotive Photographer (Contract)",
-    fixed_percentage: 10,
-    agreement_start_date: "2026-01-01",
-    agreement_end_date: "2026-12-31",
-    termination_notice_days: 30,
-    application_id: null,
-  },
-  {
-    id: "ph_002",
-    status: "draft",
-    agreement_title: "Speedio Photographer Partnership Agreement",
-    position_title: "Automotive Photographer (Contract)",
-    fixed_percentage: 10,
-    agreement_start_date: "2026-01-01",
-    agreement_end_date: "2026-12-31",
-    termination_notice_days: 30,
-    application_id: null,
-  }
-];
+
 
 const MOCK_APPLICATIONS: PhotographerApplicationRow[] = [
   {
@@ -101,17 +78,38 @@ export default function ViewPhotographerAgreementUI() {
 
       const {
       agreements,
-      addApplication
+      agreement,
+      addApplication,
+      isLoading,
+      getAll,
+      getAgreementById
     } = usePhotographerAgreementStore();
 
-  const agreement = useMemo(() => {
-    const id = params?.id;
-    if (!id) return null;
-    return agreements.find((a) => a.id === id) ?? null;
-  }, [params?.id]);
+const [hasFetched, setHasFetched] = useState(false);
+
+// Clear stale agreement immediately on mount
+useEffect(() => {
+  usePhotographerAgreementStore.setState({ agreement: null });
+}, []);
+    
+const searchParams = useSearchParams();
+const id = searchParams.get("id"); 
+
+useEffect(() => {
+  if (!id) return;
+  Promise.all([getAll(), getAgreementById(id)])
+    .finally(() => setHasFetched(true));
+}, [id]);
 
 
+//   const agreement = useMemo(() => {
+//   const id = params?.id;
+//   if (!id) return null;
+//   return agreements.find((a) => a.id === id) ?? null;
+// }, [params?.id, agreements]); 
 
+ const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
+const [sampleFiles, setSampleFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
   const [uploadingSamples, setUploadingSamples] = useState(false);
@@ -139,7 +137,7 @@ export default function ViewPhotographerAgreementUI() {
   });
 
   // UI-only: pretend loading while params resolve
-  if (!params?.id) {
+  if (!id || isLoading || !hasFetched) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex items-center justify-center">
         <div className="text-center">
@@ -157,7 +155,7 @@ export default function ViewPhotographerAgreementUI() {
           <CardContent className="p-6 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-bold text-slate-800 mb-2">Agreement Not Found</h2>
-            <p className="text-slate-600 mb-4">No agreement found for id: {params.id}</p>
+            <p className="text-slate-600 mb-4">No agreement found for id: {id}</p>
             <Button onClick={() => router.back()} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go Back
@@ -206,60 +204,71 @@ export default function ViewPhotographerAgreementUI() {
     );
   }
 
+ 
+
+
   // Form helpers (UI-only)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setApplicationData((prev) => ({ ...prev, [name]: value } as any));
   };
 
-  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+ const handlePortfolioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  setPortfolioFile(file);
+  setApplicationData((prev) => ({ ...prev, portfolio_url: URL.createObjectURL(file) })); // preview only
+};
 
-    setUploadingPortfolio(true);
-    try {
-      const url = URL.createObjectURL(file);
-      setApplicationData((prev) => ({ ...prev, portfolio_url: url }));
-      toast({ title: "Portfolio added (UI-only)", description: "Local preview only. API later." });
-    } finally {
-      setUploadingPortfolio(false);
-      e.target.value = "";
-    }
-  };
-
-  const handleSampleWorkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    setUploadingSamples(true);
-    try {
-      const urls = files.map((f) => URL.createObjectURL(f));
-      setApplicationData((prev) => ({ ...prev, sample_work_urls: [...prev.sample_work_urls, ...urls] }));
-      toast({ title: "Samples added (UI-only)", description: "Local preview only. API later." });
-    } finally {
-      setUploadingSamples(false);
-      e.target.value = "";
-    }
-  };
+const handleSampleWorkUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  setSampleFiles((prev) => [...prev, ...files]);
+  const urls = files.map((f) => URL.createObjectURL(f));
+  setApplicationData((prev) => ({ ...prev, sample_work_urls: [...prev.sample_work_urls, ...urls] }));
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!termsAccepted) {
-      toast({ title: "Accept terms", description: "Please accept agreement terms to continue.", variant: "destructive" });
-      return;
-    }
-  await addApplication(params?.id,applicationData);
-    setIsSubmitting(true);
-    try {
-      toast({
-        title: "Submitted (UI-only)",
-        description: "Application stored locally. API wiring pending.",
-      });
-      // In UI-only mode we don’t mutate agreement status; you can do local setAgreement if you want.
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  e.preventDefault();
+  if (!termsAccepted) {
+    toast({ title: "Accept terms", description: "Please accept agreement terms to continue.", variant: "destructive" });
+    return;
+  }
+
+  setIsSubmitting(true);
+  try {
+    const formData = new FormData();
+
+    // Required fields
+    formData.append("full_name", applicationData.full_name);
+    formData.append("email", applicationData.email);
+    formData.append("phone", applicationData.phone);
+    formData.append("photography_experience_years", String(applicationData.photography_experience_years));
+    formData.append("motivation", applicationData.motivation);
+
+    // Optional fields
+    if (applicationData.address) formData.append("address", applicationData.address);
+    if (applicationData.automotive_photography_experience)
+      formData.append("automotive_photography_experience", applicationData.automotive_photography_experience);
+    if (applicationData.equipment) formData.append("equipment", applicationData.equipment);
+    if (applicationData.availability) formData.append("availability", applicationData.availability);
+    if (applicationData.location_preferences)
+      formData.append("location_preferences", applicationData.location_preferences);
+
+    // File uploads — attach the actual File objects, not blob URLs
+
+    if (portfolioFile) formData.append("portfolio", portfolioFile);
+sampleFiles.forEach((file) => formData.append("sample_work", file));
+
+    await addApplication(id!, formData);
+
+    toast({ title: "Application submitted!", description: "Your application has been received." });
+  } catch (err) {
+    toast({ title: "Submission failed", description: "Please try again.", variant: "destructive" });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex flex-col">

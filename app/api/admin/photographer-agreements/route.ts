@@ -85,7 +85,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, agreement }, { status: 201 });
+
+    
+    const agreementUrl = `http://localhost:3000/PhotographerAgreement?id=${agreement.id}`;
+
+    // Update the record with the generated URL
+    const updatedAgreement = await prisma.photographerAgreement.update({
+      where: { id: agreement.id },
+      data: { agreement_url: agreementUrl },
+    });
+
+    return NextResponse.json({ success: true, agreement: updatedAgreement }, { status: 201 });
   } catch (error) {
     console.error("Failed to create photographer agreement", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

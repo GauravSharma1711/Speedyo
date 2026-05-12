@@ -1,6 +1,7 @@
 "use client";
 
 import { useLiaisonAgreementStore } from "@/store/admin/liaison";
+import lisisonAgreementService from "@/services/admin/liaison";
 import type { liaisonAgreement, liaisonApplication } from "@/store/admin/liaison";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -142,6 +143,7 @@ export default function LiaisonAgreementManagerUI() {
     const fullUrl = `${window.location.origin}/LiaisonAgreement?id=${a.id}`;
     await navigator.clipboard.writeText(fullUrl);
     toast({ title: "Copied", description: "Agreement link copied." });
+    alert("Agreement link copied to clipboard!");
   }
 
   // ── Send email ─────────────────────────────────────────────────────────────
@@ -149,22 +151,94 @@ export default function LiaisonAgreementManagerUI() {
     setIsSubmitting(true);
     try {
       // TODO: wire real send API
+      const res  =  await lisisonAgreementService.sendMail(a.id);
       toast({ title: "Send email", description: "Would email the liaison the agreement + application summary." });
+       alert("Application email sent successfully!");
+    }catch{
+        alert("Failed to send mail!");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   // ── Download PDF ───────────────────────────────────────────────────────────
-  async function handleDownloadPDF(a: liaisonAgreement) {
-    setIsSubmitting(true);
-    try {
-      // TODO: wire real PDF generation
-      toast({ title: "Download PDF", description: "PDF generation wiring pending." });
-    } finally {
-      setIsSubmitting(false);
-    }
+async function handleDownloadPDF(a: liaisonAgreement) {
+  setIsSubmitting(true);
+  try {
+    const application = a.application;
+
+    const termStart = a.agreement_start_date
+      ? new Date(a.agreement_start_date).toLocaleDateString()
+      : "N/A";
+    const termEnd = a.agreement_end_date
+      ? new Date(a.agreement_end_date).toLocaleDateString()
+      : "indefinite";
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Liaison_Agreement_${a.id}</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: Arial, sans-serif;
+            color: #1a1a1a;
+            padding: 60px 57px;
+            max-width: 850px;
+            margin: 0 auto;
+          }
+          h1 { font-size: 22px; font-weight: bold; margin-bottom: 32px; }
+          h2 { font-size: 15px; font-weight: bold; margin-top: 28px; margin-bottom: 10px; }
+          p { font-size: 13px; line-height: 1.8; padding-left: 14px; color: #1a1a1a; }
+        </style>
+      </head>
+      <body>
+        <h1>${a.agreement_title || "Speedio Dealership Partnership Liaison Agreement"}</h1>
+
+        <h2>Position Title</h2>
+        <p>${a.position_title || "Bilingual Dealership Liaison — Speedio Dealership Outreach Program"}</p>
+
+        <h2>Compensation</h2>
+        <p>Fixed Fee: ${a.fixed_fee_percentage ?? "10"}% of service fee per assisted sale</p>
+        <p>Residual Pay: ${a.residual_pay_percentage ?? "3"}% for subsequent sales from referred dealerships</p>
+        <p>Payment upon successful vehicle sale</p>
+
+        <h2>Term</h2>
+        <p>Effective from ${termStart} to ${termEnd}</p>
+        <p>${a.termination_notice_days ?? 30} days notice required for termination</p>
+
+        ${application ? `
+        <h2>Application Information</h2>
+        <p>Name: ${application.full_name}</p>
+        <p>Email: ${application.email}</p>
+        <p>Phone: ${application.phone}</p>
+        <p>Language Proficiency: ${application.language_proficiency}</p>
+        ${application.address ? `<p>Address: ${application.address}</p>` : ""}
+        ${application.previous_experience ? `<p>Previous Experience: ${application.previous_experience}</p>` : ""}
+        ${application.automotive_knowledge ? `<p>Automotive Knowledge: ${application.automotive_knowledge}</p>` : ""}
+        ${application.availability ? `<p>Availability: ${application.availability}</p>` : ""}
+        ` : ""}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `Liaison_Agreement_${a.id}.html`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+
+    toast({ title: "Downloaded", description: `Liaison_Agreement_${a.id}.html saved.` });
+  } finally {
+    setIsSubmitting(false);
   }
+}
 
   // ── Delete ─────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
@@ -334,18 +408,24 @@ export default function LiaisonAgreementManagerUI() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {/* {a.agreement_url ? ( */}
+                    {a.agreement_url ? (
                       <>
                         <Button size="sm" variant="outline" onClick={() => copyAgreementLink(a)}>
                           <Copy className="w-4 h-4 mr-2" />Copy Link
                         </Button>
-                        <Link href={`/ViewLiaisonAgreement/${a.id}`}>
+
+                       <Link
+  href={`/LiaisonAgreement?id=${a.id}`}
+  target="_blank"
+  rel="noopener noreferrer"
+>
+
                           <Button size="sm" variant="outline">
                             <Eye className="w-4 h-4 mr-2" />View Agreement
                           </Button>
                         </Link>
                       </>
-                    {/* // ) : null} */}
+                     ) : null} 
 
                     {a.status === "signed" && associatedApplication ? (
                       <Button size="sm" variant="outline" onClick={() => handleSendApplicationEmail(a)} disabled={isSubmitting}>
