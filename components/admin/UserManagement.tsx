@@ -12,6 +12,7 @@ import {
   X,
   XCircle,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -373,7 +374,7 @@ useEffect(() => { getAll(); }, []);
     );
   };
 
-  if (isLoading) return null;
+ 
 
   return (
     <Card>
@@ -388,6 +389,11 @@ useEffect(() => { getAll(); }, []);
       </CardHeader>
 
       <CardContent>
+          {isLoading ? (
+    <div className="flex items-center justify-center py-16">
+      <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+    </div>
+  ) : (
         <Table>
           <TableHeader>
             <TableRow>
@@ -449,7 +455,7 @@ useEffect(() => { getAll(); }, []);
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </Table>)}
       </CardContent>
 
       <UserDetailsModal

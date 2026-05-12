@@ -8,6 +8,7 @@ import {
   CheckCircle,
   DollarSign,
   Edit,
+  Loader2,
   Star,
   Trash2,
   XCircle,
@@ -381,9 +382,9 @@ export default function ListingManagementUI(props: {
   }
 };
 
-  if (vehiclesLoading && vehicles.length === 0) {
-    return <div className="p-8 text-center text-slate-500">Loading vehicles...</div>;
-  }
+  // if (vehiclesLoading && vehicles.length === 0) {
+  //   return <div className="p-8 text-center text-slate-500">Loading vehicles...</div>;
+  // }
 
   return (
     <>
@@ -404,7 +405,12 @@ export default function ListingManagementUI(props: {
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-4 mt-4">
+           {vehiclesLoading && vehicles.length === 0 ? (
+    <div className="flex items-center justify-center py-16">
+      <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+    </div>
+  ) : (
+    <div className="space-y-4 mt-4">
             {filteredVehicles.map((vehicle) => (
               <Card
                 key={vehicle.id}
@@ -589,7 +595,7 @@ export default function ListingManagementUI(props: {
             {filteredVehicles.length === 0 ? (
               <div className="text-sm text-slate-600">No vehicles match your search.</div>
             ) : null}
-          </div>
+          </div> )}
         </CardContent>
       </Card>
 
