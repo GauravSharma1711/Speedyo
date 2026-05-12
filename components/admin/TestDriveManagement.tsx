@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle, Calendar, Car, CheckCircle,
-  Clock, Edit, Eye, Search, User as UserIcon, XCircle,
+  Clock, Edit, Eye, Loader2, Search, User as UserIcon, XCircle,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -141,14 +141,16 @@ export default function TestDriveManagementUI() {
           </div>
 
           {isLoading && (
-            <div className="text-center py-8 text-slate-400">Loading...</div>
+             <div className="flex items-center justify-center py-16">
+                 <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+               </div>
           )}
 
-          {error && (
-            <div className="text-center py-4 text-red-500 text-sm">{error}</div>
-          )}
+       {!isLoading && error && (
+  <div className="text-center py-4 text-red-500 text-sm">{error}</div>
+)}
 
-          <div className="space-y-3">
+       {!isLoading &&  <div className="space-y-3">
             {filtered.map((t) => {
            
               const vehicleTitle = t.vehicle?.title ?? "Unknown Vehicle";
@@ -221,7 +223,7 @@ export default function TestDriveManagementUI() {
                 <p>No test drives found</p>
               </div>
             )}
-          </div>
+          </div>}
         </CardContent>
       </Card>
 

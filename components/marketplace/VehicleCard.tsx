@@ -107,7 +107,7 @@ export default function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
             <div className="flex-1 min-w-0">
               <p className="text-2xl font-bold text-blue-600">
-                ${vehicle.price?.toLocaleString?.() ?? "—"}
+                ¥{vehicle.price?.toLocaleString?.() ?? "—"}
               </p>
 
               <div className="flex items-center gap-2 mt-1">

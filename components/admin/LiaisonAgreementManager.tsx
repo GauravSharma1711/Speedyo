@@ -188,13 +188,7 @@ export default function LiaisonAgreementManagerUI() {
   }
 
   // ── Loading state ──────────────────────────────────────────────────────────
-  if (isLoading && agreements?.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -276,7 +270,11 @@ export default function LiaisonAgreementManagerUI() {
       </div>
 
       {/* Empty state */}
-      {agreements?.length === 0 ? (
+      {isLoading ? (
+  <div className="flex items-center justify-center py-16">
+    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+  </div>
+) :agreements?.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <UserCheck className="w-12 h-12 mx-auto text-slate-300 mb-3" />

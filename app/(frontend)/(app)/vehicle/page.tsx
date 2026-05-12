@@ -482,20 +482,20 @@ export default function VehiclePage() {
                   <div className="space-y-3 mb-4">
                     <div className="flex justify-between text-slate-600">
                       <span>Base Price:</span>
-                      <span className="font-semibold">${Number(basePrice).toLocaleString()}</span>
+                      <span className="font-semibold">¥{Number(basePrice).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>Other Fees:</span>
-                      <span className="font-semibold">${Number(serviceFee).toLocaleString()}</span>
+                      <span className="font-semibold">¥{Number(serviceFee).toLocaleString()}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-slate-800">Total Price:</span>
-                      <span className="text-3xl font-bold text-blue-600">${totalPrice.toLocaleString()}</span>
+                      <span className="text-3xl font-bold text-blue-600">¥{totalPrice.toLocaleString()}</span>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-4xl font-bold text-blue-600 mb-4">${vehicle.price.toLocaleString()}</p>
+                  <p className="text-4xl font-bold text-blue-600 mb-4">¥{vehicle.price.toLocaleString()}</p>
                 )}
 
                 <div className="flex items-center justify-between text-sm text-slate-500 mb-6">
