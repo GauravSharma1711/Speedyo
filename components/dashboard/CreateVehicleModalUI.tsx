@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/TextArea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Label } from "@/components/ui/Label";
-import { Dialog, DialogContent } from "@/components/ui/Dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/Dialog";
 import { Loader2, Trash2, ChevronLeft, ChevronRight, CheckCircle, Upload } from "lucide-react";
 import { useToast } from "@/components/ui/UseToast";
 import { Vehicle } from "@/store/admin/vehicleListing";
@@ -182,6 +182,7 @@ export default function CreateVehicleModalUI({
       status: "available",
       images: [],
       primary_image: null,
+      imageFiles: [],
     });
     setCurrentStep(1);
   }, [isOpen, vehicleToEdit]);
@@ -674,6 +675,9 @@ export default function CreateVehicleModalUI({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-full max-h-[90vh] flex flex-col p-0">
+        <DialogTitle className="sr-only">
+          {vehicleToEdit ? "Edit Vehicle Listing" : "Create New Vehicle Listing"}
+        </DialogTitle>
         <div className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white p-6 rounded-t-lg">
           <div className="flex items-center gap-3">
             <div>

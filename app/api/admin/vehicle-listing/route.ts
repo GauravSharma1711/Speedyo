@@ -26,6 +26,14 @@ const vehicles = await prisma.vehicle.findMany({
         dealership_name: true,
       },
     },
+
+    author: {
+      select: {
+        id: true,
+        full_name: true,
+        email: true,
+      },
+    },
   },
 });
     return NextResponse.json({

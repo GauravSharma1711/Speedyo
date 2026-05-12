@@ -8,12 +8,16 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
 import { Loader2, ShoppingCart, Check, Tag, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { guestPaymentService } from '@/services/guestPaymentService';
+
+declare global {
+  interface Window {
+    Square?: any;
+  }
+}
 
 export default function GuestCheckout() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -21,8 +25,7 @@ export default function GuestCheckout() {
   const [appliedPromo, setAppliedPromo] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [squarePayments, setSquarePayments] = useState(null);
-  const [cardPayment, setCardPayment] = useState(null);
+  const [cardPayment, setCardPayment] = useState<any>(null);
 
   const pricePerSlot = 50; // $50 per slot
   const discount = appliedPromo ? 0.20 : 0; // 20% discount when SELLER20 is applied
@@ -52,10 +55,9 @@ export default function GuestCheckout() {
 
     try {
       // Get Square credentials from environment or hardcoded (we'll use a backend call)
-      const { data: config } = await base44.functions.invoke('getSquareConfig');
-      
+      const config = await guestPaymentService.getSquareConfig();
+
       const payments = window.Square.payments(config.applicationId, config.locationId);
-      setSquarePayments(payments);
 
       const card = await payments.card();
       await card.attach('#card-container');
@@ -83,7 +85,7 @@ export default function GuestCheckout() {
     setErrorMessage('');
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e:any) => {
     e.preventDefault();
     
     if (!email || !fullName) {
@@ -107,7 +109,7 @@ export default function GuestCheckout() {
         const paymentToken = result.token;
 
         // Send payment token to backend for processing
-        const response = await base44.functions.invoke('processSquarePayment', {
+        const response = await guestPaymentService.processPayment({
           paymentToken,
           email,
           fullName,
@@ -117,11 +119,11 @@ export default function GuestCheckout() {
           paymentType: 'guest_private_seller'
         });
 
-        if (response.data.success) {
+        if (response.success) {
           // Redirect to order confirmation
-          navigate(createPageUrl(`GuestOrderConfirmation?payment_id=${response.data.paymentId}&email=${encodeURIComponent(email)}&slots=${quantity}`));
+          window.location.href = createPageUrl(`GuestOrderConfirmation?payment_id=${response.paymentId}&email=${encodeURIComponent(email)}&slots=${quantity}`);
         } else {
-          setErrorMessage(response.data.error || 'Payment failed. Please try again.');
+          setErrorMessage(response.error || 'Payment failed. Please try again.');
         }
       } else {
         let errorMsg = 'Payment failed. Please check your card details.';

@@ -21,7 +21,7 @@ import {
 
 import { useSession } from 'next-auth/react';
 
-import CreateVehicleModal from "./CreateVehicleModal";
+import CreateVehicleModalUI from "./CreateVehicleModalUI";
 import VehicleAnalytics from "./VehicleAnalytics";
 import ManagedSalesRequestForm from "../manageSales/RequestForm";
 import { format } from "date-fns";
@@ -342,36 +342,6 @@ export default function SellerDashboard() {
 
 } = usePaymentStore();
 
-useEffect(() => {
-  if (user?.user_type === "private_seller") {
-    fetchSlotDetails();
-  }
-}, [user]);
-
-useEffect(() => {
-  if (user?.user_type === "dealership") {
-    fetchDealershipSubscription();
-  }
-}, [user]);
-
-
-  const [publicUser, setPublicUser] = useState<PublicUserData | null>(null);
-  const [activeTab, setActiveTab] = useState("listings"); // Added for tabs control
-
-  useEffect(() => {
-    const loadPublicUser = async () => {
-      if (user?.id) {
-        const profiles = await PublicUser.filter({ user_id: user.id });
-        if (profiles.length > 0) {
-          setPublicUser(profiles[0]); // Set the first object from the array
-        }
-      }
-    };
-    loadPublicUser();
-  }, [user]);
-
-
-
   const [posts, setPosts] = useState<any[]>([]);
 
 
@@ -427,6 +397,37 @@ useEffect(() => {
 
   // Derive testDriveRequests from testDrives
   const testDriveRequests = testDrives;
+
+  // Tabs state
+  const [activeTab, setActiveTab] = useState("listings");
+
+  // Public user state
+  const [publicUser, setPublicUser] = useState<any | null>(null);
+
+  // Slot/subscription loading effects - moved after store destructuring
+  useEffect(() => {
+    if (user?.user_type === "private_seller") {
+      fetchSlotDetails();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user?.user_type === "dealership") {
+      fetchDealershipSubscription();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const loadPublicUser = async () => {
+      if (user?.id) {
+        const profiles = await PublicUser.filter({ user_id: user.id });
+        if (profiles.length > 0) {
+          setPublicUser(profiles[0]);
+        }
+      }
+    };
+    loadPublicUser();
+  }, [user]);
 
   const isLoading = !!storeLoading;
 
@@ -2420,15 +2421,14 @@ console.log("okook",dealershipSubscriptionDetails);
 
       {/* Modals - Keep outside wrapper */}
       {showCreateModal && (
-        <CreateVehicleModal
+        <CreateVehicleModalUI
           isOpen={showCreateModal}
           vehicleToEdit={editingVehicle}
-          onVehicleCreated={editingVehicle ? handleUpdateVehicle : handleCreateVehicle}
+          onSave={editingVehicle ? handleUpdateVehicle : handleCreateVehicle}
           onClose={() => {
             setShowCreateModal(false);
             setEditingVehicle(null);
           }}
-          user={user}
           isSubmitting={isSubmitting}
         />
       )}
