@@ -98,6 +98,7 @@ export default function DealershipAgreementManagerUI() {
   // ── Local UI state ─────────────────────────────────────────────────────────
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<FormState>({
     dealership_name: "",
@@ -147,28 +148,28 @@ export default function DealershipAgreementManagerUI() {
 
     setIsSubmitting(true);
     try {
+      const serviceFee = formData.service_fee_amount ? parseFloat(formData.service_fee_amount) : null;
+      const agreementId = `agr_${Date.now()}`;
+
       await create({
         dealership_name: formData.dealership_name.trim(),
         representative_name: formData.representative_name.trim(),
         address: formData.address.trim() || undefined,
         phone: formData.phone.trim() || undefined,
         email: formData.email.trim(),
-        license_number: formData.license_number.trim() || null,
-        service_fee_amount: Number.isFinite(fee as number) ? fee : null,
-        admin_notes: formData.admin_notes.trim() || null,
-        status: "draft",
-        agreement_url: `/SignAgreement/${id}`,
-        created_date: new Date().toISOString(),
-        signed_at: null,
+        license_number: formData.license_number.trim() || undefined,
+        service_fee_amount: serviceFee ? String(serviceFee) : undefined,
+        admin_notes: formData.admin_notes.trim() || undefined,
       });
 
       setShowCreateModal(false);
       resetForm();
       toast({ title: "Agreement created", description: "Agreement saved successfully." });
-    } catch {
+    } catch (err: any) {
+      console.error("Create failed:", err);
       toast({
         title: "Error",
-        description: error ?? "Failed to create agreement.",
+        description: err?.message || error || "Failed to create agreement.",
         variant: "destructive",
       });
     } finally {
@@ -214,21 +215,36 @@ export default function DealershipAgreementManagerUI() {
   }
 
   // ── Copy link ──────────────────────────────────────────────────────────────
-  async function copyAgreementLink(agreementUrl: string) {
-    const fullUrl = agreementUrl.startsWith("http")
-      ? agreementUrl
-      : `${window.location.origin}${agreementUrl}`;
-    await navigator.clipboard.writeText(fullUrl);
-    toast({ title: "Copied", description: "Agreement link copied." });
+  async function copyAgreementLink(agreementId: string) {
+    const fullUrl = `${window.location.origin}/SignAgreement/${agreementId}`;
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      alert("Agreement link copied to clipboard!");
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
   }
 
-  // ── Download PDF (stub) ────────────────────────────────────────────────────
-  async function downloadAgreement() {
-    setIsSubmitting(true);
+  // ── Download PDF ─────────────────────────────────────────────────────────
+  async function downloadAgreement(id: string, dealershipName: string) {
+    setDownloadingId(id);
     try {
-      toast({ title: "Download PDF", description: "PDF generation wiring pending." });
+      const res = await fetch(`/api/admin/dealership-agreements/${id}/pdf`);
+      if (!res.ok) throw new Error("Failed to generate PDF");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Agreement_${dealershipName.replace(/\s+/g, "_")}_Managed_Sales.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed:", err);
     } finally {
-      setIsSubmitting(false);
+      setDownloadingId(null);
     }
   }
 
@@ -451,7 +467,7 @@ export default function DealershipAgreementManagerUI() {
             const viewHref =
               a.status === "signed"
                 ? `/ViewDealershipAgreement/${a.id}`
-                : a.agreement_url ?? `/SignAgreement?id=${a.id}`;
+                : `/SignAgreement/${a.id}`;
 
             return (
               <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
@@ -479,7 +495,7 @@ export default function DealershipAgreementManagerUI() {
                       <span className="text-slate-500">Service Fee:</span>
                       <p className="font-semibold text-slate-800">
                         {a.service_fee_amount
-                          ? `$${Number(a.service_fee_amount).toLocaleString()}`
+                          ? `¥${Number(a.service_fee_amount).toLocaleString()}`
                           : "Varies per vehicle"}
                       </p>
                     </div>
@@ -525,7 +541,7 @@ export default function DealershipAgreementManagerUI() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => copyAgreementLink(a.agreement_url!)}
+                          onClick={() => copyAgreementLink(a.id)}
                         >
                           <Copy className="w-4 h-4 mr-2" />
                           Copy Link
@@ -559,11 +575,14 @@ export default function DealershipAgreementManagerUI() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={downloadAgreement}
-                      disabled={isSubmitting}
+                      onClick={() => downloadAgreement(a.id, a.dealership_name)}
+                      disabled={downloadingId === a.id}
                     >
-                      <FileText className="w-4 h-4 mr-2" />
-                      Download PDF
+                      {downloadingId === a.id ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Downloading...</>
+                      ) : (
+                        <><FileText className="w-4 h-4 mr-2" />Download PDF</>
+                      )}
                     </Button>
 
                     <Button

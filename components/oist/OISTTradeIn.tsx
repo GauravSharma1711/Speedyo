@@ -65,6 +65,7 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
     vehicleCondition: "",
     additionalDetails: ""
   });
+  const [facebookError, setFacebookError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -73,10 +74,24 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
     value: OISTTradeInFormData[K]
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === "facebookProfile") {
+      if (value && !value.includes("facebook.com")) {
+        setFacebookError("Please enter a valid Facebook profile URL");
+      } else {
+        setFacebookError("");
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate Facebook URL
+    if (formData.facebookProfile && !formData.facebookProfile.includes("facebook.com")) {
+      setFacebookError("Please enter a valid Facebook profile URL");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -104,7 +119,7 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
             recipientId: admin.id,
             type: "new_managed_sale_request",
             content: `New OIST Trade-In request from ${formData.fullName} for ${formData.vehicleMake} ${formData.vehicleModel} (${formData.vehicleYear})`,
-            url: `/admin?tab=oist-trade-in`,
+            url: `/AdminPanel?tab=oist-trade-in`,
             icon: "RefreshCw"
           })
         )
@@ -250,6 +265,9 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
                   placeholder="https://www.facebook.com/yourprofile"
                   required
                 />
+                {facebookError && (
+                  <p className="text-sm text-red-500 mt-1">{facebookError}</p>
+                )}
               </div>
             </div>
 

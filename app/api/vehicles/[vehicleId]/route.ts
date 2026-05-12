@@ -84,7 +84,24 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ vehic
   try {
     const { vehicleId } = await context.params;
     const body = await req.json();
-    const data = { ...body };
+
+    // Remove fields that are not part of the Prisma schema
+    const { imageFiles, images: imagesJson, ...rest } = body;
+
+    // Parse images if it's a JSON string
+    let images = rest.images;
+    if (typeof images === 'string') {
+      try {
+        images = JSON.parse(images);
+      } catch {
+        // Keep as is if parsing fails
+      }
+    }
+
+    const data: Record<string, unknown> = { ...rest };
+    if (images !== undefined) {
+      data.images = images;
+    }
     delete data.id;
 
     const vehicle = await prisma.vehicle.update({

@@ -71,28 +71,34 @@ const handleVerify = async () => {
     return;
   }
 
+  setLoading(true);
   try {
-    await verifyOtp({ otp: otpString });
+    await verifyOtp({ email, otp: otpString });
     toast.success("Email verified successfully!");
     router.push("/signIn");
   } catch {
     toast.error(error ?? "Verification failed");
     setOtp(Array(6).fill(""));
     focusInput(0);
+  } finally {
+    setLoading(false);
   }
 };
 
 const handleResend = async () => {
   if (resendTimer > 0) return;
 
+  setResendLoading(true);
   try {
-    await resendOtp();
+    await resendOtp(email);
     toast.success("New code sent to your email!");
     setResendTimer(30);
     setOtp(Array(6).fill(""));
     focusInput(0);
   } catch {
     toast.error(error ?? "Failed to resend code");
+  } finally {
+    setResendLoading(false);
   }
 };
 
@@ -216,9 +222,9 @@ const handleResend = async () => {
                             type="button"
                             onClick={handleResend}
                             disabled={resendLoading || resendTimer > 0}
-                            className="font-medium text-slate-700 hover:text-slate-900 disabled:opacity-50 transition-colors"
+                            className="font-medium text-slate-700 hover:text-slate-900 disabled:opacity-50 transition-colors cursor-pointer"
                           >
-                            Resend
+                            {resendLoading ? "Sending..." : resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend"}
                           </button>
                         </p>
                       </div>

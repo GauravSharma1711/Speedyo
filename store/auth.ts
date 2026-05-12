@@ -43,7 +43,7 @@ interface AuthState {
   getUserProfile: () => Promise<void>;
   forgotPassword: (data: ForgotPasswordData) => Promise<void>;
   verifyOtp: (data: VerifyOtpData) => Promise<void>;
-  resendOtp: () => Promise<void>;
+  resendOtp: (email: string) => Promise<void>;
   resetPassword: (data: ResetPasswordData) => Promise<void>;
   clearError: () => void;
 }
@@ -128,10 +128,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      async resendOtp() {
+      async resendOtp(email: string) {
         set({ isLoading: true, error: null });
         try {
-          await authService.resendOtp();
+          await authService.resendOtp(email);
           set({ isLoading: false });
         } catch (error: any) {
           set({

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Textarea } from "@/components/ui/TextArea";
 import { useToast } from "@/components/ui/UseToast";
 import { useVehicleEditRequestsStore } from "@/store/admin/vehicleEditRequests";
+import { notificationService } from "@/services/dashboard";
 import type { VehicleEditRequestApi, VehicleEditRequestStatus } from "@/services/admin/vehicleEditRequestServices";
 
 type RequestStatus = VehicleEditRequestStatus;
@@ -126,7 +127,21 @@ export default function VehicleEditRequestManagementUI() {
     setIsSaving(requestId);
     try {
       await update(requestId, { status: "approved", admin_notes: notes || undefined });
-      toast({ title: "Request approved", description: `Edit request #${requestId} approved.` });
+
+
+      const request = editRequests.find(r => r.id === requestId);
+      if (request) {
+        await notificationService.create({
+          recipientId: request.requestedByUser.id,
+          type: "vehicle_edit_approved",
+          content: `Your edit request for "${request.vehicle?.title || 'vehicle'}" has been approved and applied to the listing.`,
+          relatedEntityId: request.vehicle_id,
+          url: `/vehicle/${request.vehicle_id}`,
+          icon: "CheckCircle"
+        });
+      }
+
+      toast({ title: "Request approved", description: `Edit request #${requestId} approved. Seller has been notified.` });
     } catch (_e) {
       toast({
         title: "Action failed",
@@ -152,7 +167,21 @@ export default function VehicleEditRequestManagementUI() {
     setIsSaving(requestId);
     try {
       await update(requestId, { status: "declined", admin_notes: notes });
-      toast({ title: "Request declined", description: `Edit request #${requestId} declined.` });
+
+      // Find the request for notification
+      const request = editRequests.find(r => r.id === requestId);
+      if (request) {
+        await notificationService.create({
+          recipientId: request.requestedByUser.id,
+          type: "vehicle_edit_declined",
+          content: `Your edit request for "${request.vehicle?.title || 'vehicle'}" has been declined. Reason: ${notes}`,
+          relatedEntityId: request.vehicle_id,
+          url: `/Dashboard`,
+          icon: "XCircle"
+        });
+      }
+
+      toast({ title: "Request declined", description: `Edit request #${requestId} declined. Seller has been notified.` });
     } catch (_e) {
       toast({
         title: "Action failed",
