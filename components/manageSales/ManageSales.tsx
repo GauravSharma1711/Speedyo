@@ -287,10 +287,10 @@ export default function ManagedSalesPage() {
                     </div>
                     <div className="text-center mt-3 sm:mt-4">
                       <p className="text-xs sm:text-sm font-medium text-slate-500 mb-1 sm:mb-2">Vehicles</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">$500 - $3,000</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥500 - ¥3,000</p>
                       <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-3 sm:mb-4"></div>
                       <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
-                        $300-$500
+                        ¥300-¥500
                       </p>
                       <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Scaled Fee</p>
                       <p className="text-xs text-slate-500">Increases gradually as price rises</p>
@@ -306,10 +306,10 @@ export default function ManagedSalesPage() {
                     </div>
                     <div className="text-center mt-3 sm:mt-4">
                       <p className="text-xs sm:text-sm font-medium text-slate-500 mb-1 sm:mb-2">Vehicles</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">$3,001 - $8,333</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥3,001 - ¥8,333</p>
                       <div className="h-px bg-gradient-to-r from-transparent via-emerald-300 to-transparent mb-3 sm:mb-4"></div>
                       <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
-                        $500
+                        ¥500
                       </p>
                       <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Flat Fee</p>
                       <p className="text-xs text-slate-500">Simple and predictable pricing</p>
@@ -325,7 +325,7 @@ export default function ManagedSalesPage() {
                     </div>
                     <div className="text-center mt-3 sm:mt-4">
                       <p className="text-xs sm:text-sm font-medium text-slate-500 mb-1 sm:mb-2">Vehicles</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">$8,334+</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥8,334+</p>
                       <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-3 sm:mb-4"></div>
                       <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                         6%
@@ -351,7 +351,7 @@ export default function ManagedSalesPage() {
                             Your Asking Price
                           </Label>
                           <div className="relative">
-                            <span className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg sm:text-xl font-semibold">$</span>
+                            <span className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg sm:text-xl font-semibold">¥</span>
                             <Input
                               id="calculator-price"
                               type="number"
