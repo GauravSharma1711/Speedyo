@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { profileService, ProfileUser } from "@/services/profile/profileServices";
+import { useUserStore } from "@/store/user/userStore";
+ 
+
 import { UserEntity as User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -180,6 +183,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
         )}
         <CardTitle className="text-3xl">{tier.name}</CardTitle>
         <p className="text-5xl font-bold text-blue-600 mt-4">{tier.price}</p>
+
         <p className="text-slate-500">per month</p>
       </CardHeader>
       <CardContent className="p-8 flex flex-col flex-grow">
@@ -280,6 +284,9 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onSelect, isCurrentPlan }) =>
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SubscriptionPage() {
+
+    const {  updateUser } = useUserStore();
+
   const router = useRouter();
 
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -304,6 +311,9 @@ export default function SubscriptionPage() {
 
   // NOTE: We intentionally avoid a custom `/api/users/me` route here.
   // This simply checks NextAuth session presence to decide authenticated UI.
+
+
+
   const fetchUser = async () => {
     setIsLoading(true);
     try {
@@ -314,6 +324,10 @@ export default function SubscriptionPage() {
     }
     setIsLoading(false);
   };
+
+
+  console.log("current user",currentUser);
+
 
   const getCurrentUserType = (): string => {
     if (!currentUser) return "guest";
@@ -335,7 +349,7 @@ export default function SubscriptionPage() {
   const handlePlanSelect = async (plan: DealershipTier | Plan) => {
     // ── Guest downgrade ──────────────────────────────────────────────────────
     if (plan.type === "guest") {
-      if (getCurrentUserType() === "guest") return;
+      if (currentUser.user_type === "guest") return;
       setShowDowngradeModal(true);
       return;
     }
@@ -352,10 +366,10 @@ export default function SubscriptionPage() {
 
         if (currentUser.verification_fee_paid === true) {
           try {
-            await User.updateMyUserData({
-              dealership_selected_tier: (plan as DealershipTier).tierId,
-              dealership_verification_status: "approved",
-            });
+          await updateUser({
+            dealership_selected_tier: (plan as DealershipTier).tierId,
+            dealership_verification_status: "approved",
+          });
             router.push(
               getRoute("Checkout", {
                 type: "dealership",
@@ -371,7 +385,7 @@ export default function SubscriptionPage() {
         }
 
         try {
-          await User.updateMyUserData({
+          await updateUser({
             dealership_verification_status: "not_submitted",
             verification_fee_paid: false,
             dealership_selected_tier: (plan as DealershipTier).tierId,
