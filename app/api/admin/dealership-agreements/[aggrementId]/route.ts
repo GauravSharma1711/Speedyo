@@ -5,6 +5,31 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 import { sendAgreementSignedMail } from "@/helpers/sendAgreementSignedMail";
 import { sendAgreementMail } from "@/helpers/sendAgreementMail";
 
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ aggrementId: string }> },
+) {
+  try {
+    const { aggrementId } = await context.params;
+
+    const agreement = await prisma.dealershipVehicleAgreement.findUnique({
+      where: { id: aggrementId },
+      include: {
+        createdByAdmin: { select: { id: true, full_name: true, email: true } },
+      },
+    });
+
+    if (!agreement) {
+      return NextResponse.json({ success: false, error: "Agreement not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, agreement });
+  } catch (error) {
+    console.error("Failed to get agreement", error);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ aggrementId: string }> },

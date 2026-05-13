@@ -18,6 +18,7 @@ import {
   MoreHorizontal,
   Trash2,
   XCircle,
+  JapaneseYenIcon
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -189,7 +190,7 @@ function getStatusBadge(status: ManagedSaleStatus) {
     approved: { color: "bg-emerald-100 text-emerald-800", icon: CheckCircle },
     declined: { color: "bg-red-100 text-red-800", icon: XCircle },
     listed: { color: "bg-blue-100 text-blue-800", icon: CheckCircle },
-    sold: { color: "bg-slate-100 text-slate-800", icon: JapaneseYen  },
+    sold: { color: "bg-slate-100 text-slate-800", icon: JapaneseYenIcon },
     edit_requested: { color: "bg-orange-100 text-orange-800", icon: Edit },
     cancellation_requested: { color: "bg-purple-100 text-purple-800", icon: XCircle },
     cancelled: { color: "bg-red-200 text-red-900", icon: XCircle },
@@ -939,19 +940,19 @@ export default function ManagedSalesAdminUI() {
                               <div className="text-slate-700">
                                 Seller Receives:{" "}
                                 {prices.sellerReceives !== null
-                                  ? `$${prices.sellerReceives.toLocaleString()}`
+                                  ? `¥${prices.sellerReceives.toLocaleString()}`
                                   : "N/A"}
                               </div>
                               <div className="font-semibold text-blue-700">
                                 Buyer Pays:{" "}
                                 {prices.buyerPrice !== null
-                                  ? `$${prices.buyerPrice.toLocaleString()}`
+                                  ? `¥${prices.buyerPrice.toLocaleString()}`
                                   : "N/A"}
                               </div>
                               <div className="text-xs text-slate-500">
                                 Service Fee:{" "}
                                 {prices.serviceFee !== null
-                                  ? `$${prices.serviceFee.toLocaleString()}`
+                                  ? `¥${prices.serviceFee.toLocaleString()}`
                                   : "N/A"}
                               </div>
                             </TableCell>
@@ -984,7 +985,7 @@ export default function ManagedSalesAdminUI() {
                                   {request.status === "approved" || request.status === "listed" ? (
                                     <>
                                       <DropdownMenuItem onClick={() => markSold(request)}>
-                                        <JapaneseYen  className="w-4 h-4 mr-2 text-emerald-500" />
+                                        <JapaneseYenIcon className="w-4 h-4 mr-2 text-emerald-500" />
                                         Mark as Sold
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => setAvailability(request.id)}>
@@ -1141,7 +1142,7 @@ export default function ManagedSalesAdminUI() {
                                 {request.status === "approved" || request.status === "listed" ? (
                                   <>
                                     <DropdownMenuItem onClick={() => markSold(request)}>
-                                      <JapaneseYen className="w-4 h-4 mr-2 text-emerald-500" />
+                                      <JapaneseYenIcon className="w-4 h-4 mr-2 text-emerald-500" />
                                       Mark as Sold
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => setAvailability(request.id)}>

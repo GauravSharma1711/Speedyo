@@ -7,7 +7,7 @@ import type { liaisonAgreement, liaisonApplication } from "@/store/admin/liaison
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Copy, Download, Eye, Loader2, Plus, Send, UserCheck, XCircle } from "lucide-react";
+import { Copy, Download, Eye, Loader2, Plus, UserCheck, XCircle } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -120,8 +120,10 @@ export default function LiaisonAgreementManagerUI() {
         residual_pay_percentage: formData.residual_pay_percentage,
         agreement_start_date: formData.agreement_start_date || null,
         agreement_end_date: formData.agreement_end_date || null,
-        termination_notice_days: Number(formData.termination_notice_days),
+        termination_notice_days: formData.termination_notice_days,
         admin_notes: formData.admin_notes.trim() || null,
+        status: "",
+        agreement_url: "",
       });
 
       setShowCreateModal(false);
@@ -151,30 +153,30 @@ export default function LiaisonAgreementManagerUI() {
     setIsSubmitting(true);
     try {
       // TODO: wire real send API
-      const res  =  await lisisonAgreementService.sendMail(a.id);
+      const res = await lisisonAgreementService.sendMail(a.id);
       toast({ title: "Send email", description: "Would email the liaison the agreement + application summary." });
-       alert("Application email sent successfully!");
-    }catch{
-        alert("Failed to send mail!");
+      alert("Application email sent successfully!");
+    } catch {
+      alert("Failed to send mail!");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   // ── Download PDF ───────────────────────────────────────────────────────────
-async function handleDownloadPDF(a: liaisonAgreement) {
-  setIsSubmitting(true);
-  try {
-    const application = a.application;
+  async function handleDownloadPDF(a: liaisonAgreement) {
+    setIsSubmitting(true);
+    try {
+      const application = a.application;
 
-    const termStart = a.agreement_start_date
-      ? new Date(a.agreement_start_date).toLocaleDateString()
-      : "N/A";
-    const termEnd = a.agreement_end_date
-      ? new Date(a.agreement_end_date).toLocaleDateString()
-      : "indefinite";
+      const termStart = a.agreement_start_date
+        ? new Date(a.agreement_start_date).toLocaleDateString()
+        : "N/A";
+      const termEnd = a.agreement_end_date
+        ? new Date(a.agreement_end_date).toLocaleDateString()
+        : "indefinite";
 
-    const html = `
+      const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -224,21 +226,21 @@ async function handleDownloadPDF(a: liaisonAgreement) {
       </html>
     `;
 
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `Liaison_Agreement_${a.id}.html`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `Liaison_Agreement_${a.id}.html`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
 
-    toast({ title: "Downloaded", description: `Liaison_Agreement_${a.id}.html saved.` });
-  } finally {
-    setIsSubmitting(false);
+      toast({ title: "Downloaded", description: `Liaison_Agreement_${a.id}.html saved.` });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
-}
 
   // ── Delete ─────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
@@ -345,10 +347,10 @@ async function handleDownloadPDF(a: liaisonAgreement) {
 
       {/* Empty state */}
       {isLoading ? (
-  <div className="flex items-center justify-center py-16">
-    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-  </div>
-) :agreements?.length === 0 ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
+      ) : agreements?.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <UserCheck className="w-12 h-12 mx-auto text-slate-300 mb-3" />
@@ -358,96 +360,85 @@ async function handleDownloadPDF(a: liaisonAgreement) {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {agreements?.map((a) => {
-            // ✅ Read application directly from the agreement — no separate array needed
-            const associatedApplication = a.application ?? undefined;
+          {agreements?.map((a) => (
+            <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg text-slate-800">{a.position_title}</h3>
+                    <p className="text-sm text-slate-600 mt-1">
+                      Fixed Fee: {a.fixed_fee_percentage}% | Residual: {a.residual_pay_percentage}%
+                    </p>
+                  </div>
+                  <Badge className={badgeClass(a.status)}>
+                    {a.status.replace("_", " ").toUpperCase()}
+                  </Badge>
+                </div>
 
-            return (
-              <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-slate-800">{a.position_title}</h3>
-                      <p className="text-sm text-slate-600 mt-1">
-                        Fixed Fee: {a.fixed_fee_percentage}% | Residual: {a.residual_pay_percentage}%
-                      </p>
-                    </div>
-                    <Badge className={badgeClass(a.status)}>
-                      {a.status.replace("_", " ").toUpperCase()}
-                    </Badge>
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div>
+                    <span className="text-slate-500">Start Date:</span>
+                    <p className="text-slate-700">
+                      {a.agreement_start_date
+                        ? format(new Date(a.agreement_start_date), "MMM d, yyyy")
+                        : "Not set"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Created:</span>
+                    <p className="text-slate-700">{format(new Date(a.createdAt), "MMM d, yyyy")}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <div>
-                      <span className="text-slate-500">Start Date:</span>
-                      <p className="text-slate-700">
-                        {a.agreement_start_date
-                          ? format(new Date(a.agreement_start_date), "MMM d, yyyy")
-                          : "Not set"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Created:</span>
-                      <p className="text-slate-700">{format(new Date(a.createdAt), "MMM d, yyyy")}</p>
-                    </div>
-
-                    {/* ✅ Use a.application directly — no separate lookup needed */}
-                    {a.application ? (
-                      <div className="col-span-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelected({ agreement: a, application: a.application! })}
-                          className="w-full"
-                        >
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          View Submitted Application
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {a.agreement_url ? (
-                      <>
-                        <Button size="sm" variant="outline" onClick={() => copyAgreementLink(a)}>
-                          <Copy className="w-4 h-4 mr-2" />Copy Link
-                        </Button>
-
-                       <Link
-  href={`/LiaisonAgreement?id=${a.id}`}
-  target="_blank"
-  rel="noopener noreferrer"
->
-
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4 mr-2" />View Agreement
-                          </Button>
-                        </Link>
-                      </>
-                     ) : null} 
-
-                    {a.status === "signed" && associatedApplication ? (
-                      <Button size="sm" variant="outline" onClick={() => handleSendApplicationEmail(a)} disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                        Send Email
+                  {/* ✅ Use a.application directly — no separate lookup needed */}
+                  {a.application ? (
+                    <div className="col-span-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelected({ agreement: a, application: a.application! })}
+                        className="w-full"
+                      >
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        View Submitted Application
                       </Button>
-                    ) : null}
+                    </div>
+                  ) : null}
+                </div>
 
-                    {a.status === "signed" ? (
-                      <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(a)} disabled={isSubmitting}>
-                        <Download className="w-4 h-4 mr-2" />Download PDF
+                <div className="flex flex-wrap gap-2">
+                  {a.agreement_url ? (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => copyAgreementLink(a)}>
+                        <Copy className="w-4 h-4 mr-2" />Copy Link
                       </Button>
-                    ) : null}
 
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)} disabled={isSubmitting}>
-                      <XCircle className="w-4 h-4 mr-2" />Delete
+                      <Link
+                        href={`/LiaisonAgreement?id=${a.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+
+                        <Button size="sm" variant="outline">
+                          <Eye className="w-4 h-4 mr-2" />View Agreement
+                        </Button>
+                      </Link>
+                    </>
+                  ) : null}
+
+
+                  {a.status === "signed" ? (
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(a)} disabled={isSubmitting}>
+                      <Download className="w-4 h-4 mr-2" />Download PDF
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  ) : null}
+
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)} disabled={isSubmitting}>
+                    <XCircle className="w-4 h-4 mr-2" />Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 

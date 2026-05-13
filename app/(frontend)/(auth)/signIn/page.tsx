@@ -187,7 +187,7 @@ export default function SignInPage() {
                       <button
                         type="button"
                         onClick={() => router.push("/forgot-password")}
-                        className="text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors"
+                        className="text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors cursor-pointer"
                       >
                         Forgot password?
                       </button>
@@ -197,7 +197,7 @@ export default function SignInPage() {
                         className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
                       >
                         Need an account?{" "}
-                        <span className="font-medium text-slate-700">Sign up</span>
+                        <span className="font-medium text-slate-700 cursor-pointer">Sign up</span>
                       </button>
                     </div>
                   </div>

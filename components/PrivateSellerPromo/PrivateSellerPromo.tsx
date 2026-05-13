@@ -20,7 +20,8 @@ import {
   MessageCircle,
   ChevronRight,
   Star,
-  Gift
+  Gift,
+  JapaneseYenIcon
 } from "lucide-react";
 import Link from "next/link";
 import { createPageUrl } from "@/utils";
@@ -473,7 +474,7 @@ export default function PrivateSellerPromo() {
                 <div className="absolute top-4 right-4">
                   <Badge variant="outline" className="bg-white">Regular Price</Badge>
                 </div>
-                <DollarSign className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                <JapaneseYenIcon className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <p className="text-slate-600 mb-2">Standard Rate</p>
                 <div className="relative">
                   <span className="text-4xl font-bold text-slate-400 line-through">$50</span>

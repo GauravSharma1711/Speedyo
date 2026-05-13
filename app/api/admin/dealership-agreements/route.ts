@@ -22,18 +22,9 @@ export async function POST(request: NextRequest) {
       admin_notes,
     } = body;
 
-    if (
-      !dealership_name ||
-      !representative_name ||
-      !email ||
-      !address ||
-      !phone ||
-      !service_fee_amount ||
-      !license_number ||
-      !admin_notes
-    ) {
+    if (!dealership_name || !representative_name || !email) {
       return NextResponse.json(
-        { error: "All fields are are required" },
+        { error: "dealership_name, representative_name and email are required" },
         { status: 400 },
       );
     }
@@ -43,12 +34,13 @@ export async function POST(request: NextRequest) {
         dealership_name,
         representative_name,
         email,
-        address,
-        phone,
-        service_fee_amount,
-        license_number,
-        admin_notes,
+        address: address || null,
+        phone: phone || null,
+        service_fee_amount: service_fee_amount || null,
+        license_number: license_number || null,
+        admin_notes: admin_notes || null,
         created_by_admin_id: session.user.id,
+        status: "draft",
       },
       include: {
         createdByAdmin: { select: { id: true, full_name: true, email: true } },

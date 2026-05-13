@@ -17,6 +17,7 @@ import {
   FileText,
   MapPin,
   Loader2,
+  JapaneseYenIcon,
 } from "lucide-react";
 
 import { useSession } from 'next-auth/react';
@@ -545,14 +546,7 @@ const { data: session, status, update } = useSession();
   const handleCreateVehicle = async (vehicleData: any) => {
     setIsSubmitting(true);
     try {
-      const newVehicleData = {
-        ...vehicleData,
-        author_id: user.id,
-        created_by: user.email,
-        original_owner_id: user.id,
-      };
-
-      const newVehicle = await Vehicle.create(newVehicleData);
+      const res = await axios.post("/api/vehicles/create", vehicleData);
 
       setShowCreateModal(false);
       setEditingVehicle(null);
@@ -563,7 +557,7 @@ const { data: session, status, update } = useSession();
         variant: "success",
       });
 
-      return newVehicle;
+      return res.data.vehicle;
     } catch (error) {
       console.error("Failed to create vehicle:", error);
       toast({
@@ -1571,7 +1565,7 @@ console.log("okook",dealershipSubscriptionDetails);
             trendValue="+5%"
           />
           <StatCard
-            icon={DollarSign}
+            icon={JapaneseYenIcon}
             title="Avg. List Price"
             value={`¥${Math.round(stats.avgPrice).toLocaleString()}`}
             subtitle="Your listings"

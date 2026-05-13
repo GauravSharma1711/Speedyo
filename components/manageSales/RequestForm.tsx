@@ -25,6 +25,7 @@ import {
   Sparkles,
   Shield,
   Wifi,
+  JapaneseYenIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -349,17 +350,17 @@ export default function RequestFormUI(props: Props) {
     setFormData({
       requester_contact_info: {
         ...base.requester_contact_info,
-        ...(r.requester_contact_info || {}),
+        ...((r?.requester_contact_info) || {}),
       },
       vehicle_details: {
         ...base.vehicle_details,
-        ...(r.vehicle_details || {}),
+        ...((r?.vehicle_details) || {}),
       },
       access_arrangements: {
         ...base.access_arrangements,
-        ...(r.access_arrangements || {}),
+        ...((r?.access_arrangements) || {}),
       },
-      terms_agreed: r.terms_agreed ?? base.terms_agreed,
+      terms_agreed: r?.terms_agreed ?? base.terms_agreed,
     });
 
     setCurrentStep(1);
@@ -2263,7 +2264,7 @@ export default function RequestFormUI(props: Props) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-emerald-500" />
+              <JapaneseYenIcon className="w-5 h-5 text-emerald-500" />
               Pricing Summary
             </CardTitle>
           </CardHeader>

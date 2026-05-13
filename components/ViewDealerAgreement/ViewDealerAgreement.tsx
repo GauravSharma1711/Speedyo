@@ -1,30 +1,81 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft, CheckCircle, FileText, Loader2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import Footer from "@/components/layout/Footer";
-import { useDealershipAgreementStore } from "@/store/admin/dealership";
+
+type AgreementStatus = "draft" | "pending_signature" | "signed" | "cancelled";
+
+type DealershipAgreement = {
+  id: string;
+  status: AgreementStatus;
+
+  dealership_name: string;
+  representative_name: string;
+  email: string;
+  phone?: string | null;
+  address?: string | null;
+  license_number?: string | null;
+
+  service_fee_amount?: number | null;
+
+  signed_by_name?: string | null;
+  signed_at?: string | null;
+  createdAt?: string;
+  admin_notes?: string | null;
+};
 
 export default function ViewDealershipAgreementUI() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
+  const agreementId = params?.id ?? "";
 
-  const { agreements, isLoading, error, getById } = useDealershipAgreementStore();
+  const [agreement, setAgreement] = useState<DealershipAgreement | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (params?.id) getById(params.id);
-  }, [params?.id]);
+    async function fetchAgreement() {
+      if (!agreementId) {
+        setError(true);
+        setIsLoading(false);
+        return;
+      }
 
-  const agreement = agreements.find((a) => a.id === params?.id) ?? null;
+      try {
+        const res = await fetch(`/api/admin/dealership-agreements/${agreementId}`);
+        if (!res.ok) {
+          setError(true);
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.success || !data.agreement) {
+          setError(true);
+          setIsLoading(false);
+          return;
+        }
+
+        setAgreement(data.agreement);
+      } catch {
+        setError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchAgreement();
+  }, [agreementId]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
       </div>
     );
   }

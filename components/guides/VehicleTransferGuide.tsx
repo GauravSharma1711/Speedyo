@@ -12,6 +12,7 @@ import {
   CheckCircle,
   AlertCircle,
   Shield,
+  JapaneseYenIcon,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -395,7 +396,7 @@ export default function VehicleTransferGuide() {
                       </ul>
                       <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-blue-600" />
+                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
                           <span className="font-semibold text-blue-800">
                             Cost: ¥9,000–¥13,000 for 1 year
                           </span>
@@ -502,7 +503,7 @@ export default function VehicleTransferGuide() {
                       </ul>
                       <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-blue-600" />
+                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
                           <span className="font-semibold text-blue-800">Fee: ¥2,280</span>
                         </div>
                       </div>
@@ -742,7 +743,7 @@ export default function VehicleTransferGuide() {
                       </ul>
                       <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-blue-600" />
+                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
                           <span className="font-semibold text-blue-800">Fee: ¥1,500</span>
                         </div>
                       </div>
@@ -768,7 +769,7 @@ export default function VehicleTransferGuide() {
                       <p className="text-slate-600 mb-3">Pay at ALPA Payment Counter</p>
                       <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-blue-600" />
+                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
                           <span className="font-semibold text-blue-800">Range: ¥11,900 – ¥25,000</span>
                         </div>
                         <p className="text-sm text-slate-600 mt-1">
@@ -809,7 +810,7 @@ export default function VehicleTransferGuide() {
                       </ul>
                       <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 inline-block">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-emerald-600" />
+                          <JapaneseYenIcon className="w-5 h-5 text-emerald-600" />
                           <span className="font-semibold text-emerald-800">
                             Total (Inspection + Registration): ¥9,180 (approx.)
                           </span>
@@ -910,7 +911,7 @@ export default function VehicleTransferGuide() {
                       </ul>
                       <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-blue-600" />
+                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
                           <span className="font-semibold text-blue-800">Fee: ¥2,280</span>
                         </div>
                       </div>
@@ -968,7 +969,7 @@ export default function VehicleTransferGuide() {
               <Card className="shadow-xl bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-2xl">
-                    <DollarSign className="w-7 h-7 text-blue-600" />
+                    <JapaneseYenIcon className="w-7 h-7 text-blue-600" />
                     Estimated Total Costs
                   </CardTitle>
                 </CardHeader>

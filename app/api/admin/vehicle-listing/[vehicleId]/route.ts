@@ -74,23 +74,34 @@ export async function PATCH(
     const description  = formData.get("description") as string | null;
 
     // ── Image fields ──
-    const primaryImageFile = formData.get("primary_image") as File | null;
-    const imageFiles       = formData.getAll("images") as File[];
+    const primaryImageRaw = formData.get("primary_image");
+    const imageRaw        = formData.getAll("images");
 
     // ── Upload primary image if provided ──
     let primary_image: string | undefined;
-    if (primaryImageFile && primaryImageFile.size > 0) {
-      const result = await uploadFile(primaryImageFile, "vehicles");
-      primary_image = result.url;
+    if (primaryImageRaw) {
+      if (typeof primaryImageRaw === "string") {
+        // Already a URL
+        primary_image = primaryImageRaw;
+      } else if (primaryImageRaw instanceof File && primaryImageRaw.size > 0) {
+        const result = await uploadFile(primaryImageRaw, "vehicles");
+        primary_image = result.url;
+      }
     }
 
     // ── Upload additional images if provided ──
     let images: string[] | undefined;
-    if (imageFiles.length > 0) {
-      const results = await Promise.all(
-        imageFiles.map((file) => uploadFile(file, "vehicles"))
-      );
-      images = results.map((r) => r.url);
+    if (imageRaw.length > 0) {
+      const results: string[] = [];
+      for (const item of imageRaw) {
+        if (typeof item === "string") {
+          results.push(item);
+        } else if (item instanceof File && item.size > 0) {
+          const result = await uploadFile(item, "vehicles");
+          results.push(result.url);
+        }
+      }
+      images = results;
     }
 
     // ── Build update payload — only fields that were sent ──

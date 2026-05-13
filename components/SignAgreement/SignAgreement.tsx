@@ -79,25 +79,54 @@ export default function SignAgreementPage() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    setIsLoading(true);
-    setError(null);
+    async function fetchAgreement() {
+      setIsLoading(true);
+      setError(null);
 
-    if (!agreementId) {
-      setError("No agreement ID provided");
-      setIsLoading(false);
-      return;
+      if (!agreementId) {
+        setError("No agreement ID provided");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/dealership-agreements/${agreementId}`);
+        if (!res.ok) {
+          setError("Agreement not found");
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.success || !data.agreement) {
+          setError("Agreement not found");
+          setIsLoading(false);
+          return;
+        }
+
+        const dbAgreement = data.agreement;
+        setAgreement({
+          id: dbAgreement.id,
+          dealership_name: dbAgreement.dealership_name,
+          representative_name: dbAgreement.representative_name,
+          address: dbAgreement.address,
+          phone: dbAgreement.phone,
+          email: dbAgreement.email,
+          license_number: dbAgreement.license_number,
+          service_fee_amount: dbAgreement.service_fee_amount,
+          status: dbAgreement.status,
+          signed_by_name: dbAgreement.signed_by_name,
+          signed_at: dbAgreement.signed_at,
+        });
+        setSuccess(dbAgreement.status === "signed");
+      } catch {
+        setError("Failed to load agreement");
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    const found = MOCK_DB[agreementId] ?? null;
-    if (!found) {
-      setError("Agreement not found");
-      setIsLoading(false);
-      return;
-    }
-
-    setAgreement(found);
-    setSuccess(found.status === "signed");
-    setIsLoading(false);
+    fetchAgreement();
   }, [agreementId]);
 
   const canSign = useMemo(() => {
@@ -121,12 +150,23 @@ export default function SignAgreementPage() {
     setError(null);
 
     try {
-      const signedAt = new Date().toISOString();
+      const res = await fetch(`/api/admin/dealership-agreements/${agreement.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "signed",
+          signed_at: new Date().toISOString(),
+          signed_by_name: signerName.trim(),
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to sign agreement");
+
       setAgreement({
         ...agreement,
         status: "signed",
         signed_by_name: signerName.trim(),
-        signed_at: signedAt,
+        signed_at: new Date().toISOString(),
       });
       setSuccess(true);
     } catch {

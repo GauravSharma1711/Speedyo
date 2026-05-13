@@ -9,7 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/Alert";
 import {
   CreditCard, Download, Eye, Calendar, DollarSign,
   CheckCircle, XCircle, Clock, FileText, ArrowLeft,
-  ExternalLink, AlertCircle
+  ExternalLink, AlertCircle,
+  JapaneseYenIcon
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -265,7 +266,7 @@ export default function ManageSubscription() {
         <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-blue-500" />Payment History
+              <JapaneseYenIcon className="w-5 h-5 text-blue-500" />Payment History
             </CardTitle>
             <CardDescription>All your transactions and payments</CardDescription>
           </CardHeader>

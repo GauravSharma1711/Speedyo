@@ -294,80 +294,76 @@ export default function FeedbackManagementUI() {
 
             <div className="space-y-3">
 
-              {isLoading && feedbackList.length === 0 ? (
+              {isLoading ? (
                 <div className="py-14 flex items-center justify-center text-slate-500">
                   <div className="inline-flex items-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
                   </div>
                 </div>
-              ) : null}
-
-              {error ? (
+              ) : error ? (
                 <div className="text-sm text-red-600">{error}</div>
-              ) : null}
-
-              {feedbackList.map((feedback) => (
-                <div
-                  key={feedback.id}
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <UserIcon className="w-4 h-4 text-slate-500" />
-                          <span className="font-semibold text-slate-800">
-                            {feedback.user_name || "Anonymous"}
-                          </span>
-                        </div>
-
-                        {renderStars(feedback.satisfaction_rating)}
-                        {getStatusBadge(feedback.status)}
-
-                        <Badge variant="outline" className="capitalize">
-                          {feedback.category}
-                        </Badge>
-                      </div>
-
-                      <p className="text-sm text-slate-600 mb-2">
-                        {feedback.user_email || "—"}
-                      </p>
-
-                      <p className="text-slate-700 line-clamp-2">
-                        {feedback.feedback_text}
-                      </p>
-
-                      <p className="text-xs text-slate-500 mt-2">
-                        Submitted{" "}
-                        {format(new Date(feedback.created_date), "MMM d, yyyy h:mm a")}
-                      </p>
-
-                      {feedback.admin_notes ? (
-                        <div className="mt-3 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
-                          <p className="text-xs font-medium text-blue-800">Admin Notes:</p>
-                          <p className="text-sm text-blue-700">{feedback.admin_notes}</p>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewDetails(feedback)}
-                      className="ml-4"
-                    >
-                      View & Update
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              {!isLoading && feedbackList.length === 0 ? (
+              ) : feedbackList.length === 0 ? (
                 <div className="text-center py-8 text-slate-500">
                   <MessageSquare className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p>No feedback found</p>
                 </div>
-              ) : null}
+              ) : (
+                feedbackList.map((feedback) => (
+                  <div
+                    key={feedback.id}
+                    className="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <UserIcon className="w-4 h-4 text-slate-500" />
+                            <span className="font-semibold text-slate-800">
+                              {feedback.user_name || "Anonymous"}
+                            </span>
+                          </div>
+
+                          {renderStars(feedback.satisfaction_rating)}
+                          {getStatusBadge(feedback.status)}
+
+                          <Badge variant="outline" className="capitalize">
+                            {feedback.category}
+                          </Badge>
+                        </div>
+
+                        <p className="text-sm text-slate-600 mb-2">
+                          {feedback.user_email || "—"}
+                        </p>
+
+                        <p className="text-slate-700 line-clamp-2">
+                          {feedback.feedback_text}
+                        </p>
+
+                        <p className="text-xs text-slate-500 mt-2">
+                          Submitted{" "}
+                          {format(new Date(feedback.created_date), "MMM d, yyyy h:mm a")}
+                        </p>
+
+                        {feedback.admin_notes ? (
+                          <div className="mt-3 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
+                            <p className="text-xs font-medium text-blue-800">Admin Notes:</p>
+                            <p className="text-sm text-blue-700">{feedback.admin_notes}</p>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(feedback)}
+                        className="ml-4"
+                      >
+                        View & Update
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

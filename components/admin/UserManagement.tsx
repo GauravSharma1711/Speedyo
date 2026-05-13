@@ -49,23 +49,13 @@ import {
 
 type DealershipTier = "tier1" | "tier2" | "tier3";
 type VerificationStatus =
-  'pending_review'|
-  'not_submitted'|
-  'approved'|
-  'declined'|
-  'pending_payment'
-  
+  'pending_review' |
+  'not_submitted' |
+  'approved' |
+  'declined' |
+  'pending_payment';
+
 type UserType = "guest" | "private_seller" | "dealership";
-
-type SellerSubscription = {
-  tier: DealershipTier;
-  expires_at: string; // YYYY-MM-DD
-  vehicles_sold_this_year: number;
-};
-
-
-
-;
 
 function getStatusBadge(status: VerificationStatus) {
   switch (status) {
@@ -90,6 +80,7 @@ function getStatusBadge(status: VerificationStatus) {
 import { useUserStore } from "@/store/admin/user";
 import type { User } from "@/store/admin/user";
 import { toast } from "sonner";
+import { notificationService } from "@/services/dashboard";
 
 
 
@@ -138,39 +129,57 @@ useEffect(() => { getAll(); }, []);
 
   const handleEditUserStatus = (user: User) => {
     setEditingUser(user);
-    setNewUserType(user.user_type);
-    setNewVerificationStatus(user.dealership_verification_status);
+    setNewUserType(user.user_type as UserType);
+    setNewVerificationStatus(user.dealership_verification_status as VerificationStatus);
     setShowEditStatusModal(true);
   };
 
-  const handleSaveUserStatus = async() => {
+  const handleSaveUserStatus = async () => {
     if (!editingUser) return;
 
-     try {
-    await update(editingUser.id, {
-      user_type: newUserType,
-      verification_status: newVerificationStatus,
-    });
-    setShowEditStatusModal(false);
-    setEditingUser(null);
-  } catch {
-    toast({ title: "Failed to update user", variant: "destructive" });
-  }
+    try {
+      await update(editingUser.id, {
+        user_type: newUserType,
+        dealership_verification_status: newVerificationStatus,
+      });
 
+      await notificationService.create({
+        recipientId: editingUser.id,
+        type: "account_status_update",
+        content: `Your account status has been updated to ${newUserType.replace("_", " ")}. Verification: ${newVerificationStatus.replace("_", " ")}`,
+        url: "/Dashboard",
+        icon: "UserCheck"
+      });
 
+      toast.success("User updated", { description: "Status change notification sent to user" });
+      setShowEditStatusModal(false);
+      setEditingUser(null);
+    } catch {
+      toast.error("Failed to update user");
+    }
   };
 
   const handleApproveUser = async (userId: string) => {
-  try {
-    await update(userId, {
-      user_type: "dealership",
-      dealership_verification_status: "approved",
-    });
-    setShowDetailsModal(false);
-  } catch {
-    toast({ title: "Failed to approve user", variant: "destructive" });
-  }
-};
+    try {
+      await update(userId, {
+        user_type: "dealership",
+        dealership_verification_status: "approved",
+      });
+
+      await notificationService.create({
+        recipientId: userId,
+        type: "dealership_approved",
+        content: "Congratulations! Your dealership application has been approved. Your first month is FREE!",
+        url: "/Dashboard",
+        icon: "CheckCircle"
+      });
+
+      toast.success("Dealership approved", { description: "Notification sent to user. First month FREE activated." });
+      setShowDetailsModal(false);
+    } catch {
+      toast.error("Failed to approve user");
+    }
+  };
 
  const handleDeclineDealership = async () => {
   if (!declineModalData) return;
@@ -179,12 +188,22 @@ useEffect(() => { getAll(); }, []);
       dealership_verification_status: "declined",
       admin_verification_notes: declineReason || undefined,
     });
+
+    await notificationService.create({
+      recipientId: declineModalData.userId,
+      type: "dealership_declined",
+      content: `Your dealership application has been declined. Reason: ${declineReason || "No reason provided"}`,
+      url: "/Dashboard",
+      icon: "XCircle"
+    });
+
+    toast.success("Application declined", { description: "Notification sent to user with reason." });
     setShowDeclineModal(false);
     setDeclineReason("");
     setDeclineModalData(null);
     setShowDetailsModal(false);
   } catch {
-    toast({ title: "Failed to decline application", variant: "destructive" });
+    toast.error("Failed to decline application");
   }
 };
 
@@ -206,7 +225,7 @@ useEffect(() => { getAll(); }, []);
     };
 
     const tierInfo = user.dealership_selected_tier
-      ? tiers[user.dealership_selected_tier]
+      ? tiers[user.dealership_selected_tier as DealershipTier]
       : null;
 
     return (
@@ -359,7 +378,7 @@ useEffect(() => { getAll(); }, []);
               <Button
                 variant="destructive"
                 onClick={() => {
-                  setDeclineModalData({ userId: user.id, userName: user.full_name });
+                  setDeclineModalData({ userId: user.id, userName: user.full_name || "User" });
                   setShowDeclineModal(true);
                 }}
                 disabled={user.dealership_verification_status === "approved"}
@@ -417,7 +436,7 @@ useEffect(() => { getAll(); }, []);
                   <Badge>{user.user_type}</Badge>
                 </TableCell>
 
-                <TableCell>{getStatusBadge(user.verification_status)}</TableCell>
+                <TableCell>{getStatusBadge(user.dealership_verification_status as VerificationStatus)}</TableCell>
 
                 <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
 

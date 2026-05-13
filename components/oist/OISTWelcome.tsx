@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { ShoppingCart, DollarSign, RefreshCw } from "lucide-react";
+import { ShoppingCart, DollarSign, RefreshCw, JapaneseYenIcon } from "lucide-react";
 
 type OISTWelcomeProps = {
   onSelectService: (service: "buy" | "sell" | "trade-in") => void;
@@ -83,7 +83,7 @@ export default function OISTWelcome({ onSelectService }: OISTWelcomeProps) {
           <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0 hover:shadow-2xl transition-all duration-300 cursor-pointer" onClick={() => onSelectService("sell")}>
             <CardContent className="p-6 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
-                <DollarSign className="w-8 h-8 text-white" />
+                <JapaneseYenIcon className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-3">Sell a Car</h3>
               <p className="text-slate-600 mb-4">
