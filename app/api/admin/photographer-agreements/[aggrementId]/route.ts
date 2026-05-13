@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 
 import { sendPhotographerAgreementMail } from "@/helpers/sendPhotographerAgreementMail";
+import { uploadFile } from "@/lib/storage/uploadFile";
 
 const photographerInclude = {
   createdByAdmin: { select: { id: true, full_name: true, email: true } },
@@ -68,62 +69,79 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "admin") {
+    if (!session ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
+ 
     const { aggrementId } = await context.params;
-
+ 
     const existing = await prisma.photographerAgreement.findUnique({
       where: { id: aggrementId },
     });
-
+ 
     if (!existing) {
       return NextResponse.json({ error: "Agreement not found" }, { status: 404 });
     }
-
-    const body = await request.json();
-    const {
-      full_name,
-      email,
-      phone,
-      photography_experience_years,
-      motivation,
-      address,
-      
-      automotive_photography_experience,
-      portfolio_url,
-      equipment,
-      availability,
-      location_preferences,
-      sample_work_urls,
-    } = body;
-
+ 
+    // ── Parse FormData ────────────────────────────────────────────────────────
+    const formData = await request.formData();
+ 
+    const full_name    = formData.get("full_name") as string | null;
+    const email        = formData.get("email") as string | null;
+    const phone        = formData.get("phone") as string | null;
+    const motivation   = formData.get("motivation") as string | null;
+    const photography_experience_years = formData.get("photography_experience_years");
+ 
     if (!full_name || !email || !phone || !photography_experience_years || !motivation) {
       return NextResponse.json(
         { error: "full_name, email, phone, photography_experience_years, and motivation are required" },
         { status: 400 },
       );
     }
-
+ 
+    const address                        = formData.get("address") as string | null;
+    const automotive_photography_experience = formData.get("automotive_photography_experience") as string | null;
+    const equipment                      = formData.get("equipment") as string | null;
+    const availability                   = formData.get("availability") as string | null;
+    const location_preferences           = formData.get("location_preferences") as string | null;
+ 
+    // ── Upload portfolio (single file, optional) ──────────────────────────────
+    let portfolio_url: string | null = null;
+    const portfolioEntry = formData.get("portfolio");
+    if (portfolioEntry instanceof File && portfolioEntry.size > 0) {
+      const result = await uploadFile(portfolioEntry, "portfolios");
+      portfolio_url = result.url;
+    }
+ 
+    // ── Upload sample work (multiple files, optional) ─────────────────────────
+    const sample_work_urls: string[] = [];
+    const sampleEntries = formData.getAll("sample_work"); // getAll → File[]
+    for (const entry of sampleEntries) {
+      if (entry instanceof File && entry.size > 0) {
+        const result = await uploadFile(entry, "samples");
+        sample_work_urls.push(result.url);
+      }
+    }
+ 
+    // ── Create application & update agreement ─────────────────────────────────
     const application = await prisma.photographerApplication.create({
       data: {
         full_name,
         email,
         phone,
-     photography_experience_years: Number(photography_experience_years),
+        photography_experience_years: Number(photography_experience_years),
         motivation,
-        address: address ?? null,
+        address:                           address ?? null,
         automotive_photography_experience: automotive_photography_experience ?? null,
-        portfolio_url: portfolio_url ?? null,
-        equipment: equipment ?? null,
-        availability: availability ?? null,
-        location_preferences: location_preferences ?? null,
-        sample_work_urls: sample_work_urls ?? [],
-        reviewed_by_admin_id: existing.created_by_admin_id,
+        portfolio_url,
+        equipment:                         equipment ?? null,
+        availability:                      availability ?? null,
+        location_preferences:              location_preferences ?? null,
+        sample_work_urls,
+        reviewed_by_admin_id:              existing.created_by_admin_id,
       },
     });
-
+ 
     await prisma.photographerAgreement.update({
       where: { id: aggrementId },
       data: {
@@ -131,7 +149,7 @@ export async function POST(
         status: "signed",
       },
     });
-
+ 
     await sendPhotographerAgreementMail(
       email,
       full_name,
@@ -139,13 +157,48 @@ export async function POST(
       Number(existing.fixed_percentage),
       existing.status,
       phone,
-      photography_experience_years,
+      Number(photography_experience_years),
       aggrementId,
     );
+ 
+  const updatedAgreement = await prisma.photographerAgreement.findUnique({
+  where: { id: aggrementId },
+  include: {
+    application: true,
+  },
+});
 
-    return NextResponse.json({ success: true, application }, { status: 201 });
+return NextResponse.json({ success: true, agreement: updatedAgreement }, { status: 201 });
   } catch (error) {
     console.error("Failed to add application to photographer agreement", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+
+
+// get by id 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { aggrementId: string } }
+) {
+  const { aggrementId } = params;
+
+  try {
+    const agreement = await prisma.photographerAgreement.findUnique({
+      where: { id: aggrementId },
+      include: {
+        application: true,
+      },
+    });
+
+    if (!agreement) {
+      return NextResponse.json({ error: "Agreement not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ agreement }, { status: 200 });
+  } catch (error) {
+    console.error("Failed to fetch photographer agreement", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

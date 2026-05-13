@@ -37,18 +37,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Cancel Square subscription if exists
-    const squareSubId = user.seller_subscription?.square_subscription_id;
-    if (squareSubId) {
-      try {
-        await squareClient.subscriptions.cancel({ subscriptionId: squareSubId });
-      } catch (e) {
-        console.error("Failed to cancel Square subscription:", e);
-        // Don't block downgrade if Square cancel fails
-      }
-    }
+  
 
-    // 3. Downgrade user + clear subscription in one transaction
+    // 2. Downgrade user + clear subscription in one transaction
     await prisma.$transaction([
       prisma.user.update({
         where: { id: userId },
@@ -62,6 +53,17 @@ export async function POST(req: NextRequest) {
         where: { userId },
       }),
     ]);
+
+      // 3. Cancel Square subscription if exists
+    const squareSubId = user.seller_subscription?.square_subscription_id;
+    if (squareSubId) {
+      try {
+        await squareClient.subscriptions.cancel({ subscriptionId: squareSubId });
+      } catch (e) {
+        console.error("Failed to cancel Square subscription:", e);
+        // Don't block downgrade if Square cancel fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

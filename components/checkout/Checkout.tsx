@@ -64,14 +64,14 @@ export default function Checkout() {
   const [sdkReady, setSdkReady] = useState(false);
 
   // ── Pricing ──────────────────────────────────────────────────────────
-  const pricePerSlot      = 50;
-  const pricePerSlotCents = 50;
+  const pricePerSlot      = 8000;
+  const pricePerSlotCents = 8000;
   const discount          = appliedPromo ? 0.2 : 0;
   const subtotal          = quantity * pricePerSlot;
   const discountAmount    = subtotal * discount;
   const total             = subtotal - discountAmount;
   const totalCents        = Math.round(quantity * pricePerSlotCents * (1 - discount));
-  const dealershipFee     = 149;
+  const dealershipFee     = 25000;
 
   const activeIsProcessing = isProcessing || isProcessingSlots;
 
@@ -398,7 +398,7 @@ if(isDealershipSubscription){
                     </div>
                     <div className="flex justify-between py-3 border-b">
                       <span>Verification Fee</span>
-                      <span> ¥149.00</span>
+                      <span> ¥25,000</span>
                     </div>
                     <div className="flex justify-between py-3 border-b text-emerald-600">
                       <span>First Month Subscription</span>
@@ -406,7 +406,7 @@ if(isDealershipSubscription){
                     </div>
                     <div className="flex justify-between items-center py-4 bg-gradient-to-r from-blue-50 to-emerald-50 px-4 rounded-lg">
                       <span className="text-lg font-bold">Total Today</span>
-                      <span className="text-2xl font-bold text-blue-600"> ¥149.00</span>
+                      <span className="text-2xl font-bold text-blue-600"> ¥25000.00</span>
                     </div>
                     <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
                       <p className="font-semibold mb-1">What happens next?</p>

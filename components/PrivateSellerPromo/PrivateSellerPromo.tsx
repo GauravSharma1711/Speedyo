@@ -120,7 +120,7 @@ export default function PrivateSellerPromo() {
     {
       number: "2",
       title: "Choose Private Seller Plan",
-      description: "Select the Private Seller option and purchase vehicle slots ($50 each, normally).",
+      description: "Select the Private Seller option and purchase vehicle slots (¥8,000 each, normally).",
       action: "View Pricing"
     },
     {

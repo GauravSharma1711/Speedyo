@@ -1,4 +1,4 @@
-// app/api/admin/photographer-agreements/[agreementId]/send-mail/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";

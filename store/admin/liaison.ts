@@ -54,9 +54,11 @@ export type liaisonApplication = {
 
 interface liaisonAgreementState {
   agreements: liaisonAgreement[];
+    agreement: liaisonAgreement | null;
   isLoading: boolean;
   error: string | null;
-
+ getAgreementById: (id: string) => Promise<void>;
+   sendSigningMail: (agreementId: string) => Promise<void>;
   clearError: () => void;
   getAll: () => Promise<void>;
   create: (data: CreateLiaisonAgreementData) => Promise<void>;
@@ -71,6 +73,7 @@ export const useLiaisonAgreementStore =
   create<liaisonAgreementState>()(
     immer((set) => ({
       agreements: [],
+       agreement: null,
       isLoading: false,
       error: null,
 
@@ -134,30 +137,69 @@ export const useLiaisonAgreementStore =
         }
       },
 
-      async addApplication(agreementId, data) {
-        set({ isLoading: true, error: null });
-        try {
-          const res =
-            await lisisonAgreementService.addApplication(
-              agreementId,
-              data
-            );
-          set((state) => {
-            const index = state.agreements.findIndex(
-              (a) => a.id === agreementId
-            );
-            if (index !== -1) state.agreements[index] = res.agreement;
-          });
-          set({ isLoading: false });
-        } catch (error: any) {
-          set({
-            isLoading: false,
-            error:
-              error?.response?.data?.message ??
-              "Failed to add application to agreement",
-          });
-          throw error;
-        }
-      },
+     async addApplication(agreementId, data) {
+  set({ isLoading: true, error: null });
+  try {
+    const res = await lisisonAgreementService.addApplication(agreementId, data);
+
+    set((state) => {
+      
+      const index = state.agreements.findIndex((a) => a.id === agreementId);
+      if (index !== -1) state.agreements[index] = res.agreement;
+
+      
+      if (state.agreement?.id === agreementId) {
+        state.agreement = res.agreement;
+      }
+    });
+
+    set({ isLoading: false });
+  } catch (error: any) {
+    set({
+      isLoading: false,
+      error: error?.response?.data?.message ?? "Failed to add application to agreement",
+    });
+    throw error;
+  }
+},
+
+
+       async sendSigningMail(agreementId) {
+          set({ isLoading: true, error: null });
+          try {
+            const res = await lisisonAgreementService.sendSigningMail(agreementId);
+            set({ isLoading: false });
+            return res;
+          } catch (error: any) {
+            set({
+              isLoading: false,
+              error:
+                error?.response?.data?.message ??
+                "Failed to send agreement form mail",
+            });
+            throw error;
+          }
+        },
+      
+        async getAgreementById(id) {
+          set({ isLoading: true, error: null });
+          try {
+            const res = await lisisonAgreementService.getAgreementById(id);
+            set({ agreement: res.agreement, isLoading: false });
+          } catch (error: any) {
+            set({
+              isLoading: false,
+              error:
+                error?.response?.data?.message ??
+                "Failed to fetch agreement",
+            });
+            throw error;
+          }finally{
+            set({ isLoading: false });
+          }
+        },
+
+
+
     }))
   );

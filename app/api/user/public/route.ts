@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
       user_type: true,
       role: true,
       isVerified: true,
+      verification_fee_paid:true
     },
   });
 
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
       success: true,
       user: {
         id: user.id,
+        verification_fee_paid:user.verification_fee_paid,
         user_id: user.id,
         full_name: user.full_name,
         bio: user.bio,

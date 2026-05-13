@@ -85,7 +85,16 @@ const agreement = await prisma.liaisonAgreement.create({
 });
 
 
-    return NextResponse.json({ success: true, agreement }, { status: 201 });
+const agreement_url = `http://localhost:3000/LiaisonAgreement?id=${agreement.id}`;
+
+   const updatedAgreement =  await prisma.liaisonAgreement.update({
+  where: { id: agreement.id },
+  data: { agreement_url },
+});
+
+
+
+    return NextResponse.json({ success: true, agreement: updatedAgreement }, { status: 201 });
   } catch (error) {
     console.error("Failed to create liaison agreement", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

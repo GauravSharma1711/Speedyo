@@ -9,7 +9,7 @@ import {
   ChevronDown,
   ClipboardCheck,
   Clock,
-  DollarSign,
+  JapaneseYen ,
   Edit,
   Eye,
   Handshake,

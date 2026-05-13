@@ -37,6 +37,7 @@ interface DealershipAgreementState {
   create: (data: CreateDealershipAgreementData) => Promise<void>;
   update: (agreementId: string, data: UpdateDealershipAgreementData) => Promise<void>;
   delete: (agreementId: string) => Promise<void>;
+   getById: (id: string) => Promise<void>;
 }
 
 
@@ -66,6 +67,30 @@ export const useDealershipAgreementStore = create<DealershipAgreementState>()(
         throw error;
       }
     },
+
+   async getById(id: string) {
+  set({ isLoading: true, error: null });
+  try {
+    // const res = await api.get(`/api/admin/dealership-agreements/${id}`);
+     const res = await dealershipAgreementService.getById(id);
+    set((state) => {
+      // Update in list if exists, otherwise push
+      const index = state.agreements.findIndex((a) => a.id === id);
+      if (index !== -1) {
+        state.agreements[index] = res.agreement;
+      } else {
+        state.agreements.push(res.agreement);
+      }
+    });
+    set({ isLoading: false });
+  } catch (error: any) {
+    set({
+      isLoading: false,
+      error: error?.response?.data?.error ?? "Failed to fetch agreement",
+    });
+    throw error;
+  }
+},
 
     async create(data) {
       set({ isLoading: true, error: null });

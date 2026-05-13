@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { profileService, ProfileUser } from "@/services/profile/profileServices";
+import { useUserStore } from "@/store/user/userStore";
+ 
 
 import { UserEntity as User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -21,10 +24,12 @@ import { motion } from "framer-motion";
 import OrderSummaryModal from "../components/checkout/OrderSummaryModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getSession } from "next-auth/react";
+import { getSession,useSession  } from "next-auth/react";
 import Footer from "../components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import DowngradeToGuestModal from "../components/subscription/DowngradeToGuestModal";
+
+
 
 // ─── Route helper (replace these with your actual Next.js routes) ─────────────
 const routes: Record<string, string> = {
@@ -65,7 +70,7 @@ interface Plan {
 const dealershipTiers: DealershipTier[] = [
   {
     name: "Standard",
-    price: "¥99",
+    price: "¥40000",
     features: [
       "Up to 10 vehicle sales per year",
       "Unlimited active listings",
@@ -79,7 +84,7 @@ const dealershipTiers: DealershipTier[] = [
   },
   {
     name: "Professional",
-    price: "¥199",
+    price: "¥75000",
     features: [
       "Up to 25 vehicle sales per year",
       "Unlimited active listings",
@@ -95,7 +100,7 @@ const dealershipTiers: DealershipTier[] = [
   },
   {
     name: "Enterprise",
-    price: "¥349",
+    price: "¥150000",
     features: [
       "Unlimited vehicle sales per year",
       "Unlimited active listings",
@@ -112,7 +117,7 @@ const dealershipTiers: DealershipTier[] = [
 
 const privateSellerPlan: Plan = {
   name: "Private Seller",
-  price: " ¥50",
+  price: "¥8000",
   priceUnit: "per vehicle",
   features: [
     "Pay only for vehicles you want to sell",
@@ -123,7 +128,7 @@ const privateSellerPlan: Plan = {
     "Access to seller dashboard",
   ],
   cta: "Become a Private Seller",
-  info: "Perfect for individuals selling their personal vehicles.  ¥50 per vehicle (purchase 1-3 slots at checkout).",
+  info: "Perfect for individuals selling their personal vehicles.  ¥8,000 per vehicle (purchase 1-3 slots at checkout).",
   type: "private_seller",
 };
 
@@ -141,6 +146,8 @@ const guestPlan: Plan = {
   info: "Perfect for buyers looking for their next vehicle.",
   type: "guest",
 };
+
+
 
 // ─── DealershipCard ───────────────────────────────────────────────────────────
 interface DealershipCardProps {
@@ -178,6 +185,7 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
         )}
         <CardTitle className="text-3xl">{tier.name}</CardTitle>
         <p className="text-5xl font-bold text-blue-600 mt-4">{tier.price}</p>
+
         <p className="text-slate-500">per month</p>
       </CardHeader>
       <CardContent className="p-8 flex flex-col flex-grow">
@@ -278,16 +286,36 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, onSelect, isCurrentPlan }) =>
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SubscriptionPage() {
+
+    const {  updateUser } = useUserStore();
+
   const router = useRouter();
+const { update } = useSession();
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [planForSummary, setPlanForSummary] = useState<any>(null);
   const [showDowngradeModal, setShowDowngradeModal] = useState(false);
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
+  //  useEffect(() => {
+  //   profileService.me()
+  //     .then(setCurrentUser)
+  //     .catch(() => setCurrentUser(null))
+  //     .finally(() => setIsLoading(false));
+  // }, []);
+
+
+  console.log("current user",currentUser);
+
+
+useEffect(() => {
+  const init = async () => {
+    await update();
+    await fetchUser(); 
+  };
+  init();
+}, []);
+
 
 
   const fetchUser = async () => {
@@ -300,6 +328,10 @@ export default function SubscriptionPage() {
     }
     setIsLoading(false);
   };
+
+
+  console.log("current user",currentUser);
+
 
   const getCurrentUserType = (): string => {
     if (!currentUser) return "guest";
@@ -321,14 +353,14 @@ export default function SubscriptionPage() {
   const handlePlanSelect = async (plan: DealershipTier | Plan) => {
     // ── Guest downgrade ──────────────────────────────────────────────────────
     if (plan.type === "guest") {
-      if (getCurrentUserType() === "guest") return;
+      if (currentUser.user_type === "guest") return;
       setShowDowngradeModal(true);
       return;
     }
 
     // ── Dealership selection ─────────────────────────────────────────────────
     if (plan.type === "dealership") {
-      const currentUserType = getCurrentUserType();
+      const currentUserType = currentUser.user_type || "guest";
 
       if (currentUserType !== "dealership") {
         if (!currentUser) {
@@ -338,10 +370,10 @@ export default function SubscriptionPage() {
 
         if (currentUser.verification_fee_paid === true) {
           try {
-            await User.updateMyUserData({
-              dealership_selected_tier: (plan as DealershipTier).tierId,
-              dealership_verification_status: "approved",
-            });
+          await updateUser({
+            dealership_selected_tier: (plan as DealershipTier).tierId,
+            dealership_verification_status: "approved",
+          });
             router.push(
               getRoute("Checkout", {
                 type: "dealership",
@@ -357,7 +389,7 @@ export default function SubscriptionPage() {
         }
 
         try {
-          await User.updateMyUserData({
+          await updateUser({
             dealership_verification_status: "not_submitted",
             verification_fee_paid: false,
             dealership_selected_tier: (plan as DealershipTier).tierId,

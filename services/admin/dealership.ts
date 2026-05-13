@@ -30,6 +30,11 @@ const dealershipAgreementService = {
     return res.data;
   },
 
+  getById: async (id:string)=>{
+ const res = await api.get(`/api/admin/dealership-agreements/${id}`);
+ return res.data
+  },
+
   create: async (data: CreateDealershipAgreementData) => {
     const res = await api.post("/api/admin/dealership-agreements", data);
     return res.data;
