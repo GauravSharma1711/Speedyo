@@ -50,7 +50,8 @@ export default function OrderSummaryModal({ plan, onClose }: { plan: any, onClos
     const params = new URLSearchParams({
       type: plan.type,
       name: plan.name,
-      price: plan.price,
+      // price: plan.price,
+        price: isPrivateSeller ? `¥${totalPrice.toFixed(2)}` : plan.price,
     });
     
     if (plan.tierId) {
