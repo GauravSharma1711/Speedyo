@@ -47,6 +47,8 @@ export type Invoice = {
   created: string;
   paid_at: string | null;
   invoice_url: string | null;
+   period_start: string | null;  
+  period_end: string | null; 
 };
 
 export type SlotDetails = {
@@ -77,6 +79,7 @@ export type SubscriptionDetails = {
   cancel_at_period_end: boolean;
   canceled_at: string | null;
   tier: string;
+   vehicles_sold_this_year: number;
 };
 
 // ── Service ────────────────────────────────────────────────────────────────
