@@ -25,8 +25,8 @@ const authService = {
     return res.data;
   },
 
-  resendOtp: async () => {
-    const res = await api.post("/api/auth/resend-otp");
+  resendOtp: async (email: string) => {
+    const res = await api.post("/api/auth/resend-otp", { email });
     return res.data;
   },
 

@@ -14,8 +14,11 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     clearError()
-    await forgotPassword({ email })
-    setSubmittedEmail(email)
+    try {
+      await forgotPassword({ email })
+      setSubmittedEmail(email)
+    } catch {
+    }
   }
 
   return (
@@ -156,7 +159,7 @@ export default function ForgotPasswordPage() {
                         Please check your email for the password reset link. It may take a few minutes to arrive.
                       </div>
 
-                      <button
+                      {/* <button
                         type="button"
                         onClick={() => router.push("/signIn")}
                         className="w-full flex items-center justify-center gap-2 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors"
@@ -178,7 +181,7 @@ export default function ForgotPasswordPage() {
                           <path d="M19 12H5"></path>
                         </svg>
                         Back to sign in
-                      </button>
+                      </button> */}
                     </div>
                   )}
                 </div>

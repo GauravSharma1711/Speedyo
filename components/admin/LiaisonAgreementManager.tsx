@@ -6,7 +6,7 @@ import type { liaisonAgreement, liaisonApplication } from "@/store/admin/liaison
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Copy, Download, Eye, Loader2, Plus, Send, UserCheck, XCircle } from "lucide-react";
+import { Copy, Download, Eye, Loader2, Plus, UserCheck, XCircle } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -119,8 +119,10 @@ export default function LiaisonAgreementManagerUI() {
         residual_pay_percentage: formData.residual_pay_percentage,
         agreement_start_date: formData.agreement_start_date || null,
         agreement_end_date: formData.agreement_end_date || null,
-        termination_notice_days: Number(formData.termination_notice_days),
+        termination_notice_days: formData.termination_notice_days,
         admin_notes: formData.admin_notes.trim() || null,
+        status: "",
+        agreement_url: "",
       });
 
       setShowCreateModal(false);
@@ -140,18 +142,11 @@ export default function LiaisonAgreementManagerUI() {
   // ── Copy link ──────────────────────────────────────────────────────────────
   async function copyAgreementLink(a: liaisonAgreement) {
     const fullUrl = `${window.location.origin}/LiaisonAgreement?id=${a.id}`;
-    await navigator.clipboard.writeText(fullUrl);
-    toast({ title: "Copied", description: "Agreement link copied." });
-  }
-
-  // ── Send email ─────────────────────────────────────────────────────────────
-  async function handleSendApplicationEmail(a: liaisonAgreement) {
-    setIsSubmitting(true);
     try {
-      // TODO: wire real send API
-      toast({ title: "Send email", description: "Would email the liaison the agreement + application summary." });
-    } finally {
-      setIsSubmitting(false);
+      await navigator.clipboard.writeText(fullUrl);
+      alert("Agreement link copied to clipboard!");
+    } catch (err) {
+      console.error("Copy error:", err);
     }
   }
 
@@ -159,8 +154,27 @@ export default function LiaisonAgreementManagerUI() {
   async function handleDownloadPDF(a: liaisonAgreement) {
     setIsSubmitting(true);
     try {
-      // TODO: wire real PDF generation
-      toast({ title: "Download PDF", description: "PDF generation wiring pending." });
+      const res = await fetch("/api/agreement/generateLiaisonAgreementPDF", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agreementId: a.id }),
+      });
+
+      if (!res.ok) throw new Error("Failed to generate PDF");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Liaison_Agreement_${a.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: "Downloaded", description: "PDF downloaded successfully." });
+    } catch {
+      toast({ title: "Error", description: "Failed to download PDF.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -284,12 +298,8 @@ export default function LiaisonAgreementManagerUI() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {agreements?.map((a) => {
-            // ✅ Read application directly from the agreement — no separate array needed
-            const associatedApplication = a.application ?? undefined;
-
-            return (
-              <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
+          {agreements?.map((a) => (
+                          <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -334,7 +344,6 @@ export default function LiaisonAgreementManagerUI() {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {/* {a.agreement_url ? ( */}
                       <>
                         <Button size="sm" variant="outline" onClick={() => copyAgreementLink(a)}>
                           <Copy className="w-4 h-4 mr-2" />Copy Link
@@ -347,13 +356,7 @@ export default function LiaisonAgreementManagerUI() {
                       </>
                     {/* // ) : null} */}
 
-                    {a.status === "signed" && associatedApplication ? (
-                      <Button size="sm" variant="outline" onClick={() => handleSendApplicationEmail(a)} disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-                        Send Email
-                      </Button>
-                    ) : null}
-
+                    
                     {a.status === "signed" ? (
                       <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(a)} disabled={isSubmitting}>
                         <Download className="w-4 h-4 mr-2" />Download PDF
@@ -366,8 +369,7 @@ export default function LiaisonAgreementManagerUI() {
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
+          ))}
         </div>
       )}
 

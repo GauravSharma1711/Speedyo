@@ -289,8 +289,7 @@ export default function SubscriptionPage() {
     fetchUser();
   }, []);
 
-  // NOTE: We intentionally avoid a custom `/api/users/me` route here.
-  // This simply checks NextAuth session presence to decide authenticated UI.
+
   const fetchUser = async () => {
     setIsLoading(true);
     try {

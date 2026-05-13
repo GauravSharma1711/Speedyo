@@ -23,6 +23,7 @@ import { toast } from "@/components/ui/UseToast";
 
 import { useTransferStore } from "@/store/admin/transfer";
 import { useEffect } from "react";
+import { notificationService } from "@/services/dashboard";
 
 
 type TransferType = "speedio_managed" | "self_service";
@@ -189,27 +190,50 @@ export default function TransferStatusManagerUI() {
   };
 
   const handleUpdate = async(transferId: string, updates: Partial<VehicleTransfer>) => {
-    // setTransfers((prev) =>
-    //   prev.map((t) => (t.id === transferId ? { ...t, ...updates } : t)),
-    // );
-    // setEditOpenForId(null);
-    // toast({ title: "Saved", description: "Transfer updated" });
+    try {
+      await update(transferId, {
+        steps_completed: updates.stepsCompleted,
+        status: updates.status,
+        admin_notes: updates.adminNotes,
+        user_facing_notes: updates.userFacingNotes,
+      });
 
+      // Find the transfer to get buyer/seller info
+      const transfer = transfers.find((t) => t.id === transferId);
+      if (transfer) {
+        const completedSteps = updates.stepsCompleted?.length || 0;
 
-      try {
-    await update(transferId, {
-      steps_completed: updates.stepsCompleted,
-      status: updates.status,
-      admin_notes: updates.adminNotes,
-      user_facing_notes: updates.userFacingNotes,
-    });
-    await getAll(); 
-    setEditOpenForId(null);
-    toast({ title: "Saved", description: "Transfer updated" });
-  } catch {
-    toast({ title: "Failed to update transfer", variant: "destructive" });
-  }
+        if (transfer.buyerId) {
+          await notificationService.create({
+            recipientId: transfer.buyerId,
+            type: "vehicle_edit_request",
+            content: `Your vehicle transfer status has been updated: Step ${completedSteps} of 6 completed. ${updates.userFacingNotes || ""}`,
+            relatedEntityId: transferId,
+            relatedEntityType: "VehicleTransfer",
+            url: "/Dashboard",
+            icon: "CheckCircle"
+          });
+        }
 
+        if (transfer.sellerId) {
+          await notificationService.create({
+            recipientId: transfer.sellerId,
+            type: "vehicle_edit_request",
+            content: `Transfer status updated for your managed vehicle. ${updates.userFacingNotes || ""}`,
+            relatedEntityId: transferId,
+            relatedEntityType: "VehicleTransfer",
+            url: "/Dashboard",
+            icon: "CheckCircle"
+          });
+        }
+      }
+
+      await getAll();
+      setEditOpenForId(null);
+      toast({ title: "Saved", description: "Transfer updated. Buyer and seller notified." });
+    } catch {
+      toast({ title: "Failed to update transfer", variant: "destructive" });
+    }
   };
 
   return (

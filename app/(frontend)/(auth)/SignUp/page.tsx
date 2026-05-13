@@ -82,12 +82,18 @@ import { useAuthStore } from "@/store/auth";
 export default function SignUpPage() {
   const router = useRouter()
   const [form, setForm] = useState<FormState>({ email: "", password: "", confirmPassword: "" })
+  const [passwordError, setPasswordError] = useState("")
 
   const { signUpUser, isLoading, error } = useAuthStore();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setPasswordError("")
     if (form.password !== form.confirmPassword) {
-      console.log("Passwords do not match")
+      setPasswordError("Passwords do not match")
+      return
+    }
+    if (form.password.length < 8) {
+      setPasswordError("Password must be at least 8 characters")
       return
     }
     try {
@@ -153,6 +159,12 @@ export default function SignUpPage() {
                     </div>
                   )}
 
+                  {passwordError && (
+                    <div className="mb-1 p-3 bg-red-50 text-red-600 rounded-xl text-sm">
+                      {passwordError}
+                    </div>
+                  )}
+
                   <form
                     onSubmit={handleSubmit}
                     className="space-y-3 sm:space-y-4"
@@ -185,11 +197,19 @@ export default function SignUpPage() {
                     </div>
 
                     <button
-                      className="inline-flex items-center justify-center gap-1 whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 px-3 py-2 w-full h-10 sm:h-11 bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-sm rounded-xl transition-all duration-200"
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-3 py-2 w-full h-10 sm:h-11 bg-slate-900 hover:bg-slate-800 text-white font-medium shadow-sm rounded-xl transition-all duration-200"
                       type="submit"
                       disabled={isLoading}
                     >
-                    {isLoading ? "Creating account..." : "Create account"}
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Creating account...
+                      </>
+                    ) : "Create account"}
                     </button>
                   </form>
                 </div>

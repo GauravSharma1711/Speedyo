@@ -6,11 +6,11 @@ position_title:string
 fixed_fee_percentage:string
 residual_pay_percentage:string
 termination_notice_days:string
-agreement_start_date:string
-agreement_end_date:string
+agreement_start_date:string | null
+agreement_end_date:string | null
 status:string
 agreement_url:string
-admin_notes:string
+admin_notes:string | null
 }
 
 

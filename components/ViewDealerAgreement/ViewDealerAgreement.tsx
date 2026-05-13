@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckCircle, FileText } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle, FileText, Loader2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import Footer from "@/components/layout/Footer";
 
-type AgreementStatus = "draft" | "sent" | "signed";
+type AgreementStatus = "draft" | "pending_signature" | "signed" | "cancelled";
 
 type DealershipAgreement = {
   id: string;
@@ -17,43 +17,70 @@ type DealershipAgreement = {
   dealership_name: string;
   representative_name: string;
   email: string;
-  phone?: string;
-  address?: string;
-  license_number?: string;
+  phone?: string | null;
+  address?: string | null;
+  license_number?: string | null;
 
   service_fee_amount?: number | null;
 
   signed_by_name?: string | null;
-  signed_at?: string | null; // ISO
+  signed_at?: string | null;
+  createdAt?: string;
+  admin_notes?: string | null;
 };
-
-const MOCK_AGREEMENTS: DealershipAgreement[] = [
-  {
-    id: "agr_001",
-    status: "signed",
-    dealership_name: "Taka Cars",
-    representative_name: "Kevin Phillips",
-    email: "dealer@takacars.jp",
-    phone: "+81 000 000 000",
-    address: "Okinawa, JP",
-    license_number: "LIC-12345",
-    service_fee_amount: 300,
-    signed_by_name: "Kevin Phillips",
-    signed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14).toISOString(),
-  },
-];
 
 export default function ViewDealershipAgreementUI() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
+  const agreementId = params?.id ?? "";
 
-  const agreement = useMemo(() => {
-    const id = params?.id;
-    if (!id) return null;
-    return MOCK_AGREEMENTS.find((a) => a.id === id) ?? null;
-  }, [params?.id]);
+  const [agreement, setAgreement] = useState<DealershipAgreement | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  if (!agreement) {
+  useEffect(() => {
+    async function fetchAgreement() {
+      if (!agreementId) {
+        setError(true);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/dealership-agreements/${agreementId}`);
+        if (!res.ok) {
+          setError(true);
+          setIsLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.success || !data.agreement) {
+          setError(true);
+          setIsLoading(false);
+          return;
+        }
+
+        setAgreement(data.agreement);
+      } catch {
+        setError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchAgreement();
+  }, [agreementId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error || !agreement) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex flex-col">
         <div className="flex-1 flex items-center justify-center py-12 px-4">
