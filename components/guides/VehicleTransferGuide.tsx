@@ -799,7 +799,7 @@ export default function VehicleTransferGuide() {
                           "Visit JSVRO counters 1–4 to complete 2 worksheets",
                           "Verify documents at Counter A or B",
                           "Proceed to Lane #5 for Safety Inspection (or lane near Door #6)",
-                          "Fee: $50 JPY (¥7,685)",
+                          "Fee: $50 JPY (¥8,000)",
                           "Pay Initial Registration Fee: ¥1,500 at ALPA counter",
                         ].map((item) => (
                           <li key={item} className="text-slate-700">
@@ -1001,7 +1001,7 @@ export default function VehicleTransferGuide() {
                           },
                           {
                             item: "Inspection (GOJ)",
-                            fee: "$50 / ¥7,685",
+                            fee: "$50 / ¥8,000",
                             notes: "Lane #5",
                           },
                           {

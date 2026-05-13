@@ -354,7 +354,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
       case "guest":
         return { title: "Start Selling Today", description: "Become a Private Seller", icon: Car, ctaText: "Get Started" };
       case "private_seller":
-        return { title: "Need More Slots?", description: "Just $50 per vehicle", icon: ShoppingCart, ctaText: "Buy Slots" };
+        return { title: "Need More Slots?", description: "Just ¥8,000 per vehicle", icon: ShoppingCart, ctaText: "Buy Slots" };
       case "dealership":
         return { title: "Manage Subscription", description: "Upgrade or modify plan", icon: TrendingUp, ctaText: "View Plans" };
       default:

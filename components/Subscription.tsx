@@ -24,10 +24,12 @@ import { motion } from "framer-motion";
 import OrderSummaryModal from "../components/checkout/OrderSummaryModal";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getSession } from "next-auth/react";
+import { getSession,useSession  } from "next-auth/react";
 import Footer from "../components/layout/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import DowngradeToGuestModal from "../components/subscription/DowngradeToGuestModal";
+
+
 
 // ─── Route helper (replace these with your actual Next.js routes) ─────────────
 const routes: Record<string, string> = {
@@ -68,7 +70,7 @@ interface Plan {
 const dealershipTiers: DealershipTier[] = [
   {
     name: "Standard",
-    price: "¥99",
+    price: "¥40,000",
     features: [
       "Up to 10 vehicle sales per year",
       "Unlimited active listings",
@@ -82,7 +84,7 @@ const dealershipTiers: DealershipTier[] = [
   },
   {
     name: "Professional",
-    price: "¥199",
+    price: "¥75,000",
     features: [
       "Up to 25 vehicle sales per year",
       "Unlimited active listings",
@@ -98,7 +100,7 @@ const dealershipTiers: DealershipTier[] = [
   },
   {
     name: "Enterprise",
-    price: "¥349",
+    price: "¥150,000",
     features: [
       "Unlimited vehicle sales per year",
       "Unlimited active listings",
@@ -115,7 +117,7 @@ const dealershipTiers: DealershipTier[] = [
 
 const privateSellerPlan: Plan = {
   name: "Private Seller",
-  price: " ¥50",
+  price: "¥8,000",
   priceUnit: "per vehicle",
   features: [
     "Pay only for vehicles you want to sell",
@@ -126,7 +128,7 @@ const privateSellerPlan: Plan = {
     "Access to seller dashboard",
   ],
   cta: "Become a Private Seller",
-  info: "Perfect for individuals selling their personal vehicles.  ¥50 per vehicle (purchase 1-3 slots at checkout).",
+  info: "Perfect for individuals selling their personal vehicles.  ¥8,000 per vehicle (purchase 1-3 slots at checkout).",
   type: "private_seller",
 };
 
@@ -288,6 +290,7 @@ export default function SubscriptionPage() {
     const {  updateUser } = useUserStore();
 
   const router = useRouter();
+const { update } = useSession();
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -305,12 +308,13 @@ export default function SubscriptionPage() {
   console.log("current user",currentUser);
 
 
-  useEffect(() => {
-    fetchUser();
-  }, []);
-
-  // NOTE: We intentionally avoid a custom `/api/users/me` route here.
-  // This simply checks NextAuth session presence to decide authenticated UI.
+useEffect(() => {
+  const init = async () => {
+    await update();
+    await fetchUser(); 
+  };
+  init();
+}, []);
 
 
 

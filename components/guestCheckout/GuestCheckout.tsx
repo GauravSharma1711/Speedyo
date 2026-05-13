@@ -27,7 +27,7 @@ export default function GuestCheckout() {
   const [errorMessage, setErrorMessage] = useState('');
   const [cardPayment, setCardPayment] = useState<any>(null);
 
-  const pricePerSlot = 50; // $50 per slot
+  const pricePerSlot = 8000; // ¥8,000 per slot
   const discount = appliedPromo ? 0.20 : 0; // 20% discount when SELLER20 is applied
   const subtotal = pricePerSlot * quantity;
   const discountAmount = subtotal * discount;

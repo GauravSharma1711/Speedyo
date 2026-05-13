@@ -34,7 +34,7 @@ const tierOptions = [
   {
     id: "tier1" as const,
     name: "Standard",
-    price: "$99",
+    price: "¥40,000",
     features: [
       "Up to 20 active listings",
       "Standard marketplace visibility",
@@ -45,7 +45,7 @@ const tierOptions = [
   {
     id: "tier2" as const,
     name: "Professional",
-    price: "$199",
+    price: "¥75,000",
     features: [
       "Up to 100 active listings",
       "Promoted marketplace visibility",
@@ -58,7 +58,7 @@ const tierOptions = [
   {
     id: "tier3" as const,
     name: "Enterprise",
-    price: "$349",
+    price: "¥150,000",
     features: [
       "Unlimited active listings",
       "Top-tier marketplace visibility",

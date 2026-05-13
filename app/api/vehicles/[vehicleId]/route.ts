@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]/option";
 
 const vehicleDetailSelect = {
   id: true,
@@ -102,9 +104,45 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ vehic
 
 export async function DELETE(_req: NextRequest, context: { params: Promise<{ vehicleId: string }> }) {
   try {
+
+      const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { vehicleId } = await context.params;
-    await prisma.vehicle.delete({ where: { id: vehicleId } });
+
+
+  await prisma.$transaction(async (tx) => {
+      const vehicle = await tx.vehicle.findUnique({
+        where: { id: vehicleId },
+        select: { authorId: true, status: true },
+      });
+
+      if (!vehicle) throw new Error("Vehicle not found");
+
+      await tx.vehicle.delete({ where: { id: vehicleId } });
+
+      
+      if (vehicle.authorId && vehicle.status !== "sold") {
+        const ownerSlots = await tx.privateSellerSlots.findUnique({
+          where: { userId: vehicle.authorId },
+        });
+
+        
+        if (ownerSlots && ownerSlots.used > 0) {
+          await tx.privateSellerSlots.update({
+            where: { userId: vehicle.authorId },
+            data: { used: { decrement: 1 } },
+          });
+        }
+      }
+    });
+
     return NextResponse.json({ success: true });
+
+
+
   } catch (error) {
     console.error("[DELETE /api/vehicles/[vehicleId]]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -1078,7 +1078,7 @@ export default function GuestDashboard({ user }: { user: any }) {
                       <div className="flex flex-wrap gap-4 text-sm text-blue-700 mb-4">
                         <div className="flex items-center gap-1">
                           <Check className="w-4 h-4" />
-                          <span>One-time $50 fee</span>
+                          <span>One-time ¥8,000 fee</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Check className="w-4 h-4" />

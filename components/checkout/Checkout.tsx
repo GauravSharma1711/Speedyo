@@ -64,8 +64,8 @@ export default function Checkout() {
   const [sdkReady, setSdkReady] = useState(false);
 
   // ── Pricing ──────────────────────────────────────────────────────────
-  const pricePerSlot      = 50;
-  const pricePerSlotCents = 50;
+  const pricePerSlot      = 8000;
+  const pricePerSlotCents = 8000;
   const discount          = appliedPromo ? 0.2 : 0;
   const subtotal          = quantity * pricePerSlot;
   const discountAmount    = subtotal * discount;

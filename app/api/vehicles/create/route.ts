@@ -110,6 +110,14 @@ export async function POST(req: NextRequest) {
     if (result.deduped) {
       return NextResponse.json({ success: true, vehicle: result.vehicle, deduped: true }, { status: 200 });
     }
+
+    // Increment used slots for private sellers
+await prisma.privateSellerSlots.updateMany({
+  where: { userId: session.user.id },
+  data: { used: { increment: 1 } },
+});
+
+
     return NextResponse.json({ success: true, vehicle: result.vehicle }, { status: 201 });
   } catch (error) {
     console.error("POST /api/vehicles/create failed:", error);

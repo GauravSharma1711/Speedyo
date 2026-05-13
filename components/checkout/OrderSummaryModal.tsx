@@ -14,7 +14,7 @@ export default function OrderSummaryModal({ plan, onClose }: { plan: any, onClos
   const [promoApplied, setPromoApplied] = useState(false);
   
   const isPrivateSeller = plan.type === 'private_seller';
-  const pricePerUnit = isPrivateSeller ? 50 : parseFloat(plan.price.replace('$', '')); // $50 per slot
+  const pricePerUnit = isPrivateSeller ? 8000 : parseFloat(plan.price.replace('¥', '')); // ¥8,000 per slot
   
   // Calculate discount (20% for SELLER20)
   const discountPercentage = promoApplied ? 0.20 : 0;
@@ -98,7 +98,7 @@ export default function OrderSummaryModal({ plan, onClose }: { plan: any, onClos
               
               {isPrivateSeller ? (
                 <>
-                  <p className="text-sm text-slate-500 mt-2"> ¥50 per vehicle slot</p>
+                  <p className="text-sm text-slate-500 mt-2"> per vehicle slot</p>
                   
                   <div className="mt-4 space-y-3">
                     <label className="text-sm font-medium text-slate-700">How many vehicles do you want to sell?</label>

@@ -329,7 +329,7 @@ sampleFiles.forEach((file) => formData.append("sample_work", file));
                     </p>
                     <p><strong>Payment Timing:</strong> Paid upon successful sale of the vehicle.</p>
                     <p>
-                      <strong>Example:</strong> If Speedio charges a $500 service fee, you receive{" "}
+                      <strong>Example:</strong> If Speedio charges a ¥500 service fee, you receive{" "}
                       {(((agreement.fixed_percentage ?? 10) * 5) as number).toFixed(0)}.
                     </p>
                   </div>
