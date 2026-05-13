@@ -198,7 +198,7 @@ if (user?.business_name || user?.dealership_selected_tier) {
   const getVerificationFeeCheckoutUrl = () => {
     const params = new URLSearchParams({
       purpose: "dealership_verification",
-      amount: "149.00",
+      amount: "25000.00",
       description: "Dealership Verification Fee",
       tier: formData.dealership_selected_tier || "",
     });
@@ -632,7 +632,7 @@ if (user?.business_name || user?.dealership_selected_tier) {
             <CardContent className="space-y-6">
               <Alert>
                 <AlertDescription>
-                  A one-time verification fee of $149 is required to process your dealership
+                  A one-time verification fee of  ¥25,000 is required to process your dealership
                   registration.
                 </AlertDescription>
               </Alert>
@@ -654,7 +654,7 @@ if (user?.business_name || user?.dealership_selected_tier) {
                   </div>
                   <div className="flex justify-between items-center text-lg">
                     <span>Verification Fee (One-time):</span>
-                    <span className="font-bold text-2xl text-blue-600">$149.00</span>
+                    <span className="font-bold text-2xl text-blue-600">¥25,000</span>
                   </div>
                 </div>
               </div>

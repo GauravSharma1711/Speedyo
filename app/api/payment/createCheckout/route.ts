@@ -12,9 +12,9 @@ import { CURRENCY, formatCurrency } from "@/lib/payment/square";
 type TierId = "tier1" | "tier2" | "tier3";
 
 const TIER_PRICES = {
-  tier1: { amount: 15555, name: "Standard Dealership Plan" },
-  tier2: { amount: 31267, name: "Professional Dealership Plan" },
-  tier3: { amount: 54835, name: "Enterprise Dealership Plan" },
+  tier1: { amount: 40000, name: "Standard Dealership Plan" },
+  tier2: { amount: 75000, name: "Professional Dealership Plan" },
+  tier3: { amount: 150000, name: "Enterprise Dealership Plan" },
 };
 
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     // ── Private Seller — one-time slot purchase ──
     if (type === "private_seller") {
-      const pricePerSlot = 50; 
+      const pricePerSlot = 8000; 
       const hasPromo = promoCode && promoCode.toUpperCase() === "SELLER20";
       const subtotal = pricePerSlot * quantity;
       const discountAmount = hasPromo ? Math.round(subtotal * 0.2) : 0;
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
 
     // ── Dealership Verification — one-time fee ──
     if (purpose === "dealership_verification") {
-      const totalAmount = 149; 
+      const totalAmount = 25000; 
 
       const response = await squareClient.payments.create({
         sourceId: paymentToken,
