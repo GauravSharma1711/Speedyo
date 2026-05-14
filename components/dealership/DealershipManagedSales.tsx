@@ -1,5 +1,5 @@
 "use client";
-
+import { useDealershipManageSaleStore } from "@/store/dealership/dealershipManageSalesStore";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
@@ -49,6 +49,11 @@ const colorClass: Record<
 };
 
 export default function DealershipManagedSales() {
+
+
+  const {isSaving,error,inquiry} = useDealershipManageSaleStore();
+
+
   const [formData, setFormData] = useState<FormData>({
     dealershipName: "",
     contactName: "",
@@ -69,7 +74,8 @@ export default function DealershipManagedSales() {
 
     try {
       console.log("[dealership-managed-sales] submitting (dummy):", formData);
-      await new Promise((r) => setTimeout(r, 900));
+    
+      inquiry(formData);
 
       setSubmitSuccess(true);
       setFormData({
