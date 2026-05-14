@@ -44,6 +44,24 @@ import { useDealershipAgreementStore } from "@/store/admin/dealership";
 
 type VehicleStatus = "available" | "sold";
 
+type CreateVehiclePatch = {
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  mileage: number;
+  condition: string;
+  description: string;
+  location: string;
+  fuel_type: string;
+  transmission: string;
+  status: string;
+  images: string[];
+  primary_image?: string | null;
+};
+
+type VehicleRow = Vehicle;
+
 type DayOfWeek =
   | "Monday"
   | "Tuesday"
@@ -60,101 +78,6 @@ type AvailabilitySlot = {
   endTime: string; // "18:00"
   meetingAddress: string;
 };
-
-// type VehicleRow = {
-//   id: string;
-//   title: string;
-//   year: number;
-//   make: string;
-//   model: string;
-//   price: number;
-
-//   status: VehicleStatus;
-//   featured: boolean;
-
-//   website_managed: boolean;
-//   created_by: string;
-
-//   primary_image_small?: string | null;
-//   primary_image?: string | null;
-
-//   recurring_availability?: AvailabilitySlot[];
-
-//   dealership_name?: string | null;
-//   dealership_agreement_id?: string | null;
-// };
-
-// type DealershipAgreementLite = {
-//   id: string;
-//   dealership_name: string;
-//   status: "signed";
-// };
-
-// const MOCK_DEALERSHIPS: DealershipAgreementLite[] = [
-//   { id: "d_001", dealership_name: "Taka Cars", status: "signed" },
-//   { id: "d_002", dealership_name: "Ok Motors", status: "signed" },
-// ];
-
-
-
-// const MOCK_VEHICLES: VehicleRow[] = [
-//   {
-//     id: "v_001",
-//     title: "2018 Toyota Aqua (Hybrid) — Clean",
-//     year: 2018,
-//     make: "Toyota",
-//     model: "Aqua",
-//     price: 9500,
-//     status: "available",
-//     featured: true,
-//     website_managed: true,
-//     created_by: "admin@speedyo.local",
-//     primary_image:
-//       "https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=1200&q=70",
-//     recurring_availability: [
-//       {
-//         id: "slot_a",
-//         dayOfWeek: "Monday",
-//         startTime: "09:00",
-//         endTime: "18:00",
-//         meetingAddress: "Urumu, Okinawa",
-//       },
-//     ],
-//     dealership_name: "Taka Cars",
-//     dealership_agreement_id: "d_001",
-//   },
-//   {
-//     id: "v_002",
-//     title: "2020 Honda Fit — Great City Car",
-//     year: 2020,
-//     make: "Honda",
-//     model: "Fit",
-//     price: 11200,
-//     status: "available",
-//     featured: false,
-//     website_managed: false,
-//     created_by: "seller@local.dev",
-//     primary_image:
-//       "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=70",
-//     recurring_availability: [],
-//   },
-//   {
-//     id: "v_003",
-//     title: "2016 Nissan Note — Budget Friendly",
-//     year: 2016,
-//     make: "Nissan",
-//     model: "Note",
-//     price: 6200,
-//     status: "sold",
-//     featured: false,
-//     website_managed: true,
-//     created_by: "admin@speedyo.local",
-//     primary_image: null,
-//     recurring_availability: [],
-//     dealership_name: null,
-//     dealership_agreement_id: null,
-//   },
-// ];
 
 
 
@@ -487,7 +410,7 @@ export default function ListingManagementUI(props: {
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-medium text-slate-800">
-                                Test Drive Availability
+                                Car Viewing Availability
                               </h4>
                               {vehicle.recurring_availability?.length ? (
                                 <p className="text-sm text-slate-600">
@@ -689,11 +612,11 @@ export default function ListingManagementUI(props: {
 function EditVehicleForm(props: {
   vehicle: VehicleRow;
   onCancel: () => void;
-  onSave: (patch: Partial<VehicleRow>) => void;
+  onSave: (patch: { title?: string; price?: string | number; status?: string }) => void;
 }) {
   const [title, setTitle] = useState(props.vehicle.title);
   const [price, setPrice] = useState(String(props.vehicle.price));
-  const [status, setStatus] = useState<VehicleStatus>(props.vehicle.status);
+  const [status, setStatus] = useState<string>(props.vehicle.status);
 
   return (
     <div className="space-y-4">
@@ -715,7 +638,7 @@ function EditVehicleForm(props: {
 
         <div>
           <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as VehicleStatus)}>
+          <Select value={status} onValueChange={(v) => setStatus(v)}>
             <SelectTrigger id="status">
               <SelectValue />
             </SelectTrigger>
@@ -777,7 +700,7 @@ useEffect(() => {
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>
-            Set Test Drive Availability
+            Set Car Viewing  Availability
             <div className="mt-1 text-sm font-normal text-slate-500">
               {props.vehicle.title}
             </div>
@@ -785,7 +708,7 @@ useEffect(() => {
         </DialogHeader>
 
         <div className="text-sm text-slate-600">
-          Configure recurring weekly availability for test drives. Current availability is loaded automatically.
+          Configure recurring weekly availability for car viewing. Current availability is loaded automatically.
         </div>
 
         <div className="mt-4 space-y-4">
@@ -846,7 +769,7 @@ useEffect(() => {
                 </div>
 
                 <div>
-                  <Label>Meeting Address for Test Drive</Label>
+                  <Label>Meeting Address for Car Viewing</Label>
                   <Textarea
                     value={slot.meetingAddress}
                     onChange={(e) => setSlot(slot.id, { meetingAddress: e.target.value })}

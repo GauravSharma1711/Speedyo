@@ -52,7 +52,7 @@ export default function OISTBuyCar({ onBack }: OISTBuyCarProps) {
               </div>
               <div>
                 <h4 className="font-semibold text-slate-800">Direct Seller Communication</h4>
-                <p className="text-slate-600">Message sellers directly to ask questions and schedule test drives</p>
+                <p className="text-slate-600">Message sellers directly to ask questions and schedule car viewing</p>
               </div>
             </div>
             <div className="flex items-start gap-3">

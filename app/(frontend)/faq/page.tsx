@@ -30,9 +30,9 @@ const faqs = {
         "We encourage sellers to opt for our 'Verified Vehicle' service, which includes a professional inspection. Look for the 'Verified' badge on listings. Additionally, our secure messaging system allows you to communicate safely with sellers before meeting.",
     },
     {
-      question: "How do I request a test drive?",
+      question: "How do I request a car viewing?",
       answer:
-        "You can request a test drive directly from the vehicle listing page or through the chat interface when messaging a seller. This sends a formal request to the seller with your preferred time and location.",
+        "You can request a car viewing directly from the vehicle listing page or through the chat interface when messaging a seller. This sends a formal request to the seller with your preferred time and location.",
     },
   ],
   "For Sellers": [

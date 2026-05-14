@@ -73,7 +73,7 @@ export default function TestDriveAvailabilityManager({ vehicle, onClose, onSave 
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-blue-500" />
-                Manage Test Drive Availability
+                Manage Car Viewing Availability
               </CardTitle>
               <CardDescription className="mt-1">
                 Set recurring weekly availability for: <span className="font-semibold">{vehicle.title}</span>

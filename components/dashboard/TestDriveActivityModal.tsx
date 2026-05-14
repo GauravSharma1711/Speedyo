@@ -87,7 +87,7 @@ export default function TestDriveActivityModal({
 
       // If approved, send notification and system message
       if (newStatus === 'approved') {
-        const approvalMessage = `Your test drive for "${vehicle.title}" on ${format(new Date(editableDetails.preferred_date), 'MMM d, yyyy')} at ${editableDetails.preferred_time} has been approved! Location: ${editableDetails.location}.`;
+        const approvalMessage = `Your car viewing for "${vehicle.title}" on ${format(new Date(editableDetails.preferred_date), 'MMM d, yyyy')} at ${editableDetails.preferred_time} has been approved! Location: ${editableDetails.location}.`;
 
         // Create notification for buyer
         await Notification.create({
@@ -105,7 +105,7 @@ export default function TestDriveActivityModal({
         await Message.create({
           recipient_id: buyer.id,
           sender_id: currentUser.id,
-          content: `✅ Test Drive Approved!\nDate: ${format(new Date(editableDetails.preferred_date), 'MMM d, yyyy')}\nTime: ${editableDetails.preferred_time}\nLocation: ${editableDetails.location}\n\nPlease confirm your attendance. Contact us if you have any questions.`,
+          content: `✅ Car Viewing Approved!\nDate: ${format(new Date(editableDetails.preferred_date), 'MMM d, yyyy')}\nTime: ${editableDetails.preferred_time}\nLocation: ${editableDetails.location}\n\nPlease confirm your attendance. Contact us if you have any questions.`,
           message_type: "confirmation_test_drive",
           vehicle_id: testDriveRequest.vehicle_id,
           managed_sale_request_id: testDriveRequest.managed_sale_request_id,
@@ -114,17 +114,17 @@ export default function TestDriveActivityModal({
       }
 
       toast({
-        title: "Test Drive Updated",
-        description: "The test drive details have been successfully updated.",
+        title: "Car Viewing Updated",
+        description: "The car viewing details have been successfully updated.",
         variant: "success",
       });
       onUpdate();
       onClose();
     } catch (error) {
-      console.error("Failed to update test drive status:", error);
+      console.error("Failed to update car viewing status:", error);
       toast({
         title: "Update Failed",
-        description: "Failed to update test drive status. Please try again.",
+        description: "Failed to update car viewing status. Please try again.",
         variant: "destructive",
       });
     }
@@ -159,7 +159,7 @@ export default function TestDriveActivityModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-500" />
-            Edit Test Drive Details
+            Edit Car Viewing Details
           </DialogTitle>
         </DialogHeader>
 
@@ -265,7 +265,7 @@ export default function TestDriveActivityModal({
                 <Textarea
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="Add internal notes about this test drive..."
+                  placeholder="Add internal notes about this car viewing..."
                   rows={3}
                 />
               </div>

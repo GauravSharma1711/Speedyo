@@ -81,7 +81,7 @@ export default function AvailabilitySetupModal({ isOpen, onClose, request, onApp
 
   const handleApprove = () => {
     if (recurringAvailability.length === 0) {
-      if (!window.confirm("No test drive availability slots have been set. Are you sure you want to approve without setting availability? Test drives will need to be manually coordinated.")) {
+      if (!window.confirm("No car viewing availability slots have been set. Are you sure you want to approve without setting availability? Car viewings will need to be manually coordinated.")) {
         return;
       }
     }
@@ -94,7 +94,7 @@ export default function AvailabilitySetupModal({ isOpen, onClose, request, onApp
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-600" />
-            Set Test Drive Availability
+            Set Car Viewing Availability
           </DialogTitle>
         </DialogHeader>
 
@@ -133,7 +133,7 @@ export default function AvailabilitySetupModal({ isOpen, onClose, request, onApp
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Plus className="w-5 h-5 text-green-600" />
-                Add Test Drive Time Slot
+                Add Car Viewing Time Slot
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -186,7 +186,7 @@ export default function AvailabilitySetupModal({ isOpen, onClose, request, onApp
                 <Label htmlFor="meeting-address">Meeting Address</Label>
                 <Input
                   id="meeting-address"
-                  placeholder="Where test drives will take place (defaults to vehicle location)"
+                  placeholder="Where car viewings will take place (defaults to vehicle location)"
                   value={newSlot.meeting_address}
                   onChange={(e) => setNewSlot({...newSlot, meeting_address: e.target.value})}
                 />
@@ -243,8 +243,8 @@ export default function AvailabilitySetupModal({ isOpen, onClose, request, onApp
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                No test drive availability has been set. If you approve without setting availability, 
-                test drive requests will need to be manually coordinated by contacting the vehicle owner.
+                No car viewing availability has been set. If you approve without setting availability, 
+                car viewing requests will need to be manually coordinated by contacting the vehicle owner.
               </AlertDescription>
             </Alert>
           )}

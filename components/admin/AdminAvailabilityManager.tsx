@@ -131,7 +131,7 @@ export default function AdminAvailabilityManagerUI(props: {
         <div className="p-6 border-b flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-slate-800">
-              Set Test Drive Availability
+              Set Car Viewing Availability
             </h2>
             <p className="text-slate-600">{entityTitle}</p>
           </div>
@@ -144,7 +144,7 @@ export default function AdminAvailabilityManagerUI(props: {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              Configure recurring weekly availability for test drives.
+              Configure recurring weekly availability for car viewing.
             </AlertDescription>
           </Alert>
 
@@ -225,7 +225,7 @@ export default function AdminAvailabilityManagerUI(props: {
                     className="flex items-center gap-2"
                   >
                     <MapPin className="w-4 h-4" />
-                    Meeting Address for Test Drives
+                    Meeting Address for Car Viewing
                   </Label>
                   <Textarea
                     id={`address-${index}`}

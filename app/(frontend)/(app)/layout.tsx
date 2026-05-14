@@ -420,6 +420,11 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                   {getNotificationIcon(notification.icon)}
                 </div>
                 <div className="flex-1 min-w-0">
+                  {notification.sender?.full_name && (
+                    <p className="text-xs font-medium text-blue-600 mb-0.5">
+                      {notification.sender.full_name}
+                    </p>
+                  )}
                   <p className={`text-sm leading-relaxed ${!notification.read ? "text-slate-900 font-medium" : "text-slate-700"}`}>
                     {notification.content}
                   </p>

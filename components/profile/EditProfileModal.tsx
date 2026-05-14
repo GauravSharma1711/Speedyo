@@ -7,63 +7,11 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/TextArea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
-import { X, Upload, Loader2, User as UserIcon } from "lucide-react";
+import { X, Loader2, User as UserIcon, Crop } from "lucide-react";
 
 import { useProfileUpdateStore } from "@/store/profile/profileUpdate";
 import { useSession } from "next-auth/react";
-
-const convertImageToWebP = (
-  file: File,
-): Promise<{
-  file: File;
-  originalSize: number;
-  webpSize: number;
-  compressionRatio: string;
-}> => {
-  return new Promise((resolve, reject) => {
-    const originalSize = file.size;
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return reject(new Error("Failed to convert image to WebP"));
-
-            const webpFile = new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
-              type: "image/webp",
-            });
-
-            const compressionRatio = ((1 - blob.size / originalSize) * 100).toFixed(1);
-
-            resolve({
-              file: webpFile,
-              originalSize,
-              webpSize: blob.size,
-              compressionRatio,
-            });
-          },
-          "image/webp",
-          0.85,
-        );
-      };
-
-      img.onerror = reject;
-      img.src = e.target?.result as string;
-    };
-
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
+import ImageCropper from "@/components/ui/ImageCropper";
 
 type EditProfileModalProps = {
   user: {
@@ -90,6 +38,8 @@ export default function EditProfileModal({ user, onClose, onSave }: EditProfileM
   const [isUploading, setIsUploading] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>(user.profile_image || "");
+  const [showCropper, setShowCropper] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState<string>("");
 
   const initial = useMemo(() => {
     return {
@@ -127,21 +77,27 @@ export default function EditProfileModal({ user, onClose, onSave }: EditProfileM
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    try {
-      const { file: webpFile } = await convertImageToWebP(file);
-      setSelectedImageFile(webpFile);
+    // Show cropper with raw image
+    const url = URL.createObjectURL(file);
+    setRawImageSrc(url);
+    setShowCropper(true);
+    e.target.value = "";
+  };
 
-      const url = URL.createObjectURL(webpFile);
-      setPreviewUrl(url);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      console.error("Profile image conversion failed", err);
-      alert(`Failed to process image: ${message}`);
-    } finally {
-      setIsUploading(false);
-      e.target.value = "";
-    }
+  const handleCropComplete = (croppedFile: File) => {
+    setIsUploading(true);
+    setShowCropper(false);
+    setSelectedImageFile(croppedFile);
+    const url = URL.createObjectURL(croppedFile);
+    setPreviewUrl(url);
+    setIsUploading(false);
+    URL.revokeObjectURL(rawImageSrc);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    URL.revokeObjectURL(rawImageSrc);
+    setRawImageSrc("");
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -184,6 +140,17 @@ export default function EditProfileModal({ user, onClose, onSave }: EditProfileM
     }
   };
 
+  if (showCropper && rawImageSrc) {
+    return (
+      <ImageCropper
+        imageSrc={rawImageSrc}
+        onCrop={handleCropComplete}
+        onCancel={handleCropCancel}
+        aspectRatio={1}
+      />
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -223,16 +190,21 @@ export default function EditProfileModal({ user, onClose, onSave }: EditProfileM
                       {isUploading || isSaving ? <Loader2 className="animate-spin" /> : <UserIcon />}
                     </AvatarFallback>
                   </Avatar>
-
+                </div>
+                <div className="flex-1 space-y-1">
+                  <p className="font-semibold text-slate-800">Profile Picture</p>
+                  <p className="text-sm text-slate-500">
+                    Upload a new photo. It will be converted to WebP and saved.
+                  </p>
                   <Button
-                    size="icon"
-                    variant="secondary"
+                    size="sm"
+                    variant="outline"
                     asChild
-                    className="absolute bottom-0 right-0 rounded-full cursor-pointer"
                     disabled={isUploading || isSaving}
                   >
-                    <label htmlFor="profile-image-upload">
-                      <Upload className="w-4 h-4" />
+                    <label htmlFor="profile-image-upload" className="cursor-pointer">
+                      <Crop className="w-4 h-4 mr-2" />
+                      {previewUrl ? "Change Photo" : "Upload Photo"}
                       <input
                         id="profile-image-upload"
                         type="file"
@@ -243,13 +215,6 @@ export default function EditProfileModal({ user, onClose, onSave }: EditProfileM
                       />
                     </label>
                   </Button>
-                </div>
-
-                <div className="flex-1 space-y-1">
-                  <p className="font-semibold text-slate-800">Profile Picture</p>
-                  <p className="text-sm text-slate-500">
-                    Upload a new photo. It will be converted to WebP and saved.
-                  </p>
                 </div>
               </div>
 

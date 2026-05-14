@@ -456,7 +456,7 @@ const handleGetStarted = () => {
                         </li>
                         <li className="flex items-start gap-3">
                           <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-400" />
-                          <span>Buyer negotiations & test drives</span>
+                          <span>Buyer negotiations & car viewing</span>
                         </li>
                         <li className="flex items-start gap-3">
                           <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-emerald-400" />
@@ -729,7 +729,7 @@ const handleGetStarted = () => {
                           <CheckCircle className="w-4 h-4 text-emerald-600" />
                         </div>
                         <div>
-                          <span className="text-slate-700 font-medium">Test drive coordination</span>
+                          <span className="text-slate-700 font-medium">Car Viewing coordination</span>
                           <p className="text-xs text-slate-500 mt-0.5">Safe, organized viewings with qualified buyers</p>
                         </div>
                       </li>

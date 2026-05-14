@@ -28,7 +28,7 @@ export default function QuickActions({
           }`}
         >
           <Calendar className="w-4 h-4 mr-2" />
-          {isTestDriveAvailable ? "Request Test Drive" : "No Slots Available"}
+          {isTestDriveAvailable ? "Request Car Viewing" : "No Slots Available"}
         </Button>
 
         <Button

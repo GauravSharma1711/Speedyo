@@ -1086,6 +1086,7 @@ enum NotificationType {
   dealership_declined
   new_post
   new_vehicle_listing
+  admin_message
 }
 
 enum OISTVehicleCondition {

@@ -351,7 +351,7 @@ export default function DowngradeToGuestModal({
                       <TrendingUp className="w-5 h-5 text-red-600 mt-0.5" />
                     ),
                     title: "Seller Dashboard & Analytics",
-                    desc: "No access to sales insights, performance metrics, or test drive management for direct listings",
+                    desc: "No access to sales insights, performance metrics, or car viewing management for direct listings",
                   },
                 ].map(({ icon, title, desc }) => (
                   <div
@@ -377,7 +377,7 @@ export default function DowngradeToGuestModal({
                 {[
                   "Browse all vehicle listings",
                   "Message sellers directly",
-                  "Request test drives",
+                  "Request car viewing",
                   "Save favorite vehicles",
                   "Participate in the community feed",
                   "Manage your Managed Sales listings",

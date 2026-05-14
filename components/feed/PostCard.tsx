@@ -462,7 +462,7 @@ export default function PostCard({
                   onReact={() => {}}
                   currentUser={currentUser as any}
                   compact={true}
-                  showCount={false}
+                  showCount={true}
                   totalReactions={totalReactions}
                 />
               ) : (

@@ -96,11 +96,11 @@ export default function Footer() {
                     Warranty
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link href="/oist-portal" className="hover:text-white">
                     OIST Portal
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <button
                     onClick={() => setShowFeedbackModal(true)}

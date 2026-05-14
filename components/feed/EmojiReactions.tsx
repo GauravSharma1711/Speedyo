@@ -7,8 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 type ReactionType = "like" | "love" | "laugh" | "wow" | "fire" | "angry";
 
-type UserReaction = { user_email: string; reaction: ReactionType };
-
 type EmojiMap = Record<
   ReactionType,
   {
@@ -150,28 +148,54 @@ export default function EmojiReactions({
 
     if (activeReactions.length === 0) return null;
 
+    const MAX_VISIBLE_REACTIONS = 5;
+    const visibleReactions = activeReactions.slice(0, MAX_VISIBLE_REACTIONS);
+    const hiddenCount = activeReactions.length - MAX_VISIBLE_REACTIONS;
+
     return (
-      <div className="flex items-center gap-2 flex-wrap">
-        {activeReactions.map(({ type, count }) => {
-          const reactionType = type as ReactionType;
-          const emojiConfig = emojiMap[reactionType];
-          const { icon: Icon, bgColor, iconColor } = emojiConfig;
+      <div className="flex items-center">
+        {/* Stacked reactions - Instagram style overlapping */}
+        <div className="flex items-center">
+          {visibleReactions.map((reaction, index) => {
+            const reactionType = reaction.type as ReactionType;
+            const emojiConfig = emojiMap[reactionType];
+            const { icon: Icon, bgColor, iconColor } = emojiConfig;
 
-          return (
-            <div key={type} className="flex items-center gap-1">
+            return (
               <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center ${bgColor} border-2 border-white shadow-sm`}
+                key={reaction.type}
+                className="relative"
+                style={{ marginLeft: index === 0 ? 0 : "-10px", zIndex: visibleReactions.length - index }}
               >
-                <Icon className={`w-3 h-3 ${iconColor}`} />
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${bgColor} border-2 border-white shadow-sm`}
+                >
+                  <Icon className={`w-4 h-4 ${iconColor}`} />
+                </div>
+                {index === visibleReactions.length - 1 && reaction.count > 1 && (
+                  <span className="absolute -top-2 -right-2 bg-slate-600 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow-sm">
+                    {reaction.count > 999 ? `${(reaction.count / 1000).toFixed(1)}k` : reaction.count}
+                  </span>
+                )}
               </div>
-              <span className="text-sm text-slate-600 font-medium">{count}</span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
-        {showCount && totalReactions > 0 ? (
-          <span className="text-sm text-slate-600 font-medium">{totalReactions}</span>
-        ) : null}
+        {/* Extra reactions indicator */}
+        {hiddenCount > 0 && (
+          <div
+            className="relative flex items-center justify-center min-w-[28px] h-6 rounded-full bg-slate-200 border-2 border-white shadow-sm ml-[-8px]"
+            style={{ zIndex: 0 }}
+          >
+            <span className="text-xs font-bold text-slate-600">+{hiddenCount}</span>
+          </div>
+        )}
+
+        {/* Total count */}
+        {showCount && totalReactions > 0 && (
+          <span className="ml-2 text-sm text-slate-600 font-medium">{totalReactions}</span>
+        )}
       </div>
     );
   }

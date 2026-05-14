@@ -1,7 +1,12 @@
-import React from "react";
-import OISTPortal from "@/components/oist/OISTPortal";
+
+// import React from "react";
+// import OISTPortal from "@/components/oist/OISTPortal";
+
+// export default function Page() {
+//   return <OISTPortal />;
+// }
 
 export default function Page() {
-  return <OISTPortal />;
+  return null;
 }
 

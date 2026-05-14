@@ -50,7 +50,7 @@ export default function OISTSellCar({ onBack }: OISTSellCarProps) {
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <p className="text-slate-700">Buyer screening and test drive coordination</p>
+                <p className="text-slate-700">Buyer screening and car viewing coordination</p>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />

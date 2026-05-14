@@ -138,7 +138,7 @@ const guestPlan: Plan = {
   features: [
     "Browse all vehicle listings",
     "Message sellers directly",
-    "Request test drives",
+    "Request car viewing",
     "Save favorite vehicles",
     "Access to managed sales service",
   ],

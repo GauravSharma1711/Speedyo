@@ -201,7 +201,7 @@ export default function Messages() {
     try {
       await sendMessage({
         recipientId: currentConversation?.other_user?.id ?? "",
-        content: `Test drive request for "${testDriveData.vehicleTitle}": ${testDriveData.preferred_date} at ${testDriveData.preferred_time}`,
+        content: `Car Viewing request for "${testDriveData.vehicleTitle}": ${testDriveData.preferred_date} at ${testDriveData.preferred_time}`,
         vehicleId: testDriveData.vehicleId ?? currentConversation?.vehicleId,
         managedSaleRequestId: currentConversation?.managedSaleRequestId ?? null,
         message_type: "test_drive_request",
@@ -216,10 +216,10 @@ export default function Messages() {
       });
 
       setShowTestDriveModal(false);
-      toast({ title: "Test Drive Requested", description: "Your request has been sent." });
+      toast({ title: "Car Viewing Requested", description: "Your request has been sent." });
     } catch {
       toast({
-        title: "Failed to Request Test Drive",
+        title: "Failed to Request Car Viewing",
         description: "Please try again.",
         variant: "destructive",
       });
@@ -234,12 +234,12 @@ export default function Messages() {
         message.test_drive_details;
       await sendMessage({
         recipientId: message.senderId,
-        content: `✅ Test Drive Approved!\n\nDate: ${preferred_date ? format(new Date(preferred_date), "MMM d, yyyy") : "TBD"}\nTime: ${preferred_time}\nLocation: ${location}`,
+        content: `✅ Car Viewing Approved!\n\nDate: ${preferred_date ? format(new Date(preferred_date), "MMM d, yyyy") : "TBD"}\nTime: ${preferred_time}\nLocation: ${location}`,
         vehicleId: message.vehicleId ?? null,
         managedSaleRequestId: message.managedSaleRequestId ?? null,
         message_type: "test_drive_status_update",
       });
-      toast({ title: "Test Drive Approved", description: `Approved for ${vehicleTitle}.` });
+      toast({ title: "Car Viewing Approved", description: `Approved for ${vehicleTitle}.` });
     } catch {
       toast({ title: "Failed to Approve", description: "Please try again.", variant: "destructive" });
     }
@@ -251,12 +251,12 @@ export default function Messages() {
     try {
       await sendMessage({
         recipientId: message.senderId,
-        content: "❌ Test Drive Request Declined\n\nWe're unable to accommodate this request at this time.",
+        content: "❌ Car Viewing Request Declined\n\nWe're unable to accommodate this request at this time.",
         vehicleId: message.vehicleId ?? null,
         managedSaleRequestId: message.managedSaleRequestId ?? null,
         message_type: "test_drive_status_update",
       });
-      toast({ title: "Test Drive Declined", description: `Declined for ${message.test_drive_details.vehicleTitle}.` });
+      toast({ title: "Car Viewing Declined", description: `Declined for ${message.test_drive_details.vehicleTitle}.` });
     } catch {
       toast({ title: "Failed to Decline", description: "Please try again.", variant: "destructive" });
     }
@@ -267,7 +267,7 @@ export default function Messages() {
       setShowTestDriveModal(true);
     } else {
       toast({
-        title: "Cannot Request Test Drive",
+        title: "Cannot Request Car Viewing",
         description: "No vehicle associated with this conversation.",
         variant: "destructive",
       });

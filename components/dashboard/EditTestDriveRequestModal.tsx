@@ -33,7 +33,7 @@ export default function EditTestDriveRequestModal({ isOpen, request, onClose, on
 
     const handleSave = async () => {
         if (!details.location) {
-            alert("Please specify a location for the test drive.");
+            alert("Please specify a location for the car viewing.");
             return;
         }
         setIsSaving(true);
@@ -67,11 +67,11 @@ export default function EditTestDriveRequestModal({ isOpen, request, onClose, on
 
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                         <Calendar className="w-6 h-6 text-blue-600" />
-                        Update Test Drive Details
+                        Update Car Viewing Details
                     </h2>
                     
                     <p className="text-sm text-slate-600 mb-6">
-                        Confirm or update the details for the test drive request. A location is required to proceed.
+                        Confirm or update the details for the car viewing request. A location is required to proceed.
                     </p>
 
                     <div className="space-y-4">

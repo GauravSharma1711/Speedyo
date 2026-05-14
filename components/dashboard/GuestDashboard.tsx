@@ -293,7 +293,7 @@ export default function GuestDashboard({ user }: { user: any }) {
   };
 
   const handleCancelTestDriveRequest = async (messageId: string) => {
-    if (window.confirm("Are you sure you want to cancel this test drive request?")) {
+    if (window.confirm("Are you sure you want to cancel this car viewing request?")) {
         try {
             const messageToUpdate = sentTestDrives.find((msg: any) => msg.id === messageId);
             if (messageToUpdate && messageToUpdate.test_drive_details) {
@@ -302,8 +302,8 @@ export default function GuestDashboard({ user }: { user: any }) {
 
                 await axios.post("/api/user/messages", {
                     recipientId: messageToUpdate.recipient_id || messageToUpdate.recipientId,
-                    content: `The test drive request for ${format(new Date(updatedDetails.preferred_date || Date.now()), 'MMM d, yyyy')} has been cancelled by the buyer.`,
-                    message_type: 'confirmation_test_drive',
+                    content: `The car viewing request for ${format(new Date(updatedDetails.preferred_date || Date.now()), 'MMM d, yyyy')} has been cancelled by the buyer.`,
+                    message_type: 'confirmation_car_viewing',
                     vehicleId: messageToUpdate.vehicle_id || messageToUpdate.vehicleId,
                 });
 
@@ -317,7 +317,7 @@ export default function GuestDashboard({ user }: { user: any }) {
                       recipient_id: admin.user_id as string, // Use user_id from PublicUser
                       sender_id: user.id,
                       type: "test_drive_cancellation",
-                      content: `${user.full_name} cancelled their test drive request for "${vehicle?.title}" scheduled for ${format(new Date(updatedDetails.preferred_date || Date.now()), 'MMM d, yyyy')}`,
+                      content: `${user.full_name} cancelled their car viewing request for "${vehicle?.title}" scheduled for ${format(new Date(updatedDetails.preferred_date || Date.now()), 'MMM d, yyyy')}`,
                       related_entity_type: "Message",
                       related_entity_id: messageId,
                       url: "/Admin-Panel",
@@ -562,7 +562,7 @@ export default function GuestDashboard({ user }: { user: any }) {
           />
           <StatCard
             icon={Calendar}
-            title="Test Drives"
+            title="Car Viewing"
             value={sentTestDrives.length}
             subtitle="Requested"
             color="purple"
@@ -605,14 +605,14 @@ export default function GuestDashboard({ user }: { user: any }) {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-purple-500" />
-                    My Test Drive Requests
+                    My Car Viewing Requests
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {sentTestDrives.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
                       <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                      <p>You haven't requested any test drives yet.</p>
+                      <p>You haven't requested any car viewing yet.</p>
                       <p className="text-sm">Browse the marketplace to find your next car.</p>
                     </div>
                   ) : (
@@ -680,7 +680,7 @@ export default function GuestDashboard({ user }: { user: any }) {
                         try {
                           const parsed = JSON.parse(message.content);
                           if (parsed.vehicle_title) {
-                            displayContent = `Test drive request for ${parsed.vehicle_title}`;
+                            displayContent = `Car Viewing request for ${parsed.vehicle_title}`;
                           }
                         } catch {
                           // Not JSON, use as-is

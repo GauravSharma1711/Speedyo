@@ -165,7 +165,7 @@ useEffect(() => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-500" />
-            Edit Test Drive Details
+            Edit Car Viewing Details
           </DialogTitle>
         </DialogHeader>
 
@@ -294,7 +294,7 @@ useEffect(() => {
                 <Textarea
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="Add internal notes about this test drive..."
+                  placeholder="Add internal notes about this car viewing..."
                   rows={3}
                 />
               </div>

@@ -1986,7 +1986,7 @@ export default function RequestFormUI(props: Props) {
           <KeyRound className="w-7 h-7 text-blue-600" />
           Access Arrangements
         </h2>
-        <p className="text-slate-600">How can we access the vehicle for photos, inspections, and test drives?</p>
+        <p className="text-slate-600">How can we access the vehicle for photos, inspections, and car viewing?</p>
       </div>
 
       <Card>

@@ -63,7 +63,7 @@ const photoTypes = [
   "Engine Bay",
   "Odometer Reading",
   "VIN / Chassis Plate",
-  "Test Drive Video (Optional)",
+  "Car Viewing Video (Optional)",
 ] as const;
 
 type Rating = "excellent" | "good" | "fair" | "poor";

@@ -87,7 +87,7 @@ const handleSave = async () => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-blue-500" />
-            Test Drive Report
+            Car Viewing Report
           </DialogTitle>
         </DialogHeader>
 
@@ -144,7 +144,7 @@ const handleSave = async () => {
          <Textarea
   value={reportData.speedio_assessment}                           
   onChange={(e) => setReportData((p) => ({ ...p, speedio_assessment: e.target.value }))}
-  placeholder="Your assessment of the test drive..."
+  placeholder="Your assessment of the car viewing..."
   className="h-24"
 />
             </div>
