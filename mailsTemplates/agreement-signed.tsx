@@ -66,7 +66,7 @@ export default function AgreementSignedEmail({
                       <strong>Representative:</strong> ${representative_name}
                     </p>
                     <p style="margin:0 0 10px; font-size:15px; color:#374151;">
-                      <strong>Service Fee:</strong> $${service_fee_amount.toLocaleString()} per vehicle listing
+                      <strong>Service Fee:</strong> ¥${service_fee_amount.toLocaleString()} per vehicle listing
                     </p>
                     <p style="margin:0 0 10px; font-size:15px; color:#374151;">
                       <strong>Signed By:</strong> ${signer_name}

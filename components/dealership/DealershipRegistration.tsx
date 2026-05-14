@@ -76,7 +76,7 @@ type FormDataState = {
   business_city: string;
   business_state: string;
   business_zip: string;
-  tax_id_number: string;
+  dealer_License_Number: string;
   business_license_urls: string[];
 
      dealership_verification_status?: string | null;
@@ -114,7 +114,7 @@ export default function DealershipRegistration() {
     business_city: "",
     business_state: "",
     business_zip: "",
-    tax_id_number: "",
+    dealer_License_Number: "",
     business_license_urls: [],
 
       dealership_verification_status:"",
@@ -139,7 +139,7 @@ if (user?.business_name || user?.dealership_selected_tier) {
     business_city: user.business_city ?? "",
     business_state: user.business_state ?? "",
     business_zip: user.business_zip ?? "",
-    tax_id_number: user.tax_id_number ?? "",
+    dealer_License_Number: user.dealer_License_Number ?? "",
     business_license_urls: user.business_license_urls ?? [],
   } satisfies FormDataState));
 }
@@ -222,7 +222,7 @@ if (user?.business_name || user?.dealership_selected_tier) {
         "business_city",
         "business_state",
         "business_zip",
-        "tax_id_number",
+        "dealer_License_Number",
       ];
       const missing = required.filter((f) => !String(formData[f] ?? "").trim());
       if (missing.length > 0) {
@@ -255,7 +255,7 @@ if (user?.business_name || user?.dealership_selected_tier) {
         business_city: formData.business_city,
         business_state: formData.business_state,
         business_zip: formData.business_zip,
-        tax_id_number: formData.tax_id_number,
+        dealer_License_Number: formData.dealer_License_Number,
         business_license_files: licenseFiles,  
         existing_urls: [],
       });
@@ -450,11 +450,11 @@ if (user?.business_name || user?.dealership_selected_tier) {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="tax_id_number">Tax ID / EIN Number *</Label>
+                  <Label htmlFor="dealer_License_Number">Dealer License Number *</Label>
                   <Input
-                    id="tax_id_number"
-                    value={formData.tax_id_number}
-                    onChange={(e) => handleInputChange("tax_id_number", e.target.value)}
+                    id="dealer_License_Number"
+                    value={formData.dealer_License_Number}
+                    onChange={(e) => handleInputChange("dealer_License_Number", e.target.value)}
                     placeholder="XX-XXXXXXX"
                   />
                 </div>

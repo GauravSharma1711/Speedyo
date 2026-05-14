@@ -74,15 +74,51 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const body: Record<string, unknown> = {};
 
         // Parse all non-file fields
+    // for (const [key, value] of formData.entries()) {
+    //   if (typeof value === "string") {
+    //     try {
+    //       body[key] = JSON.parse(value);
+    //     } catch {
+    //       body[key] = value;
+    //     }
+    //   }
+    // }
+
     for (const [key, value] of formData.entries()) {
-      if (typeof value === "string") {
-        try {
-          body[key] = JSON.parse(value);
-        } catch {
-          body[key] = value;
-        }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (
+      trimmed.startsWith("{") ||
+      trimmed.startsWith("[") ||
+      trimmed === "true" ||
+      trimmed === "false" ||
+      trimmed === "null"
+    ) {
+      try {
+        body[key] = JSON.parse(trimmed);
+      } catch {
+        body[key] = value;
       }
+    } else {
+      body[key] = value; 
     }
+  }
+}
+
+const numericIntFields = ["vehicle_year", "vehicle_mileage", "doors", "seating_capacity"];
+const numericDecimalFields = ["seller_asking_price", "service_fee_amount", "owner_receives_amount", "final_sale_price_for_buyer"];
+
+for (const field of numericIntFields) {
+  if (body[field] !== undefined && body[field] !== "") {
+    body[field] = parseInt(String(body[field]), 10);
+  }
+}
+
+for (const field of numericDecimalFields) {
+  if (body[field] !== undefined && body[field] !== "") {
+    body[field] = parseFloat(String(body[field]));
+  }
+}
 
   // Handle vehicle_images upload
     const imageFiles = formData.getAll("vehicle_images") as File[];

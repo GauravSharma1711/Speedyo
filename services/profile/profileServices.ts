@@ -20,7 +20,7 @@ export type ProfileUser = {
   business_state?: string | null;
   business_zip?: string | null;
   business_license_urls?: string[];
-  tax_id_number?: string | null;
+  dealer_License_Number?: string | null;
   verification_fee_paid?: boolean | null;
   admin_verification_notes?: string | null;
 };

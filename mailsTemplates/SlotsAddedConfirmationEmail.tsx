@@ -73,7 +73,7 @@ export default function SlotsAddedConfirmationEmail({
                       <strong>Additional Slots:</strong> ${quantity}
                     </p>
                     <p style="margin:0 0 6px; font-size:15px; color:#047857;">
-                      <strong>Amount Paid:</strong> $${formattedAmount}
+                      <strong>Amount Paid:</strong> ¥${formattedAmount}
                     </p>
                     ${has_promo ? `
                     <p style="margin:0 0 6px; font-size:15px; color:#047857;">
