@@ -147,7 +147,7 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            <strong>Live Listing:</strong> Your vehicle is actively listed and available for test drives.
+            <strong>Live Listing:</strong> Your vehicle is actively listed and available for car viewing.
             <a 
               href={`/vehicle?id=${request.created_vehicle_id}`}
               className="ml-2 text-green-700 underline hover:text-green-900"
@@ -193,7 +193,7 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
                   {hasActiveListing && (
                     <div className="mt-2 p-2 bg-amber-50 rounded border border-amber-200">
                       <strong className="text-amber-800">Note:</strong> Your vehicle currently has an active listing with potential buyers. 
-                      Cancelling may affect ongoing interest and scheduled test drives.
+                      Cancelling may affect ongoing interest and scheduled Car Viewing.
                     </div>
                   )}
                 </AlertDialogDescription>

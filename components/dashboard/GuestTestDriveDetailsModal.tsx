@@ -73,7 +73,7 @@ export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveM
                     <Card className="bg-white/95 backdrop-blur-md">
                         <CardHeader className="flex flex-row items-start justify-between">
                             <div>
-                                <CardTitle>Test Drive Request Details</CardTitle>
+                                <CardTitle>Car Viewing Request Details</CardTitle>
                                 <CardDescription>Your request sent to the seller</CardDescription>
                             </div>
                             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -99,7 +99,7 @@ export default function GuestTestDriveDetailsModal({ isOpen, onClose, testDriveM
                                     )}
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="font-semibold text-slate-800">{vehicleInfo.title || 'Test Drive Request'}</h4>
+                                    <h4 className="font-semibold text-slate-800">{vehicleInfo.title || 'Car Viewing Request'}</h4>
                                     <p className="text-lg font-bold text-blue-600">${vehicleInfo.price?.toLocaleString() || 'N/A'}</p>
                                     <p className="text-sm text-slate-500">{vehicleInfo.year || ''} {vehicleInfo.make || ''} {vehicleInfo.model || ''}</p>
                                 </div>

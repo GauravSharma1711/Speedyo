@@ -44,10 +44,10 @@ export default function SellerTestDriveReportViewModal({ isOpen, onClose, activi
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <FileText className="w-6 h-6 text-blue-600" />
-            Test Drive Activity Report
+            Car Viewing Activity Report
           </DialogTitle>
           <DialogDescription>
-            A summary of the completed test drive for your vehicle, "{vehicle?.title}".
+            A summary of the completed car viewing for your vehicle, "{vehicle?.title}".
           </DialogDescription>
         </DialogHeader>
 
@@ -77,7 +77,7 @@ export default function SellerTestDriveReportViewModal({ isOpen, onClose, activi
           {/* Test Drive Details */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><Calendar className="w-5 h-5"/> Test Drive Details</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2"><Calendar className="w-5 h-5"/> Car Viewing Details</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4 text-sm">
               <div>

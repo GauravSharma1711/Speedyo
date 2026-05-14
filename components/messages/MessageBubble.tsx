@@ -76,14 +76,14 @@ export default function MessageBubble({
 
       case "test_drive_request": {
         const details = message.test_drive_details;
-        if (!details) return "Test drive request details are missing.";
+        if (!details) return "Car Viewing request details are missing.";
 
         return (
           <Card className="bg-white/80 border-slate-200/80">
             <CardContent className="p-4 space-y-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-semibold text-slate-800">Test Drive Request</p>
+                  <p className="font-semibold text-slate-800">Car Viewing  Request</p>
                   <p className="text-sm text-slate-600">For: {relatedVehicle?.title || "Vehicle"}</p>
                 </div>
                 <TestDriveStatusBadge status={details.status} />
@@ -98,7 +98,7 @@ export default function MessageBubble({
                 <p>
                   <strong>Location:</strong> {details.location}
                 </p>
-                {message.content && !message.content.startsWith("Test drive request for") && (
+                {message.content && !message.content.startsWith("Car Viewing request for") && (
                   <p className="pt-2 border-t border-slate-200/50 text-sm text-slate-600 italic">
                     {message.content}
                   </p>

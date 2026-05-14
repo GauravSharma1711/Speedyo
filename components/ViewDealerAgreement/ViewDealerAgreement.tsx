@@ -192,7 +192,7 @@ export default function ViewDealershipAgreementUI() {
                       <span className="text-slate-600">Service Scope:</span>
                       <ul className="list-disc list-inside ml-4 mt-2 space-y-1 text-slate-700">
                         <li>Professional vehicle listing and photography</li>
-                        <li>Test drive coordination and scheduling</li>
+                        <li>Car Viewing coordination and scheduling</li>
                         <li>Buyer qualification and communication</li>
                         <li>Sales process management</li>
                         <li>Platform visibility and marketing</li>

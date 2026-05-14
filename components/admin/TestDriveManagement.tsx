@@ -106,7 +106,7 @@ export default function TestDriveManagementUI() {
         <div className="p-6 border-b">
           <div className="flex items-center gap-2 text-lg font-semibold text-slate-800">
             <Calendar className="w-5 h-5 text-purple-500" />
-            Test Drive Management
+            Car Viewing Management
             <Badge variant="outline" className="ml-2">
               {getActiveCount(testDrives)} Active
             </Badge>
@@ -220,7 +220,7 @@ export default function TestDriveManagementUI() {
             {!isLoading && filtered.length === 0 && (
               <div className="text-center py-8 text-slate-500">
                 <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                <p>No test drives found</p>
+                <p>No car viewings found</p>
               </div>
             )}
           </div>}
@@ -253,7 +253,7 @@ export default function TestDriveManagementUI() {
               location: updated.location,  
           });
           await getAll();
-          toast({ title: "Saved", description: "Test drive updated." });
+          toast({ title: "Saved", description: "Car Viewing updated." });
           closeAll();
         }}
       />

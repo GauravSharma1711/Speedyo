@@ -81,16 +81,15 @@ import { useUserStore } from "@/store/admin/user";
 import type { User } from "@/store/admin/user";
 import { toast } from "sonner";
 import { notificationService } from "@/services/dashboard";
+import { messagesService } from "@/services/messages/messageServices";
 
 
 
 
 
 export default function UserManagementUI() {
-
-
   const { users, isLoading, error, getAll, update } = useUserStore();
-useEffect(() => { getAll(); }, []);
+  useEffect(() => { getAll(); }, []);
 
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -110,6 +109,11 @@ useEffect(() => { getAll(); }, []);
   const [newUserType, setNewUserType] = useState<UserType>("guest");
   const [newVerificationStatus, setNewVerificationStatus] =
     useState<VerificationStatus>("not_submitted");
+
+  const [showSendMessageModal, setShowSendMessageModal] = useState(false);
+  const [messageRecipient, setMessageRecipient] = useState<User | null>(null);
+  const [messageContent, setMessageContent] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
 
 
@@ -132,6 +136,52 @@ useEffect(() => { getAll(); }, []);
     setNewUserType(user.user_type as UserType);
     setNewVerificationStatus(user.dealership_verification_status as VerificationStatus);
     setShowEditStatusModal(true);
+  };
+
+  const handleOpenSendMessage = (user: User) => {
+    setMessageRecipient(user);
+    setMessageContent("");
+    setShowSendMessageModal(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageRecipient || !messageContent.trim()) return;
+
+    setIsSendingMessage(true);
+    try {
+      const { conversations } = await messagesService.getConversations();
+      const existingConv = conversations.find(c => c.other_user?.id === messageRecipient.id);
+
+      let conversationId: string;
+      if (existingConv) {
+        conversationId = existingConv.id;
+      } else {
+        const newConv = await messagesService.createConversation(messageRecipient.id);
+        conversationId = newConv.conversation.id;
+      }
+
+      await messagesService.sendMessage({
+        recipientId: messageRecipient.id,
+        content: messageContent.trim(),
+      });
+
+      await notificationService.create({
+        recipientId: messageRecipient.id,
+        type: "admin_message",
+        content: `New message from Speedyo`,
+        url: "/Messages",
+        icon: "MessageSquare"
+      });
+
+      toast.success("Message sent", { description: `Message sent to ${messageRecipient.full_name || messageRecipient.email}` });
+      setShowSendMessageModal(false);
+      setMessageRecipient(null);
+      setMessageContent("");
+    } catch {
+      toast.error("Failed to send message");
+    } finally {
+      setIsSendingMessage(false);
+    }
   };
 
   const handleSaveUserStatus = async () => {
@@ -462,7 +512,7 @@ useEffect(() => { getAll(); }, []);
                         Edit Status
                       </DropdownMenuItem>
 
-                      <DropdownMenuItem disabled>
+                      <DropdownMenuItem onClick={() => handleOpenSendMessage(user)}>
                         <MessageSquare className="mr-2 h-4 w-4" />
                         Send Message
                       </DropdownMenuItem>
@@ -559,6 +609,45 @@ useEffect(() => { getAll(); }, []);
             </Button>
             <Button variant="destructive" onClick={handleDeclineDealership}>
               Confirm Decline
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Message Modal */}
+      <Dialog open={showSendMessageModal} onOpenChange={setShowSendMessageModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Message to User</DialogTitle>
+            <DialogDescription>
+              Send a notification to {messageRecipient?.full_name || messageRecipient?.email}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="message-content">Message</Label>
+              <Textarea
+                id="message-content"
+                placeholder="Type your message here..."
+                value={messageContent}
+                onChange={(e) => setMessageContent(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowSendMessageModal(false)} disabled={isSendingMessage}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendMessage} disabled={!messageContent.trim() || isSendingMessage}>
+              {isSendingMessage ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <MessageSquare className="w-4 h-4 mr-2" />
+              )}
+              {isSendingMessage ? "Sending..." : "Send Message"}
             </Button>
           </DialogFooter>
         </DialogContent>

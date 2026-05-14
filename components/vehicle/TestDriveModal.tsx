@@ -57,7 +57,7 @@ export default function TestDriveModal({ vehicle, onClose, onSubmit }: { vehicle
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-500" />
-              Request Test Drive
+              Request Car Viewing
             </CardTitle>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="w-5 h-5" />

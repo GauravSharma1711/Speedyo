@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDashboardStore } from "@/store/dashboard";
@@ -9,10 +9,33 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import {
-  Car, Plus, Eye, MessageCircle, TrendingUp, DollarSign, Calendar, Settings,
-  Edit, Trash2, ArrowUp, ArrowDown, Handshake, Clock, CheckCircle, XCircle,
-  ExternalLink, Users, CalendarCheck, User as UserIcon, Phone, X, Shield,
-  ClipboardCheck, MessageSquare, AlertCircle, AlertTriangle,
+  Car,
+  Plus,
+  Eye,
+  MessageCircle,
+  TrendingUp,
+  DollarSign,
+  Calendar,
+  Settings,
+  Edit,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Handshake,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  Users,
+  CalendarCheck,
+  User as UserIcon,
+  Phone,
+  X,
+  Shield,
+  ClipboardCheck,
+  MessageSquare,
+  AlertCircle,
+  AlertTriangle,
   MoreHorizontal,
   FileText,
   MapPin,
@@ -20,7 +43,7 @@ import {
   JapaneseYenIcon,
 } from "lucide-react";
 
-import { useSession } from 'next-auth/react';
+import { useSession } from "next-auth/react";
 
 import CreateVehicleModalUI from "./CreateVehicleModalUI";
 import VehicleAnalytics from "./VehicleAnalytics";
@@ -30,7 +53,7 @@ import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { AnimatePresence, motion } from "framer-motion";
 import VehicleEditRequestModal from "./VehicleEditRequestModal";
 import TestDriveAvailabilityManager from "./TestDriveAvailabilityManager";
-import EditTestDriveRequestModal from './EditTestDriveRequestModal';
+import EditTestDriveRequestModal from "./EditTestDriveRequestModal";
 import SellerTestDriveReportViewModal from "./SellerTestDriveReportViewModal";
 import {
   Tooltip,
@@ -53,9 +76,21 @@ import NotificationSettings from "./NotificationSettings";
 import TransferProgressTracker from "./TransferProgressTracker";
 import { usePaymentStore } from "@/store/paymentStore";
 import { useSellerDashboardStore } from "@/store/dashboard";
-import { vehicleService, managedSaleService, messageService, notificationService, publicUserService, userService, vehicleTransferService } from "@/services/dashboard";
+import {
+  vehicleService,
+  managedSaleService,
+  messageService,
+  notificationService,
+  publicUserService,
+  userService,
+  vehicleTransferService,
+} from "@/services/dashboard";
 import type { DashboardUser } from "@/services/dashboard";
-import { sellerPerformanceService, testDriveRequestService, sellerTransferService } from "@/services/seller";
+import {
+  sellerPerformanceService,
+  testDriveRequestService,
+  sellerTransferService,
+} from "@/services/seller";
 
 // Real API implementations
 const Vehicle = {
@@ -111,19 +146,36 @@ type ManagedSaleDetailsModalProps = {
   onCancel: () => void;
 };
 
-
-
-const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel }: ManagedSaleDetailsModalProps) => {
+const ManagedSaleDetailsModal = ({
+  isOpen,
+  request,
+  onClose,
+  onEdit,
+  onCancel,
+}: ManagedSaleDetailsModalProps) => {
   if (!isOpen || !request) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
         <h2 className="text-xl font-bold mb-4">Managed Sale Request Details</h2>
-        <p className="mb-2"><strong>Vehicle:</strong> {request.vehicle_details?.title}</p>
-        <p className="mb-2"><strong>Status:</strong> {request.status}</p>
-        <p className="mb-2"><strong>Price:</strong> ${request.vehicle_details?.seller_asking_price?.toLocaleString()}</p>
-        <p className="mb-4"><strong>Submitted:</strong> {format(new Date(request.createdAt ?? request.created_date ?? 0), 'MMM d, yyyy')}</p>
+        <p className="mb-2">
+          <strong>Vehicle:</strong> {request.vehicle_details?.title}
+        </p>
+        <p className="mb-2">
+          <strong>Status:</strong> {request.status}
+        </p>
+        <p className="mb-2">
+          <strong>Price:</strong> $
+          {request.vehicle_details?.seller_asking_price?.toLocaleString()}
+        </p>
+        <p className="mb-4">
+          <strong>Submitted:</strong>{" "}
+          {format(
+            new Date(request.createdAt ?? request.created_date ?? 0),
+            "MMM d, yyyy",
+          )}
+        </p>
         {request.user_facing_notes && (
           <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-400 mb-4">
             <p className="text-xs text-blue-800">
@@ -132,11 +184,17 @@ const ManagedSaleDetailsModal = ({ isOpen, request, onClose, onEdit, onCancel }:
           </div>
         )}
         <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={onClose}>Close</Button>
-          {request.status !== 'cancelled' && request.status !== 'sold' && (
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          {request.status !== "cancelled" && request.status !== "sold" && (
             <>
-              <Button variant="outline" onClick={onEdit}>Edit</Button>
-              <Button variant="destructive" onClick={onCancel}>Cancel Request</Button>
+              <Button variant="outline" onClick={onEdit}>
+                Edit
+              </Button>
+              <Button variant="destructive" onClick={onCancel}>
+                Cancel Request
+              </Button>
             </>
           )}
         </div>
@@ -158,7 +216,18 @@ type TestDriveDetailsModalProps = {
   user: DashboardUser;
 };
 
-const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline, onComplete, onEdit, getBuyerById, getVehicleById, user }: TestDriveDetailsModalProps) => {
+const TestDriveDetailsModal = ({
+  isOpen,
+  request,
+  onClose,
+  onApprove,
+  onDecline,
+  onComplete,
+  onEdit,
+  getBuyerById,
+  getVehicleById,
+  user,
+}: TestDriveDetailsModalProps) => {
   const router = useRouter();
   if (!isOpen || !request) return null;
 
@@ -166,10 +235,15 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
   const requester = getBuyerById(request.sender_id);
   const testDriveDetails = request.test_drive_details;
 
-  const isLocationMissing = !testDriveDetails?.location || testDriveDetails.location === "N/A" || !testDriveDetails.location.trim();
+  const isLocationMissing =
+    !testDriveDetails?.location ||
+    testDriveDetails.location === "N/A" ||
+    !testDriveDetails.location.trim();
 
   const handleMessageBuyer = () => {
-    router.push(`/Messages?recipientId=${requester.user_id}&vehicleId=${vehicle.id}`);
+    router.push(
+      `/Messages?recipientId=${requester.user_id}&vehicleId=${vehicle.id}`,
+    );
     onClose();
   };
 
@@ -189,11 +263,16 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
         className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full relative max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <Button variant="ghost" size="icon" className="absolute top-3 right-3" onClick={onClose}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-3 right-3"
+          onClick={onClose}
+        >
           <X className="w-5 h-5" />
         </Button>
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-blue-700">
-          <CalendarCheck className="w-6 h-6" /> Test Drive Request
+          <CalendarCheck className="w-6 h-6" /> Car Viewing Request
         </h2>
 
         <div className="space-y-4">
@@ -202,40 +281,53 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
               <Car className="w-5 h-5 text-slate-600" /> Vehicle Details
             </h3>
             {vehicle.primary_image && (
-              <img src={vehicle.primary_image} alt={vehicle.title} className="w-full h-32 object-cover rounded-md mb-2" />
+              <img
+                src={vehicle.primary_image}
+                alt={vehicle.title}
+                className="w-full h-32 object-cover rounded-md mb-2"
+              />
             )}
-            <p className="text-md font-medium text-slate-800">{vehicle?.title || 'N/A'}</p>
+            <p className="text-md font-medium text-slate-800">
+              {vehicle?.title || "N/A"}
+            </p>
             <p className="text-sm text-slate-600">
-              <strong>Price:</strong> ${vehicle?.price?.toLocaleString() || 'N/A'}
+              <strong>Price:</strong> $
+              {vehicle?.price?.toLocaleString() || "N/A"}
             </p>
             <button
-  onClick={() =>window.open(`/vehicle?id=${vehicle?.id}`, "_blank")}
-  className="text-blue-600 hover:underline text-sm flex items-center gap-1 mt-2">
-  View Listing
-  <ExternalLink className="w-4 h-4" />
-</button>
+              onClick={() =>
+                window.open(`/vehicle?id=${vehicle?.id}`, "_blank")
+              }
+              className="text-blue-600 hover:underline text-sm flex items-center gap-1 mt-2"
+            >
+              View Listing
+              <ExternalLink className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
             <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
               <UserIcon className="w-5 h-5 text-slate-600" /> Requester
             </h3>
-            <p className="text-md font-medium text-slate-800">{requester.full_name || 'Unknown User'}</p>
+            <p className="text-md font-medium text-slate-800">
+              {requester.full_name || "Unknown User"}
+            </p>
             <p className="text-sm text-slate-600 flex items-center gap-1">
-              <MessageCircle className="w-4 h-4" /> {requester.email || 'N/A'}
+              <MessageCircle className="w-4 h-4" /> {requester.email || "N/A"}
             </p>
             {requester.phone && (
               <p className="text-sm text-slate-600 flex items-center gap-1">
                 <Phone className="w-4 h-4" /> {requester.phone}
               </p>
             )}
-          <button
-  onClick={() =>
-    window.open(  `/profile?userId=${requester.user_id}`,  "_blank" )}
-  className="text-blue-600 hover:underline text-sm flex items-center gap-1 mt-2"
->
-  View Profile
-</button>
+            <button
+              onClick={() =>
+                window.open(`/profile?userId=${requester.user_id}`, "_blank")
+              }
+              className="text-blue-600 hover:underline text-sm flex items-center gap-1 mt-2"
+            >
+              View Profile
+            </button>
           </div>
 
           <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
@@ -244,34 +336,52 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
             </h3>
             <div className="space-y-2">
               <p className="text-sm text-slate-700">
-                <strong>Requested Date:</strong> {testDriveDetails?.preferred_date ? format(new Date(testDriveDetails.preferred_date), 'EEE, MMM d, yyyy') : 'N/A'}
+                <strong>Requested Date:</strong>{" "}
+                {testDriveDetails?.preferred_date
+                  ? format(
+                      new Date(testDriveDetails.preferred_date),
+                      "EEE, MMM d, yyyy",
+                    )
+                  : "N/A"}
               </p>
               <p className="text-sm text-slate-700">
-                <strong>Requested Time:</strong> {testDriveDetails?.preferred_time || 'N/A'}
+                <strong>Requested Time:</strong>{" "}
+                {testDriveDetails?.preferred_time || "N/A"}
               </p>
               <p className="text-sm text-slate-700">
-                <strong>Location:</strong> {testDriveDetails?.location || 'N/A'}
+                <strong>Location:</strong> {testDriveDetails?.location || "N/A"}
               </p>
               <div className="pt-2">
-                <p className="text-sm font-medium text-slate-700 mb-1">Buyer's Additional Notes:</p>
+                <p className="text-sm font-medium text-slate-700 mb-1">
+                  Buyer's Additional Notes:
+                </p>
                 <div className="bg-white border border-slate-200 rounded-md p-3 min-h-[60px]">
                   {testDriveDetails?.notes ? (
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{testDriveDetails.notes}</p>
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                      {testDriveDetails.notes}
+                    </p>
                   ) : (
-                    <p className="text-sm text-slate-500 italic">No additional notes provided</p>
+                    <p className="text-sm text-slate-500 italic">
+                      No additional notes provided
+                    </p>
                   )}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2 mt-3">
               <strong>Status:</strong>
-              <Badge className={`text-sm capitalize ${
-                request.test_drive_details?.status === 'approved' ? 'bg-green-100 text-green-800' :
-                  request.test_drive_details?.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                    request.test_drive_details?.status === 'declined' ? 'bg-red-100 text-red-800' :
-                      'bg-amber-100 text-amber-800'
-              }`}>
-                {request.test_drive_details?.status || 'pending'}
+              <Badge
+                className={`text-sm capitalize ${
+                  request.test_drive_details?.status === "approved"
+                    ? "bg-green-100 text-green-800"
+                    : request.test_drive_details?.status === "completed"
+                      ? "bg-blue-100 text-blue-800"
+                      : request.test_drive_details?.status === "declined"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-amber-100 text-amber-800"
+                }`}
+              >
+                {request.test_drive_details?.status || "pending"}
               </Badge>
             </div>
           </div>
@@ -280,7 +390,10 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Missing Location:</strong> This test drive request cannot be approved until a meeting location is confirmed. Please message the buyer to confirm details and then edit this request to add the location.
+                <strong>Missing Location:</strong> This car viewing request
+                cannot be approved until a meeting location is confirmed. Please
+                message the buyer to confirm details and then edit this request
+                to add the location.
               </AlertDescription>
             </Alert>
           )}
@@ -288,33 +401,56 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
 
         <div className="mt-6 pt-4 border-t border-slate-200">
           <div className="flex flex-wrap gap-3 justify-end">
-            <Button variant="outline" onClick={handleMessageBuyer} className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              onClick={handleMessageBuyer}
+              className="flex items-center gap-1"
+            >
               <MessageSquare className="w-4 h-4" /> Message Buyer
             </Button>
-            {testDriveDetails?.status === 'pending' && (
+            {testDriveDetails?.status === "pending" && (
               <>
-                <Button onClick={onEdit} className="bg-yellow-500 hover:bg-yellow-600 flex items-center gap-1">
+                <Button
+                  onClick={onEdit}
+                  className="bg-yellow-500 hover:bg-yellow-600 flex items-center gap-1"
+                >
                   <Edit className="w-4 h-4" /> Edit Request
                 </Button>
                 <Button
-                  onClick={() => { onApprove(request.id); onClose(); }}
+                  onClick={() => {
+                    onApprove(request.id);
+                    onClose();
+                  }}
                   className="bg-green-500 hover:bg-green-600 flex items-center gap-1"
                   disabled={isLocationMissing}
-                  title={isLocationMissing ? "A location must be confirmed first" : "Approve this request"}
+                  title={
+                    isLocationMissing
+                      ? "A location must be confirmed first"
+                      : "Approve this request"
+                  }
                 >
                   <CheckCircle className="w-4 h-4" /> Approve
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={() => { onDecline(request.id); onClose(); }}
+                  onClick={() => {
+                    onDecline(request.id);
+                    onClose();
+                  }}
                   className="flex items-center gap-1"
                 >
                   <XCircle className="w-4 h-4" /> Decline
                 </Button>
               </>
             )}
-            {testDriveDetails?.status === 'approved' && (
-              <Button onClick={() => { onComplete(request.id); onClose(); }} className="bg-blue-500 hover:bg-blue-600 flex items-center gap-1">
+            {testDriveDetails?.status === "approved" && (
+              <Button
+                onClick={() => {
+                  onComplete(request.id);
+                  onClose();
+                }}
+                className="bg-blue-500 hover:bg-blue-600 flex items-center gap-1"
+              >
                 <ClipboardCheck className="w-4 h-4" /> Mark as Completed
               </Button>
             )}
@@ -325,28 +461,25 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
   );
 };
 
-
 export default function SellerDashboard() {
   const router = useRouter();
-const { data: session, status, update } = useSession();
-  
+  const { data: session, status, update } = useSession();
+
   const {
-  fetchSlotDetails,
-  slotDetails,
-  isLoadingSlots,
+    fetchSlotDetails,
+    slotDetails,
+    isLoadingSlots,
 
-
-  fetchDealershipSubscription,
-  dealershipSubscriptionDetails,
-  isLoadingdealershipDetails,
-
-
-} = usePaymentStore();
+    fetchDealershipSubscription,
+    dealershipSubscriptionDetails,
+    isLoadingdealershipDetails,
+  } = usePaymentStore();
 
   const [posts, setPosts] = useState<any[]>([]);
 
-
-  const [vehiclePerformance, setVehiclePerformance] = useState<Record<string, any>>({});
+  const [vehiclePerformance, setVehiclePerformance] = useState<
+    Record<string, any>
+  >({});
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
@@ -358,22 +491,31 @@ const { data: session, status, update } = useSession();
     activeListings: 0,
     avgPrice: 0,
     totalInquiries: 0,
-    thisWeekViews: 0
+    thisWeekViews: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingRequest, setViewingRequest] = useState<any | null>(null);
-  const [showTestDriveDetails, setShowTestDriveDetails] = useState<any | null>(null);
+  const [showTestDriveDetails, setShowTestDriveDetails] = useState<any | null>(
+    null,
+  );
   const [viewingActivity, setViewingActivity] = useState<any | null>(null);
-  const [editingTestDriveRequest, setEditingTestDriveRequest] = useState<any | null>(null);
-  const [showVehicleEditRequestModal, setShowVehicleEditRequestModal] = useState<any | null>(null);
-  const [viewingSentTestDrive, setViewingSentTestDrive] = useState<any | null>(null);
+  const [editingTestDriveRequest, setEditingTestDriveRequest] = useState<
+    any | null
+  >(null);
+  const [showVehicleEditRequestModal, setShowVehicleEditRequestModal] =
+    useState<any | null>(null);
+  const [viewingSentTestDrive, setViewingSentTestDrive] = useState<any | null>(
+    null,
+  );
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [showBuyMoreSlotsModal, setShowBuyMoreSlotsModal] = useState(false);
 
   const [selectedTransfer, setSelectedTransfer] = useState<any | null>(null);
 
-  const [availabilityVehicle, setAvailabilityVehicle] = useState<any | null>(null);
+  const [availabilityVehicle, setAvailabilityVehicle] = useState<any | null>(
+    null,
+  );
 
   const { toast } = useToast();
 
@@ -419,12 +561,12 @@ const { data: session, status, update } = useSession();
   }, [user]);
 
   useEffect(() => {
-  const init = async () => {
-    await update();          
-    await loadSellerDashboard(); 
-  };
-  init();
-}, []);
+    const init = async () => {
+      await update();
+      await loadSellerDashboard();
+    };
+    init();
+  }, []);
 
   useEffect(() => {
     const loadPublicUser = async () => {
@@ -441,22 +583,35 @@ const { data: session, status, update } = useSession();
   const isLoading = !!storeLoading;
 
   const getPrivateSellerSlotInfo = () => {
-    if (!user || user.user_type !== 'private_seller') return null;
+    if (!user || user.user_type !== "private_seller") return null;
     const purchased = user.private_seller_slots?.purchased || 0;
     const used = user.private_seller_slots?.used || 0;
     return { purchased, used, remaining: purchased - used };
   };
 
   // Memoize helper functions to prevent useCallback dependency changes
-  const getBuyerById = useCallback((buyerId: string) => {
-    // ✅ FIX: Match against user_id since we're using PublicUser now
-    return buyers.find(buyer => buyer.user_id === buyerId) || { full_name: "Unknown Buyer", email: "unknown", phone: null, user_id: buyerId };
-  }, [buyers]);
+  const getBuyerById = useCallback(
+    (buyerId: string) => {
+      // ✅ FIX: Match against user_id since we're using PublicUser now
+      return (
+        buyers.find((buyer) => buyer.user_id === buyerId) || {
+          full_name: "Unknown Buyer",
+          email: "unknown",
+          phone: null,
+          user_id: buyerId,
+        }
+      );
+    },
+    [buyers],
+  );
 
-  const getVehicleById = useCallback((vehicleId: string | null | undefined) => {
-    if (!vehicleId) return null;
-    return listings.find(vehicle => vehicle.id === vehicleId) || null;
-  }, [listings]);
+  const getVehicleById = useCallback(
+    (vehicleId: string | null | undefined) => {
+      if (!vehicleId) return null;
+      return listings.find((vehicle) => vehicle.id === vehicleId) || null;
+    },
+    [listings],
+  );
 
   // Handlers - all useCallback hooks before early return
   const handleEditVehicle = useCallback((vehicle: any) => {
@@ -464,70 +619,111 @@ const { data: session, status, update } = useSession();
     setShowCreateModal(true);
   }, []);
 
-  const handleDeleteVehicle = useCallback(async (vehicleId: string) => {
-    if (confirm("Are you sure you want to delete this listing?")) {
-      try {
-        await Vehicle.delete(vehicleId);
-        toast({ title: "Listing Deleted", description: "The vehicle listing has been permanently removed.", variant: "success" });
-        loadSellerDashboard();
-      } catch (error) {
-        console.error("Failed to delete vehicle:", error);
-        toast({ title: "Deletion Failed", description: "Could not delete the listing. Please try again.", variant: "destructive" });
+  const handleDeleteVehicle = useCallback(
+    async (vehicleId: string) => {
+      if (confirm("Are you sure you want to delete this listing?")) {
+        try {
+          await Vehicle.delete(vehicleId);
+          toast({
+            title: "Listing Deleted",
+            description: "The vehicle listing has been permanently removed.",
+            variant: "success",
+          });
+          loadSellerDashboard();
+        } catch (error) {
+          console.error("Failed to delete vehicle:", error);
+          toast({
+            title: "Deletion Failed",
+            description: "Could not delete the listing. Please try again.",
+            variant: "destructive",
+          });
+        }
       }
-    }
-  }, [loadSellerDashboard, toast]);
+    },
+    [loadSellerDashboard, toast],
+  );
 
-  const handleMarkAsSold = useCallback(async (vehicleId: string) => {
-    if (window.confirm("Are you sure you want to mark this vehicle as sold? This will remove it from active listings.")) {
+  const handleMarkAsSold = useCallback(
+    async (vehicleId: string) => {
+      if (
+        window.confirm(
+          "Are you sure you want to mark this vehicle as sold? This will remove it from active listings.",
+        )
+      ) {
+        setIsUpdating(vehicleId);
+        try {
+          await Vehicle.update(vehicleId, { status: "sold" });
+          toast({
+            title: "Vehicle Marked as Sold",
+            description:
+              "The listing has been updated and removed from the marketplace.",
+            variant: "success",
+          });
+          await loadSellerDashboard();
+        } catch (error) {
+          console.error("Failed to mark vehicle as sold:", error);
+          toast({
+            title: "Update Failed",
+            description:
+              "Could not mark the vehicle as sold. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsUpdating(null);
+        }
+      }
+    },
+    [loadSellerDashboard, toast],
+  );
+
+  const handleMarkAsUnavailable = useCallback(
+    async (vehicleId: string) => {
+      if (
+        window.confirm(
+          "Mark this vehicle as temporarily unavailable? You can make it available again anytime.",
+        )
+      ) {
+        setIsUpdating(vehicleId);
+        try {
+          await Vehicle.update(vehicleId, { status: "unavailable" });
+          toast({ title: "Vehicle Marked as Unavailable", variant: "success" });
+          await loadSellerDashboard();
+        } catch (error) {
+          console.error("Failed to mark vehicle as unavailable:", error);
+          toast({ title: "Update Failed", variant: "destructive" });
+        } finally {
+          setIsUpdating(null);
+        }
+      }
+    },
+    [loadSellerDashboard, toast],
+  );
+
+  const handleMarkAsAvailable = useCallback(
+    async (vehicleId: string) => {
       setIsUpdating(vehicleId);
       try {
-        await Vehicle.update(vehicleId, { status: 'sold' });
-        toast({ title: "Vehicle Marked as Sold", description: "The listing has been updated and removed from the marketplace.", variant: "success" });
+        await Vehicle.update(vehicleId, { status: "available" });
+        toast({ title: "Vehicle Marked as Available", variant: "success" });
         await loadSellerDashboard();
       } catch (error) {
-        console.error("Failed to mark vehicle as sold:", error);
-        toast({ title: "Update Failed", description: "Could not mark the vehicle as sold. Please try again.", variant: "destructive" });
-      } finally {
-        setIsUpdating(null);
-      }
-    }
-  }, [loadSellerDashboard, toast]);
-
-  const handleMarkAsUnavailable = useCallback(async (vehicleId: string) => {
-    if (window.confirm("Mark this vehicle as temporarily unavailable? You can make it available again anytime.")) {
-      setIsUpdating(vehicleId);
-      try {
-        await Vehicle.update(vehicleId, { status: 'unavailable' });
-        toast({ title: "Vehicle Marked as Unavailable", variant: "success" });
-        await loadSellerDashboard();
-      } catch (error) {
-        console.error("Failed to mark vehicle as unavailable:", error);
+        console.error("Failed to mark vehicle as available:", error);
         toast({ title: "Update Failed", variant: "destructive" });
       } finally {
         setIsUpdating(null);
       }
-    }
-  }, [loadSellerDashboard, toast]);
+    },
+    [loadSellerDashboard, toast],
+  );
 
-  const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
-    setIsUpdating(vehicleId);
-    try {
-      await Vehicle.update(vehicleId, { status: 'available' });
-      toast({ title: "Vehicle Marked as Available", variant: "success" });
-      await loadSellerDashboard();
-    } catch (error) {
-      console.error("Failed to mark vehicle as available:", error);
-      toast({ title: "Update Failed", variant: "destructive" });
-    } finally {
-      setIsUpdating(null);
-    }
-  }, [loadSellerDashboard, toast]);
-
-  const handleViewActivity = useCallback((request: any) => {
-    const vehicle = getVehicleById(request.vehicle_id);
-    const buyer = getBuyerById(request.sender_id);
-    setViewingActivity({ request, vehicle, buyer });
-  }, [getVehicleById, getBuyerById]);
+  const handleViewActivity = useCallback(
+    (request: any) => {
+      const vehicle = getVehicleById(request.vehicle_id);
+      const buyer = getBuyerById(request.sender_id);
+      setViewingActivity({ request, vehicle, buyer });
+    },
+    [getVehicleById, getBuyerById],
+  );
 
   // All hooks defined before any early returns - Rules of Hooks compliant
   if (storeLoading) {
@@ -593,9 +789,13 @@ const { data: session, status, update } = useSession();
     }
   };
 
-  const handleVehicleEditRequestSubmit = async (vehicleId: string, changes: Record<string, any>, notes: string) => {
+  const handleVehicleEditRequestSubmit = async (
+    vehicleId: string,
+    changes: Record<string, any>,
+    notes: string,
+  ) => {
     try {
-      const currentVehicle = listings.find(v => v.id === vehicleId); // Check from user's direct listings
+      const currentVehicle = listings.find((v) => v.id === vehicleId); // Check from user's direct listings
       if (!currentVehicle) {
         throw new Error("Vehicle not found for edit request.");
       }
@@ -604,27 +804,27 @@ const { data: session, status, update } = useSession();
         requested_at: new Date().toISOString(),
         requested_changes: changes,
         notes_from_user: notes,
-        status: 'pending'
+        status: "pending",
       };
 
       const existingEditRequests = currentVehicle.edit_requests || [];
 
       await Vehicle.update(vehicleId, {
-        status: 'edit_requested',
-        edit_requests: [...existingEditRequests, newEditRequest]
+        status: "edit_requested",
+        edit_requests: [...existingEditRequests, newEditRequest],
       });
 
       const admins = await getAdmins();
-      const notificationPromises = admins.map((admin:any) =>
+      const notificationPromises = admins.map((admin: any) =>
         Notification.create({
           recipient_id: admin.id,
           sender_id: user.id,
           type: "vehicle_edit_request",
           content: `User ${user.full_name} requested an edit for their vehicle "${currentVehicle.title}`,
           related_entity_id: vehicleId,
-         url: "/Admin-Panel?tab=vehicles",
-          icon: "Edit"
-        })
+          url: "/Admin-Panel?tab=vehicles",
+          icon: "Edit",
+        }),
       );
       await Promise.all(notificationPromises);
 
@@ -639,7 +839,8 @@ const { data: session, status, update } = useSession();
       console.error("Failed to submit vehicle edit request:", error);
       toast({
         title: "Submission Failed",
-        description: "There was an error submitting your edit request. Please try again.",
+        description:
+          "There was an error submitting your edit request. Please try again.",
         variant: "destructive",
       });
     }
@@ -655,18 +856,30 @@ const { data: session, status, update } = useSession();
     if (!requestToCancel || !requestToCancel.id) {
       toast({
         title: "Error",
-        description: "Invalid managed sale request data. Please refresh and try again.",
-        variant: "destructive"
+        description:
+          "Invalid managed sale request data. Please refresh and try again.",
+        variant: "destructive",
       });
       return;
     }
 
-    if (window.confirm("Are you sure you want to cancel this managed sale request?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to cancel this managed sale request?",
+      )
+    ) {
       try {
-        await managedSaleService.update(requestToCancel.id, { status: 'cancelled' });
-        if (requestToCancel.status === 'listed' && requestToCancel.created_vehicle_id) {
+        await managedSaleService.update(requestToCancel.id, {
+          status: "cancelled",
+        });
+        if (
+          requestToCancel.status === "listed" &&
+          requestToCancel.created_vehicle_id
+        ) {
           // If a vehicle was created, mark it as cancelled too
-          await Vehicle.update(requestToCancel.created_vehicle_id, { status: 'cancelled' });
+          await Vehicle.update(requestToCancel.created_vehicle_id, {
+            status: "cancelled",
+          });
         }
 
         // Send notification to user about cancellation
@@ -677,14 +890,15 @@ const { data: session, status, update } = useSession();
           content: `Your managed sale request for "${requestToCancel.vehicle_details.title}" has been cancelled.`,
           related_entity_id: requestToCancel.id,
           url: "/Dashboard",
-          icon: "XCircle"
+          icon: "XCircle",
         });
 
         loadSellerDashboard();
         setShowDetailsModal(false); // close modal
         toast({
           title: "Request Cancelled",
-          description: "The managed sale request has been successfully cancelled.",
+          description:
+            "The managed sale request has been successfully cancelled.",
           variant: "success",
         });
       } catch (error) {
@@ -704,7 +918,10 @@ const { data: session, status, update } = useSession();
     loadSellerDashboard();
   };
 
-  const handleUpdateRequest = async (requestData: any, originalRequest: any) => {
+  const handleUpdateRequest = async (
+    requestData: any,
+    originalRequest: any,
+  ) => {
     setIsSubmittingEdit(true);
     try {
       const changes: Record<string, any> = {};
@@ -712,8 +929,16 @@ const { data: session, status, update } = useSession();
       if (requestData.vehicle_details && originalRequest.vehicle_details) {
         const vehicleDetailKeys = Object.keys(requestData.vehicle_details);
         for (const key of vehicleDetailKeys) {
-          const originalValue = originalRequest.vehicle_details[key] === null || originalRequest.vehicle_details[key] === undefined ? "" : String(originalRequest.vehicle_details[key]);
-          const newValue = requestData.vehicle_details[key] === null || requestData.vehicle_details[key] === undefined ? "" : String(requestData.vehicle_details[key]);
+          const originalValue =
+            originalRequest.vehicle_details[key] === null ||
+            originalRequest.vehicle_details[key] === undefined
+              ? ""
+              : String(originalRequest.vehicle_details[key]);
+          const newValue =
+            requestData.vehicle_details[key] === null ||
+            requestData.vehicle_details[key] === undefined
+              ? ""
+              : String(requestData.vehicle_details[key]);
 
           if (newValue !== originalValue) {
             changes[key] = requestData.vehicle_details[key];
@@ -721,11 +946,24 @@ const { data: session, status, update } = useSession();
         }
       }
 
-      if (requestData.access_arrangements && originalRequest.access_arrangements) {
-        const accessArrangementKeys = Object.keys(requestData.access_arrangements);
+      if (
+        requestData.access_arrangements &&
+        originalRequest.access_arrangements
+      ) {
+        const accessArrangementKeys = Object.keys(
+          requestData.access_arrangements,
+        );
         for (const key of accessArrangementKeys) {
-          const originalValue = originalRequest.access_arrangements[key] === null || originalRequest.access_arrangements[key] === undefined ? "" : String(originalRequest.access_arrangements[key]);
-          const newValue = requestData.access_arrangements[key] === null || requestData.access_arrangements[key] === undefined ? "" : String(requestData.access_arrangements[key]);
+          const originalValue =
+            originalRequest.access_arrangements[key] === null ||
+            originalRequest.access_arrangements[key] === undefined
+              ? ""
+              : String(originalRequest.access_arrangements[key]);
+          const newValue =
+            requestData.access_arrangements[key] === null ||
+            requestData.access_arrangements[key] === undefined
+              ? ""
+              : String(requestData.access_arrangements[key]);
 
           if (newValue !== originalValue) {
             changes[key] = requestData.access_arrangements[key];
@@ -737,18 +975,18 @@ const { data: session, status, update } = useSession();
         const newEditRequest = {
           requested_at: new Date().toISOString(),
           requested_changes: changes,
-          status: 'pending'
+          status: "pending",
         };
 
         const existingEditRequests = originalRequest.edit_requests || [];
 
         await managedSaleService.update(originalRequest.id, {
-          status: 'edit_requested',
-          edit_requests: [...existingEditRequests, newEditRequest]
+          status: "edit_requested",
+          edit_requests: [...existingEditRequests, newEditRequest],
         });
 
         const admins = await getAdmins();
-        const notificationPromises = admins.map((admin:any) =>
+        const notificationPromises = admins.map((admin: any) =>
           Notification.create({
             recipient_id: admin.id,
             sender_id: user.id,
@@ -756,8 +994,8 @@ const { data: session, status, update } = useSession();
             content: `User ${user.full_name} requested an edit for "${originalRequest.vehicle_details.title}".`,
             related_entity_id: originalRequest.id,
             url: `/Admin-Panel?tab=managed_sales`,
-            icon: "Edit"
-          })
+            icon: "Edit",
+          }),
         );
         await Promise.all(notificationPromises);
 
@@ -774,12 +1012,12 @@ const { data: session, status, update } = useSession();
           variant: "info",
         });
       }
-
     } catch (error) {
       console.error("Failed to submit update request:", error);
       toast({
         title: "Submission Failed",
-        description: "There was an error submitting your update. Please try again.",
+        description:
+          "There was an error submitting your update. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -794,24 +1032,26 @@ const { data: session, status, update } = useSession();
 
   const handleApproveTestDrive = async (messageId: string) => {
     try {
-      const message = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
+      const message = testDriveRequests.find(
+        (msg) => msg.id === messageId && msg.recipient_id === user.id,
+      );
       if (message && message.test_drive_details) {
         const updatedTestDriveDetails = {
           ...message.test_drive_details,
-          status: "approved"
+          status: "approved",
         };
 
         await Message.update(messageId, {
-          test_drive_details: updatedTestDriveDetails
+          test_drive_details: updatedTestDriveDetails,
         });
 
         await Message.create({
           recipient_id: message.sender_id || undefined,
           sender_id: user.id,
-          content: `Your test drive request for ${format(new Date(message.test_drive_details.preferred_date || Date.now()), 'MMM d, yyyy')} at ${message.test_drive_details.preferred_time || 'TBD'} has been approved.`,
+          content: `Your car viewing request for ${format(new Date(message.test_drive_details.preferred_date || Date.now()), "MMM d, yyyy")} at ${message.test_drive_details.preferred_time || "TBD"} has been approved.`,
           message_type: "confirmation_test_drive",
           vehicle_id: message.vehicle_id,
-          conversation_id: message.conversation_id
+          conversation_id: message.conversation_id,
         });
 
         const buyer = buyers.find((b: any) => b.user_id === message.sender_id);
@@ -822,17 +1062,18 @@ const { data: session, status, update } = useSession();
           recipient_id: message.sender_id,
           sender_id: user.id,
           type: "test_drive_update",
-          content: `Your test drive for "${getVehicleById(message.vehicle_id)?.title}" has been approved!`,
+          content: `Your car viewing for "${getVehicleById(message.vehicle_id)?.title}" has been approved!`,
           related_entity_id: message.id,
           url: `/Chat?messageId=${message.id}`,
-          icon: "CheckCircle"
+          icon: "CheckCircle",
         });
 
         loadSellerDashboard();
 
         toast({
-          title: "Test Drive Approved",
-          description: "The test drive request has been approved and the buyer has been notified.",
+          title: "Car Viewing Approved",
+          description:
+            "The car viewing request has been approved and the buyer has been notified.",
           duration: 3000,
         });
       }
@@ -840,7 +1081,7 @@ const { data: session, status, update } = useSession();
       console.error("Failed to approve test drive:", error);
       toast({
         title: "Approval Failed",
-        description: "Failed to approve test drive request. Please try again.",
+        description: "Failed to approve car viewing request. Please try again.",
         variant: "destructive",
         duration: 4000,
       });
@@ -849,24 +1090,26 @@ const { data: session, status, update } = useSession();
 
   const handleDeclineTestDrive = async (messageId: string) => {
     try {
-      const message = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
+      const message = testDriveRequests.find(
+        (msg) => msg.id === messageId && msg.recipient_id === user.id,
+      );
       if (message && message.test_drive_details) {
         const updatedTestDriveDetails = {
           ...message.test_drive_details,
-          status: "declined"
+          status: "declined",
         };
 
         await Message.update(messageId, {
-          test_drive_details: updatedTestDriveDetails
+          test_drive_details: updatedTestDriveDetails,
         });
 
         await Message.create({
           recipient_id: message.sender_id || undefined,
           sender_id: user.id,
-          content: `Your test drive request for ${format(new Date(message.test_drive_details.preferred_date || Date.now()), 'MMM d, yyyy')} has been declined.`,
+          content: `Your car viewing request for ${format(new Date(message.test_drive_details.preferred_date || Date.now()), "MMM d, yyyy")} has been declined.`,
           message_type: "confirmation_test_drive",
           vehicle_id: message.vehicle_id,
-          conversation_id: message.conversation_id
+          conversation_id: message.conversation_id,
         });
 
         const buyer = buyers.find((b: any) => b.user_id === message.sender_id);
@@ -877,17 +1120,18 @@ const { data: session, status, update } = useSession();
           recipient_id: message.sender_id,
           sender_id: user.id,
           type: "test_drive_update",
-          content: `Your test drive for "${getVehicleById(message.vehicle_id)?.title}" has been declined.`,
+          content: `Your car viewing for "${getVehicleById(message.vehicle_id)?.title}" has been declined.`,
           related_entity_id: message.id,
           url: `/Chat?messageId=${message.id}`,
-          icon: "XCircle"
+          icon: "XCircle",
         });
 
         loadSellerDashboard();
 
         toast({
-          title: "Test Drive Declined",
-          description: "The test drive request has been declined and the buyer has been notified.",
+          title: "Car Viewing Declined",
+          description:
+            "The car viewing request has been declined and the buyer has been notified.",
           duration: 3000,
         });
       }
@@ -895,7 +1139,7 @@ const { data: session, status, update } = useSession();
       console.error("Failed to decline test drive:", error);
       toast({
         title: "Decline Failed",
-        description: "Failed to decline test drive request. Please try again.",
+        description: "Failed to decline car viewing request. Please try again.",
         variant: "destructive",
         duration: 4000,
       });
@@ -904,41 +1148,44 @@ const { data: session, status, update } = useSession();
 
   const handleMarkAsCompleted = async (messageId: string) => {
     try {
-      const message = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
+      const message = testDriveRequests.find(
+        (msg) => msg.id === messageId && msg.recipient_id === user.id,
+      );
       if (message && message.test_drive_details) {
         const updatedTestDriveDetails = {
           ...message.test_drive_details,
-          status: "completed"
+          status: "completed",
         };
 
         await Message.update(messageId, {
-          test_drive_details: updatedTestDriveDetails
+          test_drive_details: updatedTestDriveDetails,
         });
 
         await Message.create({
           recipient_id: message.sender_id || undefined,
           sender_id: user.id,
-          content: `Your test drive for ${getVehicleById(message.vehicle_id)?.title} has been marked as completed.`,
+          content: `Your car viewing for ${getVehicleById(message.vehicle_id)?.title} has been marked as completed.`,
           message_type: "confirmation_test_drive",
           vehicle_id: message.vehicle_id,
-          conversation_id: message.conversation_id
+          conversation_id: message.conversation_id,
         });
 
         await Notification.create({
           recipient_id: message.sender_id,
           sender_id: user.id,
           type: "test_drive_update",
-          content: `Your test drive for "${getVehicleById(message.vehicle_id)?.title}" has been marked as completed.`,
+          content: `Your car viewing for "${getVehicleById(message.vehicle_id)?.title}" has been marked as completed.`,
           related_entity_id: message.id,
           url: `/Chat?messageId=${message.id}`,
-          icon: "ClipboardCheck"
+          icon: "ClipboardCheck",
         });
 
         loadSellerDashboard();
 
         toast({
-          title: "Test Drive Completed",
-          description: "The test drive has been marked as completed and the buyer has been notified.",
+          title: "Car Viewing Completed",
+          description:
+            "The car viewing has been marked as completed and the buyer has been notified.",
           duration: 3000,
         });
       }
@@ -946,72 +1193,95 @@ const { data: session, status, update } = useSession();
       console.error("Failed to mark test drive as completed:", error);
       toast({
         title: "Update Failed",
-        description: "Failed to mark test drive as completed. Please try again.",
+        description:
+          "Failed to mark car viewing as completed. Please try again.",
         variant: "destructive",
         duration: 4000,
       });
     }
   };
 
-  const handleUpdateTestDriveRequest = async (messageId: string, updatedDetails: any) => {
+  const handleUpdateTestDriveRequest = async (
+    messageId: string,
+    updatedDetails: any,
+  ) => {
     try {
-      const message = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
+      const message = testDriveRequests.find(
+        (msg) => msg.id === messageId && msg.recipient_id === user.id,
+      );
       if (message && message.test_drive_details) {
         const updatedTestDriveDetails = {
           ...message.test_drive_details,
           ...updatedDetails,
         };
 
-        await Message.update(messageId, { test_drive_details: updatedTestDriveDetails });
+        await Message.update(messageId, {
+          test_drive_details: updatedTestDriveDetails,
+        });
 
         // If the details modal is still open for this request, update its local state
         if (showTestDriveDetails && showTestDriveDetails.id === messageId) {
-          const updatedMessage = { ...message, test_drive_details: updatedTestDriveDetails };
+          const updatedMessage = {
+            ...message,
+            test_drive_details: updatedTestDriveDetails,
+          };
           setShowTestDriveDetails(updatedMessage);
         }
 
         await loadSellerDashboard();
 
         toast({
-          title: "Test Drive Updated",
-          description: "Test drive request has been successfully updated.",
+          title: "Car Viewing Updated",
+          description: "Car viewing request has been successfully updated.",
           duration: 3000,
         });
       }
     } catch (error) {
-      console.error("Failed to update test drive request:", error);
+      console.error("Failed to update car viewing request:", error);
       toast({
         title: "Update Failed",
-        description: "Failed to update test drive details. Please try again.",
+        description: "Failed to update car viewing details. Please try again.",
         variant: "destructive",
         duration: 4000,
       });
     }
   };
 
-  const handleCancelSentTestDriveRequest = async (messageId: string) => {
-    if (window.confirm("Are you sure you want to cancel this test drive request? This action cannot be undone.")) {
+  const handleCancelSentCarViewingRequest = async (messageId: string) => {
+    if (
+      window.confirm(
+        "Are you sure you want to cancel this car viewing request? This action cannot be undone.",
+      )
+    ) {
       try {
-        const messageToUpdate = testDriveRequests.find(msg => msg.id === messageId && msg.sender_id === user.id);
+        const messageToUpdate = testDriveRequests.find(
+          (msg) => msg.id === messageId && msg.sender_id === user.id,
+        );
         if (messageToUpdate && messageToUpdate.test_drive_details) {
-          const updatedDetails = { ...messageToUpdate.test_drive_details, status: 'cancelled' };
-          await Message.update(messageId, { test_drive_details: updatedDetails });
+          const updatedDetails = {
+            ...messageToUpdate.test_drive_details,
+            status: "cancelled",
+          };
+          await Message.update(messageId, {
+            test_drive_details: updatedDetails,
+          });
 
           await Message.create({
             recipient_id: messageToUpdate.recipient_id || undefined,
             sender_id: user.id,
-            content: `The test drive request for ${format(new Date(updatedDetails.preferred_date || Date.now()), 'MMM d, yyyy')} has been cancelled by the requester.`,
-            message_type: 'confirmation_test_drive',
+            content: `The car viewing request for ${format(new Date(updatedDetails.preferred_date || Date.now()), "MMM d, yyyy")} has been cancelled by the requester.`,
+            message_type: "confirmation_test_drive",
             vehicle_id: messageToUpdate.vehicle_id,
-            conversation_id: messageToUpdate.conversation_id
+            conversation_id: messageToUpdate.conversation_id,
           });
 
           await loadSellerDashboard();
           setViewingSentTestDrive(null);
 
           toast({
-            title: "Test Drive Cancelled",
-            description: "Your test drive request has been cancelled and the seller has been notified.",
+            title: "Car Viewing Cancelled",
+            description:
+              "Your car viewing request has been cancelled and the seller has been notified.",
             duration: 3000,
           });
         }
@@ -1028,25 +1298,37 @@ const { data: session, status, update } = useSession();
   };
 
   const handleCancelTestDrive = async (messageId: string) => {
-    if (window.confirm("Are you sure you want to cancel this test drive request? The buyer will be notified.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to cancel this car viewing request? The buyer will be notified.",
+      )
+    ) {
       try {
-        const messageToUpdate = testDriveRequests.find(msg => msg.id === messageId && msg.recipient_id === user.id);
+        const messageToUpdate = testDriveRequests.find(
+          (msg) => msg.id === messageId && msg.recipient_id === user.id,
+        );
         if (messageToUpdate && messageToUpdate.test_drive_details) {
-          const updatedDetails = { ...messageToUpdate.test_drive_details, status: 'cancelled' };
-          await Message.update(messageToUpdate.id, { test_drive_details: updatedDetails });
+          const updatedDetails = {
+            ...messageToUpdate.test_drive_details,
+            status: "cancelled",
+          };
+          await Message.update(messageToUpdate.id, {
+            test_drive_details: updatedDetails,
+          });
 
           await Message.create({
             recipient_id: messageToUpdate.sender_id,
             sender_id: user.id,
-            content: `Your test drive request for ${getVehicleById(messageToUpdate.vehicle_id)?.title} was cancelled by the seller.`,
-            message_type: 'confirmation_test_drive',
+            content: `Your car viewing request for ${getVehicleById(messageToUpdate.vehicle_id)?.title} was cancelled by the seller.`,
+            message_type: "confirmation_car_viewing",
             vehicle_id: messageToUpdate.vehicle_id,
-            conversation_id: messageToUpdate.conversation_id
+            conversation_id: messageToUpdate.conversation_id,
           });
 
           toast({
-            title: "Test Drive Cancelled",
-            description: "The request has been marked as cancelled and the buyer notified.",
+            title: "Car Viewing Cancelled",
+            description:
+              "The request has been marked as cancelled and the buyer notified.",
             variant: "success",
           });
           await loadSellerDashboard();
@@ -1055,25 +1337,30 @@ const { data: session, status, update } = useSession();
         console.error("Failed to cancel test drive", error);
         toast({
           title: "Update Failed",
-          description: "Could not cancel the test drive request. Please try again.",
+          description:
+            "Could not cancel the car viewing request. Please try again.",
           variant: "destructive",
         });
       }
     }
   };
 
-  const handleSaveVehicleAvailability = async (vehicleId: string, availabilityData: any) => {
+  const handleSaveVehicleAvailability = async (
+    vehicleId: string,
+    availabilityData: any,
+  ) => {
     try {
       await Vehicle.update(vehicleId, availabilityData);
       await loadSellerDashboard();
       setAvailabilityVehicle(null);
       toast({
         title: "Availability Saved",
-        description: "Your vehicle's test drive availability has been updated.",
+        description:
+          "Your vehicle's car viewing availability has been updated.",
         variant: "success",
       });
     } catch (error) {
-      console.error("Failed to save test drive availability:", error);
+      console.error("Failed to save car viewing availability:", error);
       toast({
         title: "Save Failed",
         description: "Failed to save availability. Please try again.",
@@ -1084,166 +1371,173 @@ const { data: session, status, update } = useSession();
 
   const getTestDriveStatusInfo = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return {
           icon: <Clock className="w-3 h-3 mr-1 text-amber-500" />,
-          text: "Pending"
+          text: "Pending",
         };
-      case 'approved':
+      case "approved":
         return {
           icon: <CheckCircle className="w-3 h-3 mr-1 text-green-500" />,
-          text: "Approved"
+          text: "Approved",
         };
-      case 'declined':
+      case "declined":
         return {
           icon: <XCircle className="w-3 h-3 mr-1 text-red-500" />,
-          text: "Declined"
+          text: "Declined",
         };
-      case 'completed':
+      case "completed":
         return {
           icon: <ClipboardCheck className="w-3 h-3 mr-1 text-blue-500" />,
-          text: "Completed"
+          text: "Completed",
         };
-      case 'cancelled':
+      case "cancelled":
         return {
           icon: <Trash2 className="w-3 h-3 mr-1 text-slate-500" />,
-          text: "Cancelled"
+          text: "Cancelled",
         };
       default:
         return {
           icon: null,
-          text: "Unknown"
+          text: "Unknown",
         };
     }
   };
 
   const getStatusInfo = (status: string) => {
     switch (status) {
-      case 'pending_review':
+      case "pending_review":
         return {
           icon: <Clock className="w-3 h-3 mr-1" />,
           badgeClass: "bg-amber-100 text-amber-800",
           text: "Pending Review",
-          description: "Our team is reviewing your submission. We'll get back to you within 2 business days."
+          description:
+            "Our team is reviewing your submission. We'll get back to you within 2 business days.",
         };
-      case 'approved':
+      case "approved":
         return {
           icon: <CheckCircle className="w-3 h-3 mr-1" />,
           badgeClass: "bg-blue-100 text-blue-800",
           text: "Approved",
-          description: "Your request is approved! We're preparing your listing to go live."
+          description:
+            "Your request is approved! We're preparing your listing to go live.",
         };
-      case 'listed':
+      case "listed":
         return {
           icon: <ExternalLink className="w-3 h-3 mr-1" />,
           badgeClass: "bg-green-100 text-green-800",
           text: "Listed",
-          description: "Your vehicle is now live on the marketplace and visible to thousands of buyers."
+          description:
+            "Your vehicle is now live on the marketplace and visible to thousands of buyers.",
         };
-      case 'declined':
+      case "declined":
         return {
           icon: <XCircle className="w-3 h-3 mr-1" />,
           badgeClass: "bg-red-100 text-red-800",
           text: "Declined",
-          description: "Unfortunately, we couldn't approve this request. Please check the notes from Speedio for details."
+          description:
+            "Unfortunately, we couldn't approve this request. Please check the notes from Speedio for details.",
         };
-      case 'sold':
+      case "sold":
         return {
           icon: <CheckCircle className="w-3 h-3 mr-1" />,
           badgeClass: "bg-emerald-100 text-emerald-800",
           text: "Sold",
-          description: "Congratulations! Your vehicle has been sold through our managed service."
+          description:
+            "Congratulations! Your vehicle has been sold through our managed service.",
         };
-      case 'cancelled':
+      case "cancelled":
         return {
           icon: <Trash2 className="w-3 h-3 mr-1" />,
           badgeClass: "bg-slate-100 text-slate-800",
           text: "Cancelled",
-          description: "You have cancelled this managed sale request."
+          description: "You have cancelled this managed sale request.",
         };
-      case 'edit_requested':
+      case "edit_requested":
         return {
           icon: <Edit className="w-3 h-3 mr-1" />,
           badgeClass: "bg-yellow-100 text-yellow-800",
           text: "Edit Requested",
-          description: "Your requested changes are under review by our team. We will update you shortly."
+          description:
+            "Your requested changes are under review by our team. We will update you shortly.",
         };
       default:
         return {
           icon: null,
           badgeClass: "bg-slate-100",
           text: status,
-          description: ""
+          description: "",
         };
     }
   };
 
   type TierKey = "tier1" | "tier2" | "tier3";
 
- const canPostVehicle = () => {
-  if (!user) return false;
+  const canPostVehicle = () => {
+    if (!user) return false;
 
-  if (user.user_type === "private_seller") {
-    // Use store slotDetails if available, fallback to user object
-    const remaining = slotDetails?.remaining ?? 0;
-    return remaining > 0;
-  }
+    if (user.user_type === "private_seller") {
+      // Use store slotDetails if available, fallback to user object
+      const remaining = slotDetails?.remaining ?? 0;
+      return remaining > 0;
+    }
 
-  if (user.user_type === "dealership") {
-    const subscription = user.seller_subscription;
-    if (!subscription || !subscription.expires_at) return false;
-    const expiresAt = new Date(subscription.expires_at);
-    if (expiresAt <= new Date()) return false;
-    const vehiclesSoldThisYear = subscription.vehicles_sold_this_year || 0;
-    const salesLimits: Record<TierKey, number> = {
-      tier1: 10,
-      tier2: 25,
-      tier3: -1,
-    };
-    const tier = (subscription.tier ?? "tier1") as TierKey;
-    const limit = salesLimits[tier];
-    if (limit === -1) return true;
-    return vehiclesSoldThisYear < limit;
-  }
+    if (user.user_type === "dealership") {
+      const subscription = user.seller_subscription;
+      if (!subscription || !subscription.expires_at) return false;
+      const expiresAt = new Date(subscription.expires_at);
+      if (expiresAt <= new Date()) return false;
+      const vehiclesSoldThisYear = subscription.vehicles_sold_this_year || 0;
+      const salesLimits: Record<TierKey, number> = {
+        tier1: 10,
+        tier2: 25,
+        tier3: -1,
+      };
+      const tier = (subscription.tier ?? "tier1") as TierKey;
+      const limit = salesLimits[tier];
+      if (limit === -1) return true;
+      return vehiclesSoldThisYear < limit;
+    }
 
-  return false;
-};
+    return false;
+  };
 
-const getSalesLimitInfo = () => {
-  if (!user) return null;
+  const getSalesLimitInfo = () => {
+    if (!user) return null;
 
-  if (user.user_type === "private_seller") {
-    // Use store slotDetails if available, fallback to user object
-    const purchased = slotDetails?.purchased  ?? 0;
-    const used = slotDetails?.used  ?? 0;
-    return {
-      current: used,
-      limit: purchased,
-      type: "Private Seller",
-    };
-  }
+    if (user.user_type === "private_seller") {
+      // Use store slotDetails if available, fallback to user object
+      const purchased = slotDetails?.purchased ?? 0;
+      const used = slotDetails?.used ?? 0;
+      return {
+        current: used,
+        limit: purchased,
+        type: "Private Seller",
+      };
+    }
 
-  if (user.user_type === "dealership" && dealershipSubscriptionDetails) {
-    const vehiclesSoldThisYear = dealershipSubscriptionDetails.vehicles_sold_this_year || 0;
-    const limits: Record<TierKey, { limit: number; name: string }> = {
-      tier1: { limit: 10, name: "Standard" },
-      tier2: { limit: 25, name: "Professional" },
-      tier3: { limit: -1, name: "Enterprise" },
-    };
-    const tier = (dealershipSubscriptionDetails?.tier ?? "tier1") as TierKey;
-    const tierInfo = limits[tier] ?? limits.tier1;
-    return {
-      current: vehiclesSoldThisYear,
-      limit: tierInfo.limit,
-      type: tierInfo.name,
-    };
-  }
+    if (user.user_type === "dealership" && dealershipSubscriptionDetails) {
+      const vehiclesSoldThisYear =
+        dealershipSubscriptionDetails.vehicles_sold_this_year || 0;
+      const limits: Record<TierKey, { limit: number; name: string }> = {
+        tier1: { limit: 10, name: "Standard" },
+        tier2: { limit: 25, name: "Professional" },
+        tier3: { limit: -1, name: "Enterprise" },
+      };
+      const tier = (dealershipSubscriptionDetails?.tier ?? "tier1") as TierKey;
+      const tierInfo = limits[tier] ?? limits.tier1;
+      return {
+        current: vehiclesSoldThisYear,
+        limit: tierInfo.limit,
+        type: tierInfo.name,
+      };
+    }
 
-  return null;
-};
+    return null;
+  };
 
   const getSubscriptionPill = () => {
-    if (user.user_type === 'dealership' && user.seller_subscription?.tier) {
+    if (user.user_type === "dealership" && user.seller_subscription?.tier) {
       const tierNames: Record<TierKey, string> = {
         tier1: "Standard",
         tier2: "Professional",
@@ -1256,7 +1550,8 @@ const getSalesLimitInfo = () => {
       };
       const tier = (user.seller_subscription.tier ?? "tier1") as TierKey;
       const tierName = tierNames[tier] || tier;
-      const tierColor = tierColors[tier] || "bg-blue-100 text-blue-800 hover:bg-blue-200";
+      const tierColor =
+        tierColors[tier] || "bg-blue-100 text-blue-800 hover:bg-blue-200";
 
       return (
         <Badge className={`${tierColor} transition-colors duration-200`}>
@@ -1264,7 +1559,7 @@ const getSalesLimitInfo = () => {
         </Badge>
       );
     }
-    if (user.user_type === 'private_seller' && user.seller_subscription) {
+    if (user.user_type === "private_seller" && user.seller_subscription) {
       return (
         <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors duration-200">
           Private Seller
@@ -1306,13 +1601,15 @@ const getSalesLimitInfo = () => {
           </div>
           {trend && (
             <div className="text-right">
-              {trend === 'up' ? (
+              {trend === "up" ? (
                 <ArrowUp className="w-4 h-4 text-emerald-500 ml-auto" />
               ) : (
                 <ArrowDown className="w-4 h-4 text-red-500 ml-auto" />
               )}
-              <span className={`text-xs ${trend === 'up' ? 'text-emerald-600' : 'text-red-600'}`}>
-                {trendValue || '+12%'}
+              <span
+                className={`text-xs ${trend === "up" ? "text-emerald-600" : "text-red-600"}`}
+              >
+                {trendValue || "+12%"}
               </span>
             </div>
           )}
@@ -1322,37 +1619,42 @@ const getSalesLimitInfo = () => {
   );
 
   const getUpgradeRecommendation = () => {
-    if (user.user_type === 'private_seller') {
+    if (user.user_type === "private_seller") {
       return {
         show: true,
         title: "Ready to Scale Your Business?",
-        description: "Upgrade to a Dealership account and unlock unlimited listings, advanced analytics, and priority support to grow your automotive business.",
+        description:
+          "Upgrade to a Dealership account and unlock unlimited listings, advanced analytics, and priority support to grow your automotive business.",
         benefits: [
           "Unlimited vehicle listings",
           "Advanced analytics & reporting",
           "Priority customer support",
-          "Featured marketplace placement"
+          "Featured marketplace placement",
         ],
         cta: "Explore Dealership Plans",
         gradient: "from-purple-500 to-blue-500",
-        icon: Users
+        icon: Users,
       };
     }
 
-    if (user.user_type === 'dealership' && user.seller_subscription?.tier === 'tier1') {
+    if (
+      user.user_type === "dealership" &&
+      user.seller_subscription?.tier === "tier1"
+    ) {
       return {
         show: true,
         title: "Supercharge Your Dealership",
-        description: "Upgrade to Professional or Enterprise for more listings, better visibility, and advanced features to maximize your sales potential.",
+        description:
+          "Upgrade to Professional or Enterprise for more listings, better visibility, and advanced features to maximize your sales potential.",
         benefits: [
           "Up to 100+ listings (Professional)",
           "Promoted marketplace visibility",
           "Advanced reporting dashboard",
-          "Dedicated account support"
+          "Dedicated account support",
         ],
         cta: "Upgrade Your Plan",
         gradient: "from-emerald-500 to-blue-500",
-        icon: TrendingUp
+        icon: TrendingUp,
       };
     }
 
@@ -1362,72 +1664,90 @@ const getSalesLimitInfo = () => {
   const upgradeRec = getUpgradeRecommendation();
 
   const getDealershipVerificationAlert = () => {
-    if (!user || !user.dealership_verification_status || user.dealership_verification_status === 'not_submitted') {
+    if (
+      !user ||
+      !user.dealership_verification_status ||
+      user.dealership_verification_status === "not_submitted"
+    ) {
       return null;
     }
 
-    if (user.dealership_verification_status === 'pending_review') {
+    if (user.dealership_verification_status === "pending_review") {
       return (
         <Alert className="bg-amber-50 border-amber-200">
           <AlertDescription className="flex items-center gap-3 text-amber-800">
             <Clock className="w-5 h-5" />
             <span>
-              <strong>Dealership Application Under Review:</strong> Your dealership registration is being reviewed by our team. We'll notify you of the status within 2-3 business days.
+              <strong>Dealership Application Under Review:</strong> Your
+              dealership registration is being reviewed by our team. We'll
+              notify you of the status within 2-3 business days.
             </span>
           </AlertDescription>
         </Alert>
       );
     }
 
-    if (user.dealership_verification_status === 'declined') {
+    if (user.dealership_verification_status === "declined") {
       return (
         <Alert variant="destructive">
           <AlertDescription className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <XCircle className="w-5 h-5" />
               <span>
-                <strong>Dealership Application Declined:</strong> {user.admin_verification_notes || "Please review your information and try again."}
+                <strong>Dealership Application Declined:</strong>{" "}
+                {user.admin_verification_notes ||
+                  "Please review your information and try again."}
               </span>
             </div>
             <Link href="/DealershipRegistration">
-              <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50">Resubmit Application</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 border-red-300 hover:bg-red-50"
+              >
+                Resubmit Application
+              </Button>
             </Link>
           </AlertDescription>
         </Alert>
       );
     }
 
-    
-
-
-   if(!dealershipSubscriptionDetails?.square_customer_id){
-    if (user.dealership_verification_status === 'approved' && !user.seller_subscription?.tier) {
-
-
-      return (
-        <Alert className="bg-emerald-50 border-emerald-200">
-          <AlertDescription className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-emerald-800">
-              <CheckCircle className="w-5 h-5" />
-              <span>
-                <strong>Dealership Approved!</strong> Your dealership has been verified and approved. You can now select a subscription plan to start listing vehicles.
-              </span>
-            </div>
-            <Link href="/Subscription">
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">Select Plan</Button>
-            </Link>
-          </AlertDescription>
-        </Alert>
-      );
+    if (!dealershipSubscriptionDetails?.square_customer_id) {
+      if (
+        user.dealership_verification_status === "approved" &&
+        !user.seller_subscription?.tier
+      ) {
+        return (
+          <Alert className="bg-emerald-50 border-emerald-200">
+            <AlertDescription className="flex items-center justify-between">
+              <div className="flex items-center gap-3 text-emerald-800">
+                <CheckCircle className="w-5 h-5" />
+                <span>
+                  <strong>Dealership Approved!</strong> Your dealership has been
+                  verified and approved. You can now select a subscription plan
+                  to start listing vehicles.
+                </span>
+              </div>
+              <Link href="/Subscription">
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                >
+                  Select Plan
+                </Button>
+              </Link>
+            </AlertDescription>
+          </Alert>
+        );
+      }
     }
-  }
 
     return null;
   };
 
-
- const isGuest =  session?.user?.user_type === 'guest';
-console.log("okook",dealershipSubscriptionDetails);
+  const isGuest = session?.user?.user_type === "guest";
+  console.log("okook", dealershipSubscriptionDetails);
   return (
     <div className="space-y-6">
       {getDealershipVerificationAlert()}
@@ -1438,102 +1758,121 @@ console.log("okook",dealershipSubscriptionDetails);
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
-              {isGuest ? 'Guest Dashboard' : 'Seller Dashboard'}
+              {isGuest ? "Guest Dashboard" : "Seller Dashboard"}
             </h1>
             <p className="text-slate-600 mt-1">
-              Welcome back, {user?.full_name || 'User'}
+              Welcome back, {user?.full_name || "User"}
             </p>
           </div>
           <div className="flex items-center gap-4">
-            {user?.role === 'admin' ? (
-              <Badge variant="outline" className="capitalize text-lg px-4 py-2 bg-slate-100 text-slate-700 border-slate-300">
+            {user?.role === "admin" ? (
+              <Badge
+                variant="outline"
+                className="capitalize text-lg px-4 py-2 bg-slate-100 text-slate-700 border-slate-300"
+              >
                 Admin
               </Badge>
             ) : (
               <Badge variant="outline" className="capitalize text-lg px-4 py-2">
-                {user?.user_type || 'guest'}
+                {user?.user_type || "guest"}
               </Badge>
             )}
           </div>
         </div>
 
         {/* Private Seller Slot Info Card */}
-    
-{user?.user_type === "private_seller" && (
-  isLoadingSlots ? (
-    <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-lg">
-      <CardContent className="p-6 flex items-center gap-3">
-        <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-        <span className="text-slate-600">Loading slot details...</span>
-      </CardContent>
-    </Card>
-  ) : slotDetails ? (() => {
-    const slotInfo = {
-      purchased: slotDetails.purchased,
-      used: slotDetails.used,
-      remaining: slotDetails.remaining,
-    };
-    return (
-      <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-lg">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex-1">
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Vehicle Slots</h3>
-              <div className="space-y-1 text-sm text-slate-700 mb-4">
-                <p><strong>Purchased:</strong> {slotInfo.purchased} slots</p>
-                <p><strong>Used:</strong> {slotInfo.used} vehicles sold</p>
-                <p><strong>Remaining:</strong> {slotInfo.remaining} slots available</p>
-              </div>
 
-              {slotInfo.remaining === 0 && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    <span className="text-sm">No slots remaining. Purchase more to list additional vehicles.</span>
-                  </AlertDescription>
-                </Alert>
-              )}
+        {user?.user_type === "private_seller" &&
+          (isLoadingSlots ? (
+            <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-lg">
+              <CardContent className="p-6 flex items-center gap-3">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                <span className="text-slate-600">Loading slot details...</span>
+              </CardContent>
+            </Card>
+          ) : slotDetails ? (
+            (() => {
+              const slotInfo = {
+                purchased: slotDetails.purchased,
+                used: slotDetails.used,
+                remaining: slotDetails.remaining,
+              };
+              return (
+                <Card className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-lg">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">
+                          Vehicle Slots
+                        </h3>
+                        <div className="space-y-1 text-sm text-slate-700 mb-4">
+                          <p>
+                            <strong>Purchased:</strong> {slotInfo.purchased}{" "}
+                            slots
+                          </p>
+                          <p>
+                            <strong>Used:</strong> {slotInfo.used} vehicles sold
+                          </p>
+                          <p>
+                            <strong>Remaining:</strong> {slotInfo.remaining}{" "}
+                            slots available
+                          </p>
+                        </div>
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setShowBuyMoreSlotsModal(true)}
-                  size="sm"
-                  className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Buy More Slots
-                </Button>
-                {slotInfo.remaining > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditingVehicle(null);
-                      setShowCreateModal(true);
-                    }}
-                  >
-                    <Car className="w-4 h-4 mr-2" />
-                    List a Vehicle
-                  </Button>
-                )}
-              </div>
-            </div>
+                        {slotInfo.remaining === 0 && (
+                          <Alert variant="destructive" className="mb-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                              <span className="text-sm">
+                                No slots remaining. Purchase more to list
+                                additional vehicles.
+                              </span>
+                            </AlertDescription>
+                          </Alert>
+                        )}
 
-            <div className="text-right flex-shrink-0">
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-blue-600">{slotInfo.remaining}</span>
-                <span className="text-lg text-slate-500">/ {slotInfo.purchased}</span>
-              </div>
-              <p className="text-xs text-slate-600 mt-1">Available</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  })() : null
-)}
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => setShowBuyMoreSlotsModal(true)}
+                            size="sm"
+                            className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Buy More Slots
+                          </Button>
+                          {slotInfo.remaining > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingVehicle(null);
+                                setShowCreateModal(true);
+                              }}
+                            >
+                              <Car className="w-4 h-4 mr-2" />
+                              List a Vehicle
+                            </Button>
+                          )}
+                        </div>
+                      </div>
 
-
+                      <div className="text-right flex-shrink-0">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-4xl font-bold text-blue-600">
+                            {slotInfo.remaining}
+                          </span>
+                          <span className="text-lg text-slate-500">
+                            / {slotInfo.purchased}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1">Available</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()
+          ) : null)}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1557,7 +1896,7 @@ console.log("okook",dealershipSubscriptionDetails);
           />
           <StatCard
             icon={CalendarCheck}
-            title="Test Drive Requests"
+            title="Car Viewing Requests"
             value={stats.totalInquiries}
             subtitle="All time"
             color="purple"
@@ -1583,6 +1922,12 @@ console.log("okook",dealershipSubscriptionDetails);
               Your Listings ({listings.length})
             </TabsTrigger>
             <TabsTrigger
+              value="managed_sales"
+              className="whitespace-nowrap flex-shrink-0 px-3 py-2 text-sm md:px-4"
+            >
+              Managed Sales ({managedSaleRequests.length})
+            </TabsTrigger>
+            <TabsTrigger
               value="transfers"
               className="whitespace-nowrap flex-shrink-0 px-3 py-2 text-sm md:px-4"
             >
@@ -1592,13 +1937,12 @@ console.log("okook",dealershipSubscriptionDetails);
               value="test_drives"
               className="whitespace-nowrap flex-shrink-0 px-3 py-2 text-sm md:px-4"
             >
-              Test Drives ({testDriveRequests.filter(req => req.recipient_id === user.id).length + testDriveRequests.filter(req => req.sender_id === user.id).length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="managed_sales"
-              className="whitespace-nowrap flex-shrink-0 px-3 py-2 text-sm md:px-4"
-            >
-              Managed Sales ({managedSaleRequests.length})
+              Car Viewing (
+              {testDriveRequests.filter((req) => req.recipient_id === user.id)
+                .length +
+                testDriveRequests.filter((req) => req.sender_id === user.id)
+                  .length}
+              )
             </TabsTrigger>
             <TabsTrigger
               value="performance"
@@ -1613,8 +1957,6 @@ console.log("okook",dealershipSubscriptionDetails);
               Settings
             </TabsTrigger>
           </TabsList>
-
-      
 
           <TabsContent value="listings" className="mt-6">
             <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
@@ -1641,35 +1983,50 @@ console.log("okook",dealershipSubscriptionDetails);
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
                       <span>
-                        {user.user_type === 'private_seller'
+                        {user.user_type === "private_seller"
                           ? (() => {
-                            const slotInfo = getPrivateSellerSlotInfo();
-                            if (!slotInfo || slotInfo.purchased === 0) {
-                              return 'You need to purchase vehicle slots to list vehicles.';
-                            }
-                            // Only remaining slots check is relevant if purchased > 0
-                            return `You have no vehicle slots remaining. Purchase more to list new vehicles.`;
-                          })()
-                          : user.user_type === 'dealership'
-                            ? (() => {
-                              const subscription = dealershipSubscriptionDetails;
-                              const salesInfo = getSalesLimitInfo();
-                              const now = new Date();
-                              if (!subscription || !subscription?.square_customer_id) {
-                                return 'Your dealership needs an active subscription to list vehicles.';
+                              const slotInfo = getPrivateSellerSlotInfo();
+                              if (!slotInfo || slotInfo.purchased === 0) {
+                                return "You need to purchase vehicle slots to list vehicles.";
                               }
-
-                               if (!subscription.expires_at || new Date(subscription.expires_at) <= now) {
-        return 'Your dealership subscription has expired. Please renew to continue selling.';
-      }
-
-                              if (salesInfo?.limit === -1) return 'Unlimited sales available.';
-                              return `You've reached your sales limit. Current sales: ${salesInfo?.current || 0}/${salesInfo?.limit} for this year.`;
+                              // Only remaining slots check is relevant if purchased > 0
+                              return `You have no vehicle slots remaining. Purchase more to list new vehicles.`;
                             })()
+                          : user.user_type === "dealership"
+                            ? (() => {
+                                const subscription =
+                                  dealershipSubscriptionDetails;
+                                const salesInfo = getSalesLimitInfo();
+                                const now = new Date();
+                                if (
+                                  !subscription ||
+                                  !subscription?.square_customer_id
+                                ) {
+                                  return "Your dealership needs an active subscription to list vehicles.";
+                                }
+
+                                if (
+                                  !subscription.expires_at ||
+                                  new Date(subscription.expires_at) <= now
+                                ) {
+                                  return "Your dealership subscription has expired. Please renew to continue selling.";
+                                }
+
+                                if (salesInfo?.limit === -1)
+                                  return "Unlimited sales available.";
+                                return `You've reached your sales limit. Current sales: ${salesInfo?.current || 0}/${salesInfo?.limit} for this year.`;
+                              })()
                             : "You need a seller account to list vehicles."}
                       </span>
-                      <Link href="/Subscription" className="ml-2 font-semibold underline">
-                        {user.user_type === 'private_seller' ? 'Buy Slots' : user.user_type === 'dealership' ? 'Manage Subscription' : 'Upgrade Plan'}
+                      <Link
+                        href="/Subscription"
+                        className="ml-2 font-semibold underline"
+                      >
+                        {user.user_type === "private_seller"
+                          ? "Buy Slots"
+                          : user.user_type === "dealership"
+                            ? "Manage Subscription"
+                            : "Upgrade Plan"}
                       </Link>
                     </AlertDescription>
                   </Alert>
@@ -1681,13 +2038,15 @@ console.log("okook",dealershipSubscriptionDetails);
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-semibold text-blue-900">
-                            {user.user_type === 'private_seller' ? 'Vehicle Slot Status' : 'Sales Limit Status'}
+                            {user.user_type === "private_seller"
+                              ? "Vehicle Slot Status"
+                              : "Sales Limit Status"}
                           </h4>
                           <p className="text-sm text-blue-700">
                             {(() => {
                               const info = getSalesLimitInfo();
                               if (!info) return "";
-                              if (user.user_type === 'private_seller') {
+                              if (user.user_type === "private_seller") {
                                 return `${info.current}/${info.limit} vehicles listed (${info.type})`;
                               }
                               if (info.limit === -1) {
@@ -1701,18 +2060,27 @@ console.log("okook",dealershipSubscriptionDetails);
                           const info = getSalesLimitInfo();
                           if (!info) return null;
                           if (info.limit !== -1) {
-                            const percentage = (info.current / info.limit) * 100;
+                            const percentage =
+                              (info.current / info.limit) * 100;
                             return (
                               <div className="text-right">
-                                <div className="text-2xl font-bold text-blue-600">{Math.round(percentage)}%</div>
-                                <div className="text-xs text-blue-500">Used</div>
+                                <div className="text-2xl font-bold text-blue-600">
+                                  {Math.round(percentage)}%
+                                </div>
+                                <div className="text-xs text-blue-500">
+                                  Used
+                                </div>
                               </div>
                             );
                           }
                           return (
                             <div className="text-right">
-                              <div className="text-2xl font-bold text-blue-600">∞</div>
-                              <div className="text-xs text-blue-500">Unlimited</div>
+                              <div className="text-2xl font-bold text-blue-600">
+                                ∞
+                              </div>
+                              <div className="text-xs text-blue-500">
+                                Unlimited
+                              </div>
                             </div>
                           );
                         })()}
@@ -1725,22 +2093,37 @@ console.log("okook",dealershipSubscriptionDetails);
                   <div className="text-center py-8 text-slate-500">
                     <Car className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                     <p>No vehicles listed yet</p>
-                    <p className="text-sm">Create your first listing to get started</p>
+                    <p className="text-sm">
+                      Create your first listing to get started
+                    </p>
                     {canPostVehicle() && (
-                      <Button onClick={() => setShowCreateModal(true)} className="mt-3" disabled={isSubmitting}>
+                      <Button
+                        onClick={() => setShowCreateModal(true)}
+                        className="mt-3"
+                        disabled={isSubmitting}
+                      >
                         <Plus className="w-4 h-4 mr-2" />
-                        {isSubmitting ? "Creating..." : "Create Your First Listing"}
+                        {isSubmitting
+                          ? "Creating..."
+                          : "Create Your First Listing"}
                       </Button>
                     )}
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {listings.map((vehicle) => (
-                      <div key={vehicle.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div
+                        key={vehicle.id}
+                        className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
                         <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                           <div className="w-full md:w-32 h-32 md:h-20 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">
                             {vehicle.primary_image ? (
-                              <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
+                              <img
+                                src={vehicle.primary_image}
+                                alt={vehicle.title || "Vehicle"}
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <div className="flex items-center justify-center h-full">
                                 <Car className="w-10 h-10 text-slate-400" />
@@ -1750,7 +2133,9 @@ console.log("okook",dealershipSubscriptionDetails);
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start gap-2 mb-1">
-                              <h3 className="font-semibold text-slate-800 leading-tight">{vehicle.title}</h3>
+                              <h3 className="font-semibold text-slate-800 leading-tight">
+                                {vehicle.title}
+                              </h3>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 {vehicle.verified && (
                                   <TooltipProvider>
@@ -1758,35 +2143,57 @@ console.log("okook",dealershipSubscriptionDetails);
                                       <TooltipTrigger>
                                         <Shield className="w-4 h-4 text-blue-500" />
                                       </TooltipTrigger>
-                                      <TooltipContent><p>Verified Listing</p></TooltipContent>
+                                      <TooltipContent>
+                                        <p>Verified Listing</p>
+                                      </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
                                 )}
                                 {vehicle.website_managed && (
-                                  <Badge variant="outline" className="text-xs bg-slate-100 text-slate-700 border-slate-300 whitespace-nowrap"> {/* FIX: Changed badge color */}
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs bg-slate-100 text-slate-700 border-slate-300 whitespace-nowrap"
+                                  >
+                                    {" "}
+                                    {/* FIX: Changed badge color */}
                                     Managed by Speedio
                                   </Badge>
                                 )}
                               </div>
                             </div>
                             <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 mt-1">
-                              <span className="font-bold text-blue-600">¥{vehicle.price?.toLocaleString()}</span>
+                              <span className="font-bold text-blue-600">
+                                ¥{vehicle.price?.toLocaleString()}
+                              </span>
                               <span className="flex items-center gap-1">
                                 <Eye className="w-4 h-4" />
                                 {vehicle.views || 0} views
                               </span>
-                              <Badge variant="outline" className={`capitalize text-xs ${
-                                vehicle.status === 'sold' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' :
-                                vehicle.status === 'unavailable' ? 'bg-amber-50 text-amber-700 border-amber-300' : ''
-                              }`}>
+                              <Badge
+                                variant="outline"
+                                className={`capitalize text-xs ${
+                                  vehicle.status === "sold"
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                    : vehicle.status === "unavailable"
+                                      ? "bg-amber-50 text-amber-700 border-amber-300"
+                                      : ""
+                                }`}
+                              >
                                 {vehicle.status}
                               </Badge>
                             </div>
                           </div>
 
                           <div className="flex flex-shrink-0 flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
-                            <Link href={`/vehicle?id=${vehicle.id}`} className="w-full sm:w-auto">
-                              <Button variant="outline" size="sm" className="w-full justify-center">
+                            <Link
+                              href={`/vehicle?id=${vehicle.id}`}
+                              className="w-full sm:w-auto"
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-center"
+                              >
                                 <Eye className="w-4 h-4 mr-2" />
                                 View
                               </Button>
@@ -1797,7 +2204,9 @@ console.log("okook",dealershipSubscriptionDetails);
                                 variant="outline"
                                 size="sm"
                                 className="w-full sm:w-auto justify-center"
-                                onClick={() => setShowVehicleEditRequestModal(vehicle)}
+                                onClick={() =>
+                                  setShowVehicleEditRequestModal(vehicle)
+                                }
                               >
                                 <Edit className="w-4 h-4 mr-2" />
                                 Request Edit
@@ -1821,37 +2230,61 @@ console.log("okook",dealershipSubscriptionDetails);
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 {!vehicle.website_managed && (
-                                  <DropdownMenuItem onClick={() => handleEditVehicle(vehicle)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditVehicle(vehicle)}
+                                  >
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit Listing
                                   </DropdownMenuItem>
                                 )}
-                                {vehicle.status === 'unavailable' ? (
+                                {vehicle.status === "unavailable" ? (
                                   <DropdownMenuItem
-                                    onClick={() => handleMarkAsAvailable(vehicle.id)}
+                                    onClick={() =>
+                                      handleMarkAsAvailable(vehicle.id)
+                                    }
                                     disabled={isUpdating === vehicle.id}
                                   >
                                     <CheckCircle className="mr-2 h-4 w-4" />
-                                    {isUpdating === vehicle.id ? 'Updating...' : 'Mark as Available'}
+                                    {isUpdating === vehicle.id
+                                      ? "Updating..."
+                                      : "Mark as Available"}
                                   </DropdownMenuItem>
                                 ) : (
                                   <DropdownMenuItem
-                                    onClick={() => handleMarkAsUnavailable(vehicle.id)}
-                                    disabled={isUpdating === vehicle.id || vehicle.status === 'sold' || vehicle.status === 'edit_requested'}
+                                    onClick={() =>
+                                      handleMarkAsUnavailable(vehicle.id)
+                                    }
+                                    disabled={
+                                      isUpdating === vehicle.id ||
+                                      vehicle.status === "sold" ||
+                                      vehicle.status === "edit_requested"
+                                    }
                                   >
                                     <XCircle className="mr-2 h-4 w-4" />
-                                    {isUpdating === vehicle.id ? 'Updating...' : 'Mark as Unavailable'}
+                                    {isUpdating === vehicle.id
+                                      ? "Updating..."
+                                      : "Mark as Unavailable"}
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
                                   onClick={() => handleMarkAsSold(vehicle.id)}
-                                  disabled={isUpdating === vehicle.id || vehicle.status === 'sold'}
+                                  disabled={
+                                    isUpdating === vehicle.id ||
+                                    vehicle.status === "sold"
+                                  }
                                 >
                                   <CheckCircle className="mr-2 h-4 w-4" />
-                                  {isUpdating === vehicle.id ? 'Updating...' : 'Mark as Sold'}
-                                  </DropdownMenuItem>
+                                  {isUpdating === vehicle.id
+                                    ? "Updating..."
+                                    : "Mark as Sold"}
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteVehicle(vehicle.id)}>
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() =>
+                                    handleDeleteVehicle(vehicle.id)
+                                  }
+                                >
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete Listing
                                 </DropdownMenuItem>
@@ -1880,33 +2313,51 @@ console.log("okook",dealershipSubscriptionDetails);
                   <div className="text-center py-8 text-slate-500">
                     <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                     <p>No active transfers</p>
-                    <p className="text-sm">Vehicle transfer progress will appear here</p>
+                    <p className="text-sm">
+                      Vehicle transfer progress will appear here
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {vehicleTransfers.map((transfer) => {
-                      const vehicle = listings.find((v: any) => v.id === transfer.vehicle_id);
+                      const vehicle = listings.find(
+                        (v: any) => v.id === transfer.vehicle_id,
+                      );
                       return (
-                        <Card key={transfer.id} className="border border-slate-200 hover:shadow-md transition-shadow">
+                        <Card
+                          key={transfer.id}
+                          className="border border-slate-200 hover:shadow-md transition-shadow"
+                        >
                           <CardContent className="p-4">
                             <div className="flex items-start gap-4">
                               <div className="w-20 h-16 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
                                 {vehicle?.primary_image ? (
-                                  <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
+                                  <img
+                                    src={vehicle.primary_image}
+                                    alt={vehicle.title || "Vehicle"}
+                                    className="w-full h-full object-cover"
+                                  />
                                 ) : (
                                   <div className="flex items-center justify-center h-full">
                                     <Car className="w-8 h-8 text-slate-400" />
                                   </div>
                                 )}
                               </div>
-                              
+
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-slate-800 mb-1">{vehicle?.title || 'Unknown Vehicle'}</h4>
+                                <h4 className="font-semibold text-slate-800 mb-1">
+                                  {vehicle?.title || "Unknown Vehicle"}
+                                </h4>
                                 <p className="text-sm text-slate-500 mb-3">
-                                  {vehicle?.year} {vehicle?.make} {vehicle?.model}
+                                  {vehicle?.year} {vehicle?.make}{" "}
+                                  {vehicle?.model}
                                 </p>
-                                
-                                <TransferProgressTracker transfer={transfer} vehicle={vehicle} compact={true} />
+
+                                <TransferProgressTracker
+                                  transfer={transfer}
+                                  vehicle={vehicle}
+                                  compact={true}
+                                />
                               </div>
 
                               <Button
@@ -1934,34 +2385,46 @@ console.log("okook",dealershipSubscriptionDetails);
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-purple-500" />
-                  Test Drive Management
+                  Car Viewing Management
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <Tabs defaultValue="received" className="w-full">
                   <div className="px-4 pt-4">
                     <TabsList className="grid w-full grid-cols-2 h-auto">
-                      <TabsTrigger value="received" className="text-xs sm:text-sm px-2 py-2">
+                      <TabsTrigger
+                        value="received"
+                        className="text-xs sm:text-sm px-2 py-2"
+                      >
                         Received ({testDrives.length})
                       </TabsTrigger>
-                      <TabsTrigger value="sent" className="text-xs sm:text-sm px-2 py-2">
+                      <TabsTrigger
+                        value="sent"
+                        className="text-xs sm:text-sm px-2 py-2"
+                      >
                         Sent (0)
                       </TabsTrigger>
                     </TabsList>
                   </div>
 
                   <TabsContent value="received" className="mt-0 p-4">
-                    {listings.length === 0 && managedSaleVehicles.length === 0 ? (
+                    {listings.length === 0 &&
+                    managedSaleVehicles.length === 0 ? (
                       <div className="text-center py-8">
                         <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-600 mb-2">No Vehicles Listed</h3>
+                        <h3 className="text-lg font-semibold text-slate-600 mb-2">
+                          No Vehicles Listed
+                        </h3>
                         <p className="text-slate-500 text-sm">
-                          Create your first vehicle listing to manage test drives.
+                          Create your first vehicle listing to manage car
+                          viewing.
                         </p>
                       </div>
                     ) : (
                       <div className="space-y-6">
-                        {listings.filter(v => !v.website_managed && v.status === 'available').length > 0 && (
+                        {listings.filter(
+                          (v) => !v.website_managed && v.status === "available",
+                        ).length > 0 && (
                           <div className="space-y-4">
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                               <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
@@ -1969,111 +2432,214 @@ console.log("okook",dealershipSubscriptionDetails);
                                 Self-Managed Vehicles
                               </h4>
                               <p className="text-sm text-blue-700">
-                                Set test drive availability for vehicles you manage directly. You'll handle all test drive requests and scheduling.
+                                Set car viewing availability for vehicles you
+                                manage directly. You'll handle all car viewing
+                                requests and scheduling.
                               </p>
                             </div>
 
-                            {listings.filter(v => !v.website_managed && v.status === 'available').map(vehicle => (
-                              <div key={vehicle.id} className="border border-slate-200 rounded-lg p-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex gap-3">
-                                    <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                      {vehicle.primary_image ? (
-                                        <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
-                                      ) : (
-                                        <Car className="w-6 h-6 text-slate-400" />
-                                      )}
+                            {listings
+                              .filter(
+                                (v) =>
+                                  !v.website_managed &&
+                                  v.status === "available",
+                              )
+                              .map((vehicle) => (
+                                <div
+                                  key={vehicle.id}
+                                  className="border border-slate-200 rounded-lg p-4"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex gap-3">
+                                      <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                        {vehicle.primary_image ? (
+                                          <img
+                                            src={vehicle.primary_image}
+                                            alt={vehicle.title || "Vehicle"}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        ) : (
+                                          <Car className="w-6 h-6 text-slate-400" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <h4 className="font-semibold text-slate-800">
+                                          {vehicle.title}
+                                        </h4>
+                                        <p className="text-sm text-slate-500">
+                                          ${vehicle.price?.toLocaleString()}
+                                        </p>
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs mt-1"
+                                        >
+                                          <UserIcon className="w-3 h-3 mr-1" />
+                                          Self-Managed
+                                        </Badge>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <h4 className="font-semibold text-slate-800">{vehicle.title}</h4>
-                                      <p className="text-sm text-slate-500">${vehicle.price?.toLocaleString()}</p>
-                                      <Badge variant="outline" className="text-xs mt-1">
-                                        <UserIcon className="w-3 h-3 mr-1" />
-                                        Self-Managed
-                                      </Badge>
-                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        setAvailabilityVehicle(vehicle)
+                                      }
+                                    >
+                                      <Calendar className="w-4 h-4 mr-2" />
+                                      Set Availability
+                                    </Button>
                                   </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setAvailabilityVehicle(vehicle)}
-                                  >
-                                    <Calendar className="w-4 h-4 mr-2" />
-                                    Set Availability
-                                  </Button>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
 
                             <div className="mt-6">
                               <h5 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
                                 <MessageCircle className="w-4 h-4 text-purple-500" />
-                                Recent Test Drive Activity
+                                Recent Car Viewing Activity
                               </h5>
-                              {testDriveRequests.filter(req => req.recipient_id === user.id && !getVehicleById(req.vehicle_id)?.website_managed).length > 0 ? (
+                              {testDriveRequests.filter(
+                                (req) =>
+                                  req.recipient_id === user.id &&
+                                  !getVehicleById(req.vehicle_id)
+                                    ?.website_managed,
+                              ).length > 0 ? (
                                 <div className="space-y-3">
-                                  {testDriveRequests.filter(req => req.recipient_id === user.id && !getVehicleById(req.vehicle_id)?.website_managed).slice(0, 5).map(request => {
-                                    const vehicle = getVehicleById(request.vehicle_id);
-                                    const requester = getBuyerById(request.sender_id || '');
+                                  {testDriveRequests
+                                    .filter(
+                                      (req) =>
+                                        req.recipient_id === user.id &&
+                                        !getVehicleById(req.vehicle_id)
+                                          ?.website_managed,
+                                    )
+                                    .slice(0, 5)
+                                    .map((request) => {
+                                      const vehicle = getVehicleById(
+                                        request.vehicle_id,
+                                      );
+                                      const requester = getBuyerById(
+                                        request.sender_id || "",
+                                      );
 
-                                    return (
-                                      <div
-                                        key={request.id}
-                                        className="border rounded-lg p-3 bg-slate-50 border-slate-200"
-                                      >
-                                        <div className="flex items-center gap-4">
-                                          <div className="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                            {vehicle?.primary_image ? (
-                                              <img src={vehicle.primary_image} alt={vehicle?.title || 'Vehicle'} className="w-full h-full object-cover" />
-                                            ) : (
-                                              <Car className="w-6 h-6 text-slate-400 m-auto" />
-                                            )}
-                                          </div>
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600">
-                                                <UserIcon className="w-4 h-4" />
-                                              </div>
-                                              <div>
-                                                <p className="font-semibold text-slate-800 truncate">{requester.full_name}</p>
-                                                {request.test_drive_details?.preferred_date && request.test_drive_details?.preferred_time && (
-                                                  <p className="text-xs text-slate-500">
-                                                    {format(new Date(request.test_drive_details.preferred_date), 'MMM d, yyyy')} @ {request.test_drive_details.preferred_time}
+                                      return (
+                                        <div
+                                          key={request.id}
+                                          className="border rounded-lg p-3 bg-slate-50 border-slate-200"
+                                        >
+                                          <div className="flex items-center gap-4">
+                                            <div className="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                              {vehicle?.primary_image ? (
+                                                <img
+                                                  src={vehicle.primary_image}
+                                                  alt={
+                                                    vehicle?.title || "Vehicle"
+                                                  }
+                                                  className="w-full h-full object-cover"
+                                                />
+                                              ) : (
+                                                <Car className="w-6 h-6 text-slate-400 m-auto" />
+                                              )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2 mb-1">
+                                                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600">
+                                                  <UserIcon className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                  <p className="font-semibold text-slate-800 truncate">
+                                                    {requester.full_name}
                                                   </p>
-                                                )}
+                                                  {request.test_drive_details
+                                                    ?.preferred_date &&
+                                                    request.test_drive_details
+                                                      ?.preferred_time && (
+                                                      <p className="text-xs text-slate-500">
+                                                        {format(
+                                                          new Date(
+                                                            request
+                                                              .test_drive_details
+                                                              .preferred_date,
+                                                          ),
+                                                          "MMM d, yyyy",
+                                                        )}{" "}
+                                                        @{" "}
+                                                        {
+                                                          request
+                                                            .test_drive_details
+                                                            .preferred_time
+                                                        }
+                                                      </p>
+                                                    )}
+                                                </div>
                                               </div>
                                             </div>
-                                          </div>
-                                          <div className="flex items-center gap-2 flex-shrink-0">
-                                            <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setShowTestDriveDetails(request); }}>View Details</Button>
-                                            <DropdownMenu>
-                                              <DropdownMenuTrigger asChild>
-                                                <Button size="icon" variant="ghost" onClick={(e) => e.stopPropagation()}>
-                                                  <MoreHorizontal className="w-4 h-4" />
-                                                </Button>
-                                              </DropdownMenuTrigger>
-                                              <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleApproveTestDrive(request.id); }} className="text-emerald-600">
-                                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                                  Approve Request
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleCancelTestDrive(request.id); }} className="text-red-600">
-                                                  <XCircle className="mr-2 h-4 w-4" />
-                                                  Mark as Cancelled
-                                                </DropdownMenuItem>
-                                              </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setShowTestDriveDetails(
+                                                    request,
+                                                  );
+                                                }}
+                                              >
+                                                View Details
+                                              </Button>
+                                              <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                  <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    onClick={(e) =>
+                                                      e.stopPropagation()
+                                                    }
+                                                  >
+                                                    <MoreHorizontal className="w-4 h-4" />
+                                                  </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                  <DropdownMenuItem
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleApproveTestDrive(
+                                                        request.id,
+                                                      );
+                                                    }}
+                                                    className="text-emerald-600"
+                                                  >
+                                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                                    Approve Request
+                                                  </DropdownMenuItem>
+                                                  <DropdownMenuItem
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleCancelTestDrive(
+                                                        request.id,
+                                                      );
+                                                    }}
+                                                    className="text-red-600"
+                                                  >
+                                                    <XCircle className="mr-2 h-4 w-4" />
+                                                    Mark as Cancelled
+                                                  </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                              </DropdownMenu>
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })}
 
-                                  {testDriveRequests.filter(req => req.recipient_id === user.id && !getVehicleById(req.vehicle_id)?.website_managed).length > 5 && (
+                                  {testDriveRequests.filter(
+                                    (req) =>
+                                      req.recipient_id === user.id &&
+                                      !getVehicleById(req.vehicle_id)
+                                        ?.website_managed,
+                                  ).length > 5 && (
                                     <div className="text-center py-2">
                                       <Link href="/Messages">
                                         <Button variant="link" size="sm">
-                                          View All Test Drive Requests
+                                          View All Car Viewing Requests
                                         </Button>
                                       </Link>
                                     </div>
@@ -2081,14 +2647,15 @@ console.log("okook",dealershipSubscriptionDetails);
                                 </div>
                               ) : (
                                 <p className="text-slate-500 text-sm text-center py-4">
-                                  No test drive requests yet.
+                                  No car viewing requests yet.
                                 </p>
                               )}
                             </div>
                           </div>
                         )}
 
-                        {managedSaleVehicles.filter(v => v.website_managed).length > 0 && (
+                        {managedSaleVehicles.filter((v) => v.website_managed)
+                          .length > 0 && (
                           <div className="space-y-4">
                             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                               <h4 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
@@ -2096,80 +2663,126 @@ console.log("okook",dealershipSubscriptionDetails);
                                 Speedio-Managed Vehicles
                               </h4>
                               <p className="text-sm text-emerald-700">
-                                These vehicles are managed by Speedio. We handle all test drive requests, scheduling, and coordination based on the access arrangements you provided.
+                                These vehicles are managed by Speedio. We handle
+                                all car viewing requests, scheduling, and
+                                coordination based on the access arrangements
+                                you provided.
                               </p>
                             </div>
 
-                            {managedSaleVehicles.filter(v => v.website_managed).map(vehicle => (
-                              <div key={vehicle.id} className="border border-emerald-200 bg-emerald-50/30 rounded-lg p-4">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex gap-3">
-                                    <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                      {vehicle.primary_image ? (
-                                        <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
-                                      ) : (
-                                        <Car className="w-6 h-6 text-slate-400" />
-                                      )}
+                            {managedSaleVehicles
+                              .filter((v) => v.website_managed)
+                              .map((vehicle) => (
+                                <div
+                                  key={vehicle.id}
+                                  className="border border-emerald-200 bg-emerald-50/30 rounded-lg p-4"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex gap-3">
+                                      <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                        {vehicle.primary_image ? (
+                                          <img
+                                            src={vehicle.primary_image}
+                                            alt={vehicle.title || "Vehicle"}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        ) : (
+                                          <Car className="w-6 h-6 text-slate-400" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <h4 className="font-semibold text-slate-800">
+                                          {vehicle.title}
+                                        </h4>
+                                        <p className="text-sm text-slate-500">
+                                          ${vehicle.price?.toLocaleString()}
+                                        </p>
+                                        <Badge className="bg-emerald-500 text-white text-xs mt-1">
+                                          <Shield className="w-3 h-3 mr-1" />
+                                          Managed by Speedio
+                                        </Badge>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <h4 className="font-semibold text-slate-800">{vehicle.title}</h4>
-                                      <p className="text-sm text-slate-500">${vehicle.price?.toLocaleString()}</p>
-                                      <Badge className="bg-emerald-500 text-white text-xs mt-1">
-                                        <Shield className="w-3 h-3 mr-1" />
-                                        Managed by Speedio
+                                    <div className="flex flex-col gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                          const request =
+                                            testDriveRequests.find(
+                                              (r) =>
+                                                r.vehicle_id === vehicle.id,
+                                            );
+                                          if (request) {
+                                            handleViewActivity(request);
+                                          } else {
+                                            alert(
+                                              "No activity to show for this vehicle yet.",
+                                            );
+                                          }
+                                        }}
+                                      >
+                                        <Eye className="w-4 h-4 mr-2" />
+                                        View Activity
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          window.open(
+                                            `/contact?subject=Car Viewing Inquiry for ${vehicle.title} (Vehicle ID: ${vehicle.id})`,
+                                            "_blank",
+                                          )
+                                        }
+                                      >
+                                        <MessageCircle className="w-4 h-4 mr-2" />
+                                        Message Speedio
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-3 p-3 bg-white/60 rounded-lg">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <p className="text-xs text-emerald-700 font-medium">
+                                        <Calendar className="w-3 h-3 mr-1 inline" />
+                                        Car Viewing Status
+                                      </p>
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
+                                        {Math.floor(Math.random() * 5) + 1}{" "}
+                                        activities
                                       </Badge>
                                     </div>
-                                  </div>
-                                  <div className="flex flex-col gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        const request = testDriveRequests.find(r => r.vehicle_id === vehicle.id);
-                                        if (request) {
-                                          handleViewActivity(request);
-                                        } else {
-                                          alert("No activity to show for this vehicle yet.");
-                                        }
-                                      }}
-                                    >
-                                      <Eye className="w-4 h-4 mr-2" />
-                                      View Activity
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                    
-           onClick={() => window.open(`/contact?subject=Test Drive Inquiry for ${vehicle.title} (Vehicle ID: ${vehicle.id})`, '_blank')}
-                                    >
-                                      <MessageCircle className="w-4 h-4 mr-2" />
-                                      Message Speedio
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                <div className="mt-3 p-3 bg-white/60 rounded-lg">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs text-emerald-700 font-medium">
-                                      <Calendar className="w-3 h-3 mr-1 inline" />
-                                      Test Drive Status
+                                    <p className="text-xs text-slate-600 mb-2">
+                                      Our team manages all car viewing requests
+                                      for this vehicle based on the access
+                                      arrangements you provided.
                                     </p>
-                                    <Badge variant="outline" className="text-xs">
-                                      {Math.floor(Math.random() * 5) + 1} activities
-                                    </Badge>
-                                  </div>
-                                  <p className="text-xs text-slate-600 mb-2">
-                                    Our team manages all test drive requests for this vehicle based on the access arrangements you provided.
-                                  </p>
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-slate-500">Recent activity:</span>
-                                    <span className="text-emerald-600 font-medium">
-                                      Last test drive: {format(new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), 'MMM d')}
-                                    </span>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="text-slate-500">
+                                        Recent activity:
+                                      </span>
+                                      <span className="text-emerald-600 font-medium">
+                                        Last car viewing:{" "}
+                                        {format(
+                                          new Date(
+                                            Date.now() -
+                                              Math.random() *
+                                                7 *
+                                                24 *
+                                                60 *
+                                                60 *
+                                                1000,
+                                          ),
+                                          "MMM d",
+                                        )}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
                           </div>
                         )}
                       </div>
@@ -2181,74 +2794,124 @@ console.log("okook",dealershipSubscriptionDetails);
                       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                         <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2">
                           <Car className="w-5 h-5" />
-                          Your Test Drive Requests
+                          Your Car Viewing Requests
                         </h4>
                         <p className="text-sm text-purple-700">
-                          Track the status of test drive requests you've submitted for other vehicles.
+                          Track the status of car viewing requests you've
+                          submitted for other vehicles.
                         </p>
                       </div>
 
-                      {testDriveRequests.filter(req => req.sender_id === user.id).length > 0 ? (
+                      {testDriveRequests.filter(
+                        (req) => req.sender_id === user.id,
+                      ).length > 0 ? (
                         <div className="space-y-3">
-                          {testDriveRequests.filter(req => req.sender_id === user.id).map(request => {
-                            const vehicle = getVehicleById(request.vehicle_id);
-                            const seller = getBuyerById(request.recipient_id || '');
-                            return (
-                              <div
-                                key={request.id}
-                                className="border rounded-lg p-4 bg-slate-50 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
-                                onClick={() => setViewingSentTestDrive(request)}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex gap-4 items-center">
-                                    <div className="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                      {vehicle?.primary_image ? (
-                                        <img src={vehicle.primary_image} alt={vehicle?.title || 'Vehicle'} className="w-full h-full object-cover" />
-                                      ) : (
-                                        <Car className="w-6 h-6 text-slate-400" />
-                                      )}
-                                    </div>
-                                    <div className="flex-1">
-                                      <p className="font-medium text-slate-800">{vehicle?.title || 'Unknown Vehicle'}</p>
-                                      <p className="text-xs text-slate-500">
-                                        To: {seller?.full_name || 'Unknown Seller'} • {format(new Date(request.created_date || Date.now()), 'MMM d')}
-                                      </p>
-                                      {request.test_drive_details?.preferred_date && (
-                                        <p className="text-xs text-slate-600 mt-1">
-                                          Requested for {format(new Date(request.test_drive_details.preferred_date), 'MMM d, yyyy')}
+                          {testDriveRequests
+                            .filter((req) => req.sender_id === user.id)
+                            .map((request) => {
+                              const vehicle = getVehicleById(
+                                request.vehicle_id,
+                              );
+                              const seller = getBuyerById(
+                                request.recipient_id || "",
+                              );
+                              return (
+                                <div
+                                  key={request.id}
+                                  className="border rounded-lg p-4 bg-slate-50 border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
+                                  onClick={() =>
+                                    setViewingSentTestDrive(request)
+                                  }
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex gap-4 items-center">
+                                      <div className="w-16 h-12 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                        {vehicle?.primary_image ? (
+                                          <img
+                                            src={vehicle.primary_image}
+                                            alt={vehicle?.title || "Vehicle"}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        ) : (
+                                          <Car className="w-6 h-6 text-slate-400" />
+                                        )}
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="font-medium text-slate-800">
+                                          {vehicle?.title || "Unknown Vehicle"}
                                         </p>
-                                      )}
+                                        <p className="text-xs text-slate-500">
+                                          To:{" "}
+                                          {seller?.full_name ||
+                                            "Unknown Seller"}{" "}
+                                          •{" "}
+                                          {format(
+                                            new Date(
+                                              request.created_date ||
+                                                Date.now(),
+                                            ),
+                                            "MMM d",
+                                          )}
+                                        </p>
+                                        {request.test_drive_details
+                                          ?.preferred_date && (
+                                          <p className="text-xs text-slate-600 mt-1">
+                                            Requested for{" "}
+                                            {format(
+                                              new Date(
+                                                request.test_drive_details
+                                                  .preferred_date,
+                                              ),
+                                              "MMM d, yyyy",
+                                            )}
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge className={`text-sm capitalize ${
-                                      request.test_drive_details?.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                        request.test_drive_details?.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                                          request.test_drive_details?.status === 'declined' ? 'bg-red-100 text-red-800' :
-                                            'bg-amber-100 text-amber-800'
-                                      }`}>
-                                      {request.test_drive_details?.status || 'pending'}
-                                    </Badge>
-                                    <div className="mt-1">
-                                      <Button variant="ghost" size="sm" onClick={(e) => {
-                                        e.stopPropagation();
-                                        setViewingSentTestDrive(request);
-                                      }}>
-                                        View Details
-                                      </Button>
+                                    <div className="text-right">
+                                      <Badge
+                                        className={`text-sm capitalize ${
+                                          request.test_drive_details?.status ===
+                                          "approved"
+                                            ? "bg-green-100 text-green-800"
+                                            : request.test_drive_details
+                                                  ?.status === "completed"
+                                              ? "bg-blue-100 text-blue-800"
+                                              : request.test_drive_details
+                                                    ?.status === "declined"
+                                                ? "bg-red-100 text-red-800"
+                                                : "bg-amber-100 text-amber-800"
+                                        }`}
+                                      >
+                                        {request.test_drive_details?.status ||
+                                          "pending"}
+                                      </Badge>
+                                      <div className="mt-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setViewingSentTestDrive(request);
+                                          }}
+                                        >
+                                          View Details
+                                        </Button>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            )
-                          })}
+                              );
+                            })}
                         </div>
                       ) : (
                         <div className="text-center py-8">
                           <Car className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                          <h3 className="text-lg font-semibold text-slate-600 mb-2">No Test Drive Requests Sent</h3>
+                          <h3 className="text-lg font-semibold text-slate-600 mb-2">
+                            No Car Viewing Requests Sent
+                          </h3>
                           <p className="text-slate-500 text-sm">
-                            You haven't requested any test drives yet.
+                            You haven't requested any car viewings yet.
                           </p>
                         </div>
                       )}
@@ -2283,7 +2946,10 @@ console.log("okook",dealershipSubscriptionDetails);
                   <div className="text-center py-8 text-slate-500">
                     <Handshake className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                     <p className="font-medium mb-1">No Managed Sale Vehicles</p>
-                    <p className="text-sm">Vehicles sold through our managed service will appear here.</p>
+                    <p className="text-sm">
+                      Vehicles sold through our managed service will appear
+                      here.
+                    </p>
                     <Link href="/Managed-Sales" className="mt-4 inline-block">
                       <Button variant="outline">
                         <TrendingUp className="w-4 h-4 mr-2" />
@@ -2294,20 +2960,31 @@ console.log("okook",dealershipSubscriptionDetails);
                 ) : (
                   <div className="grid gap-6">
                     {managedSaleVehicles.map((vehicle) => (
-                      <Card key={vehicle.id} className="border border-slate-200">
+                      <Card
+                        key={vehicle.id}
+                        className="border border-slate-200"
+                      >
                         <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
                               <div className="w-20 h-16 bg-slate-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {vehicle.primary_image ? (
-                                  <img src={vehicle.primary_image} alt={vehicle.title || 'Vehicle'} className="w-full h-full object-cover" />
+                                  <img
+                                    src={vehicle.primary_image}
+                                    alt={vehicle.title || "Vehicle"}
+                                    className="w-full h-full object-cover"
+                                  />
                                 ) : (
                                   <Car className="w-8 h-8 text-slate-400" />
                                 )}
                               </div>
                               <div>
-                                <h3 className="font-semibold text-slate-800">{vehicle.title}</h3>
-                                <p className="text-lg font-bold text-blue-600">${vehicle.price?.toLocaleString()}</p>
+                                <h3 className="font-semibold text-slate-800">
+                                  {vehicle.title}
+                                </h3>
+                                <p className="text-lg font-bold text-blue-600">
+                                  ${vehicle.price?.toLocaleString()}
+                                </p>
                                 <div className="flex items-center gap-2 text-sm text-slate-500">
                                   <MapPin className="w-4 h-4" />
                                   {vehicle.location}
@@ -2315,12 +2992,17 @@ console.log("okook",dealershipSubscriptionDetails);
                               </div>
                             </div>
                             <div className="flex flex-col gap-2">
-                              <Badge className={
-                                vehicle.status === 'available' ? 'bg-green-100 text-green-800' :
-                                  vehicle.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                    vehicle.status === 'sold' ? 'bg-blue-100 text-blue-800' :
-                                      'bg-slate-100 text-slate-800'
-                              }>
+                              <Badge
+                                className={
+                                  vehicle.status === "available"
+                                    ? "bg-green-100 text-green-800"
+                                    : vehicle.status === "pending"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : vehicle.status === "sold"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "bg-slate-100 text-slate-800"
+                                }
+                              >
                                 {vehicle.status}
                               </Badge>
                               <div className="text-xs text-slate-500">
@@ -2333,7 +3015,13 @@ console.log("okook",dealershipSubscriptionDetails);
                           <div className="text-sm text-slate-600">
                             <p className="mb-2">{vehicle.description}</p>
                             <p className="text-xs text-slate-500">
-                              Listed {vehicle.createdAt ? format(new Date(vehicle.createdAt), 'MMM d, yyyy') : '—'}
+                              Listed{" "}
+                              {vehicle.createdAt
+                                ? format(
+                                    new Date(vehicle.createdAt),
+                                    "MMM d, yyyy",
+                                  )
+                                : "—"}
                             </p>
                           </div>
 
@@ -2370,17 +3058,30 @@ console.log("okook",dealershipSubscriptionDetails);
                 <CardContent>
                   <div className="space-y-4">
                     <div className="p-3 border border-slate-200 rounded-lg">
-                      <h4 className="font-semibold text-slate-800 mb-1">Profile Settings</h4>
-                      <p className="text-sm text-slate-600 mb-2">Manage your seller profile and verification status</p>
+                      <h4 className="font-semibold text-slate-800 mb-1">
+                        Profile Settings
+                      </h4>
+                      <p className="text-sm text-slate-600 mb-2">
+                        Manage your seller profile and verification status
+                      </p>
                       <Link href="/Profile">
-                        <Button variant="outline" size="sm">Edit Profile</Button>
+                        <Button variant="outline" size="sm">
+                          Edit Profile
+                        </Button>
                       </Link>
                     </div>
                     <div className="p-3 border border-slate-200 rounded-lg">
-                      <h4 className="font-semibold text-slate-800 mb-1">Subscription & Billing</h4>
-                      <p className="text-sm text-slate-600 mb-2">View and manage your subscription plan and payment details</p>
+                      <h4 className="font-semibold text-slate-800 mb-1">
+                        Subscription & Billing
+                      </h4>
+                      <p className="text-sm text-slate-600 mb-2">
+                        View and manage your subscription plan and payment
+                        details
+                      </p>
                       <Link href="/ManageSubscription">
-                        <Button variant="outline" size="sm">Manage Subscription</Button>
+                        <Button variant="outline" size="sm">
+                          Manage Subscription
+                        </Button>
                       </Link>
                     </div>
                   </div>
@@ -2405,11 +3106,12 @@ console.log("okook",dealershipSubscriptionDetails);
                   <p className="text-slate-600 mb-4">
                     {upgradeRec.description}
                   </p>
-
                 </div>
                 <div className="flex-shrink-0">
                   <Link href="/Subscription">
-                    <Button className={`bg-gradient-to-r ${upgradeRec.gradient} hover:from-purple-600 hover:to-blue-600 text-lg px-6 py-3`}>
+                    <Button
+                      className={`bg-gradient-to-r ${upgradeRec.gradient} hover:from-purple-600 hover:to-blue-600 text-lg px-6 py-3`}
+                    >
                       <TrendingUp className="w-5 h-5 mr-2" />
                       {upgradeRec.cta}
                     </Button>
@@ -2547,12 +3249,17 @@ console.log("okook",dealershipSubscriptionDetails);
               className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full relative max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <Button variant="ghost" size="icon" className="absolute top-3 right-3" onClick={() => setViewingSentTestDrive(null)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-3 right-3"
+                onClick={() => setViewingSentTestDrive(null)}
+              >
                 <X className="w-5 h-5" />
               </Button>
 
               <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-purple-700">
-                <Calendar className="w-6 h-6" /> Your Test Drive Request
+                <Calendar className="w-6 h-6" /> Your Car Viewing Request
               </h2>
 
               <div className="space-y-4">
@@ -2561,15 +3268,24 @@ console.log("okook",dealershipSubscriptionDetails);
                     <Car className="w-5 h-5 text-slate-600" /> Vehicle
                   </h3>
                   {(() => {
-                    const vehicle = getVehicleById(viewingSentTestDrive.vehicle_id);
+                    const vehicle = getVehicleById(
+                      viewingSentTestDrive.vehicle_id,
+                    );
                     return (
                       <>
                         {vehicle?.primary_image && (
-                          <img src={vehicle.primary_image} alt={vehicle?.title || 'Vehicle'} className="w-full h-32 object-cover rounded-md mb-2" />
+                          <img
+                            src={vehicle.primary_image}
+                            alt={vehicle?.title || "Vehicle"}
+                            className="w-full h-32 object-cover rounded-md mb-2"
+                          />
                         )}
-                        <p className="text-md font-medium text-slate-800">{vehicle?.title || 'N/A'}</p>
+                        <p className="text-md font-medium text-slate-800">
+                          {vehicle?.title || "N/A"}
+                        </p>
                         <p className="text-sm text-slate-600">
-                          <strong>Price:</strong> ${vehicle?.price?.toLocaleString() || 'N/A'}
+                          <strong>Price:</strong> $
+                          {vehicle?.price?.toLocaleString() || "N/A"}
                         </p>
                       </>
                     );
@@ -2581,12 +3297,17 @@ console.log("okook",dealershipSubscriptionDetails);
                     <UserIcon className="w-5 h-5 text-slate-600" /> Seller
                   </h3>
                   {(() => {
-                    const seller = getBuyerById(viewingSentTestDrive.recipient_id);
+                    const seller = getBuyerById(
+                      viewingSentTestDrive.recipient_id,
+                    );
                     return (
                       <>
-                        <p className="text-md font-medium text-slate-800">{seller.full_name || 'Unknown Seller'}</p>
+                        <p className="text-md font-medium text-slate-800">
+                          {seller.full_name || "Unknown Seller"}
+                        </p>
                         <p className="text-sm text-slate-600 flex items-center gap-1">
-                          <MessageCircle className="w-4 h-4" /> {seller.email || 'N/A'}
+                          <MessageCircle className="w-4 h-4" />{" "}
+                          {seller.email || "N/A"}
                         </p>
                       </>
                     );
@@ -2595,38 +3316,67 @@ console.log("okook",dealershipSubscriptionDetails);
 
                 <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
                   <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-slate-600" /> Request Details
+                    <Calendar className="w-5 h-5 text-slate-600" /> Request
+                    Details
                   </h3>
                   <div className="space-y-2">
                     <p className="text-sm text-slate-700">
-                      <strong>Requested Date:</strong> {viewingSentTestDrive.test_drive_details?.preferred_date ? format(new Date(viewingSentTestDrive.test_drive_details.preferred_date), 'EEE, MMM d, yyyy') : 'N/A'}
+                      <strong>Requested Date:</strong>{" "}
+                      {viewingSentTestDrive.test_drive_details?.preferred_date
+                        ? format(
+                            new Date(
+                              viewingSentTestDrive.test_drive_details
+                                .preferred_date,
+                            ),
+                            "EEE, MMM d, yyyy",
+                          )
+                        : "N/A"}
                     </p>
                     <p className="text-sm text-slate-700">
-                      <strong>Requested Time:</strong> {viewingSentTestDrive.test_drive_details?.preferred_time || 'N/A'}
+                      <strong>Requested Time:</strong>{" "}
+                      {viewingSentTestDrive.test_drive_details
+                        ?.preferred_time || "N/A"}
                     </p>
                     <p className="text-sm text-slate-700">
-                      <strong>Location:</strong> {viewingSentTestDrive.test_drive_details?.location || 'N/A'}
+                      <strong>Location:</strong>{" "}
+                      {viewingSentTestDrive.test_drive_details?.location ||
+                        "N/A"}
                     </p>
                     <div className="pt-2">
-                      <p className="text-sm font-medium text-slate-700 mb-1">Your Notes:</p>
+                      <p className="text-sm font-medium text-slate-700 mb-1">
+                        Your Notes:
+                      </p>
                       <div className="bg-white border border-slate-200 rounded-md p-3 min-h-[60px]">
                         {viewingSentTestDrive.test_drive_details?.notes ? (
-                          <p className="text-sm text-slate-700 whitespace-pre-wrap">{viewingSentTestDrive.test_drive_details.notes}</p>
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                            {viewingSentTestDrive.test_drive_details.notes}
+                          </p>
                         ) : (
-                          <p className="text-sm text-slate-500 italic">No notes provided</p>
+                          <p className="text-sm text-slate-500 italic">
+                            No notes provided
+                          </p>
                         )}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mt-3">
                     <strong>Status:</strong>
-                    <Badge className={`text-sm capitalize ${
-                      viewingSentTestDrive.test_drive_details?.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        viewingSentTestDrive.test_drive_details?.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                          viewingSentTestDrive.test_drive_details?.status === 'declined' ? 'bg-red-100 text-red-800' :
-                            'bg-amber-100 text-amber-800'
-                      }`}>
-                      {viewingSentTestDrive.test_drive_details?.status || 'pending'}
+                    <Badge
+                      className={`text-sm capitalize ${
+                        viewingSentTestDrive.test_drive_details?.status ===
+                        "approved"
+                          ? "bg-green-100 text-green-800"
+                          : viewingSentTestDrive.test_drive_details?.status ===
+                              "completed"
+                            ? "bg-blue-100 text-blue-800"
+                            : viewingSentTestDrive.test_drive_details
+                                  ?.status === "declined"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {viewingSentTestDrive.test_drive_details?.status ||
+                        "pending"}
                     </Badge>
                   </div>
                 </div>
@@ -2635,12 +3385,21 @@ console.log("okook",dealershipSubscriptionDetails);
               <div className="mt-6 pt-4 border-t border-slate-200">
                 <div className="flex flex-wrap gap-3 justify-end">
                   {(() => {
-                    const seller = getBuyerById(viewingSentTestDrive.recipient_id);
-                    const vehicle = getVehicleById(viewingSentTestDrive.vehicle_id);
+                    const seller = getBuyerById(
+                      viewingSentTestDrive.recipient_id,
+                    );
+                    const vehicle = getVehicleById(
+                      viewingSentTestDrive.vehicle_id,
+                    );
                     if (seller && vehicle) {
                       return (
-                        <Link href={`/Messages?recipientId=${seller.user_id}&vehicleId=${vehicle.id}`}>
-                          <Button variant="outline" className="flex items-center gap-1">
+                        <Link
+                          href={`/Messages?recipientId=${seller.user_id}&vehicleId=${vehicle.id}`}
+                        >
+                          <Button
+                            variant="outline"
+                            className="flex items-center gap-1"
+                          >
                             <MessageSquare className="w-4 h-4" /> Message Seller
                           </Button>
                         </Link>
@@ -2649,17 +3408,27 @@ console.log("okook",dealershipSubscriptionDetails);
                     return null;
                   })()}
 
-                  {viewingSentTestDrive.test_drive_details?.status === 'pending' && (
+                  {viewingSentTestDrive.test_drive_details?.status ===
+                    "pending" && (
                     <Button
                       variant="destructive"
-                      onClick={() => handleCancelSentTestDriveRequest(viewingSentTestDrive.id)}
+                      onClick={() =>
+                        handleCancelSentTestDriveRequest(
+                          viewingSentTestDrive.id,
+                        )
+                      }
                       className="flex items-center gap-1"
                     >
                       <XCircle className="w-4 h-4" /> Cancel Request
                     </Button>
                   )}
 
-                  <Button variant="outline" onClick={() => setViewingSentTestDrive(null)}>Close</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setViewingSentTestDrive(null)}
+                  >
+                    Close
+                  </Button>
                 </div>
               </div>
             </motion.div>
@@ -2670,11 +3439,15 @@ console.log("okook",dealershipSubscriptionDetails);
       <BuyMoreSlotsModal
         isOpen={showBuyMoreSlotsModal}
         onClose={() => setShowBuyMoreSlotsModal(false)}
-       currentSlots={
-  slotDetails
-    ? { purchased: slotDetails.purchased, used: slotDetails.used, remaining: slotDetails.remaining }
-    : { purchased: 0, used: 0, remaining: 0 }
-}
+        currentSlots={
+          slotDetails
+            ? {
+                purchased: slotDetails.purchased,
+                used: slotDetails.used,
+                remaining: slotDetails.remaining,
+              }
+            : { purchased: 0, used: 0, remaining: 0 }
+        }
       />
 
       {/* Transfer Details Modal */}
@@ -2696,17 +3469,25 @@ console.log("okook",dealershipSubscriptionDetails);
               onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-white z-10 px-6 pt-4 pb-2 border-b border-slate-200 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-slate-800">Transfer Details</h3>
-                <Button variant="ghost" size="icon" onClick={() => setSelectedTransfer(null)}>
+                <h3 className="text-xl font-bold text-slate-800">
+                  Transfer Details
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedTransfer(null)}
+                >
                   <X className="w-5 h-5" />
                 </Button>
               </div>
-              
+
               <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-                <TransferProgressTracker 
-                  transfer={selectedTransfer} 
-                  vehicle={listings.find((v: any) => v.id === selectedTransfer.vehicle_id)} 
-                  compact={false} 
+                <TransferProgressTracker
+                  transfer={selectedTransfer}
+                  vehicle={listings.find(
+                    (v: any) => v.id === selectedTransfer.vehicle_id,
+                  )}
+                  compact={false}
                 />
               </div>
             </motion.div>

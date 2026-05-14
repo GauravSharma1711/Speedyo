@@ -13,6 +13,7 @@ import { X, CheckCircle, Circle, Upload, User, MapPin, Camera, Loader2 } from "l
 
 import { useProfileUpdateStore } from "@/store/profile/profileUpdate";
 import { useSession } from "next-auth/react";
+import ImageCropper from "@/components/ui/ImageCropper";
 
 type SetupData = {
   full_name: string;
@@ -89,6 +90,8 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeStep, setActiveStep] = useState<StepId | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState("");
 
   const emailName = useMemo(() => user?.email?.split("@")[0] || "", [user?.email]);
 
@@ -151,19 +154,25 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    try {
-      setSelectedImageFile(file);
-      const url = URL.createObjectURL(file);
-      setSetupData((prev) => ({ ...prev, profile_image: url }));
-      toast({ title: "Photo selected", description: "Click Save to upload." });
-    } catch (error) {
-      console.error("Profile image preview failed", error);
-      toast({ title: "Upload failed", description: "Could not preview image.", variant: "destructive" });
-    } finally {
-      setIsUploading(false);
-      e.target.value = "";
-    }
+    const url = URL.createObjectURL(file);
+    setRawImageSrc(url);
+    setShowCropper(true);
+    e.target.value = "";
+  };
+
+  const handleCropComplete = (croppedFile: File) => {
+    setSelectedImageFile(croppedFile);
+    const url = URL.createObjectURL(croppedFile);
+    setSetupData((prev) => ({ ...prev, profile_image: url }));
+    setShowCropper(false);
+    toast({ title: "Photo selected", description: "Click Save to upload." });
+    URL.revokeObjectURL(rawImageSrc);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    URL.revokeObjectURL(rawImageSrc);
+    setRawImageSrc("");
   };
 
   const handleSaveStep = async (stepId: StepId) => {
@@ -328,6 +337,17 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
       </motion.div>
     );
   };
+
+  if (showCropper && rawImageSrc) {
+    return (
+      <ImageCropper
+        imageSrc={rawImageSrc}
+        onCrop={handleCropComplete}
+        onCancel={handleCropCancel}
+        aspectRatio={1}
+      />
+    );
+  }
 
   return (
     <motion.div

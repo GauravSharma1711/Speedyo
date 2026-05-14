@@ -332,7 +332,7 @@ export default function SignAgreementPage() {
                 "List this vehicle on the Speedio platform and associated marketing channels",
                 "Represent the vehicle accurately using provided information, photos, and inspection data",
                 "Communicate with potential buyers on behalf of the dealership",
-                "Schedule test drives and handle buyer inquiries",
+                "Schedule car viewing and handle buyer inquiries",
                 "Handle title transfer processes",
                 "Collect payment from buyer and disburse payment to dealership",
               ].map((line) => (

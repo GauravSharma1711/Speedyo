@@ -307,8 +307,8 @@ export default function VehiclePage() {
       setShowConfirmationModal(true);
     } catch (e) {
       toast({
-        title: "Failed to request test drive",
-        description: e instanceof Error ? e.message : "Failed to request test drive",
+        title: "Failed to request car viewing",
+        description: e instanceof Error ? e.message : "Failed to request car viewing",
         variant: "destructive",
       });
     }
@@ -406,7 +406,7 @@ export default function VehiclePage() {
                   </div>
                   <h2 className="text-2xl font-bold text-slate-800 mb-2">Request Submitted!</h2>
                   <p className="text-slate-600 mb-6">
-                    Your test drive request for the “{vehicle.title}” has been sent. You’ll receive updates in
+                    Your car viewing request for the “{vehicle.title}” has been sent. You’ll receive updates in
                     Messages.
                   </p>
                   <Button onClick={() => setShowConfirmationModal(false)} className="w-full">
@@ -514,7 +514,7 @@ export default function VehiclePage() {
                   className="w-full text-lg py-6 bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
                   disabled={isRequestingTestDrive}
                 >
-                  Schedule Test Drive
+                  Schedule Car Viewing
                 </Button>
 
                 <Button

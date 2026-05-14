@@ -250,7 +250,7 @@ export default function ManagedSalesPage() {
                   </div>
                   <h3 className="font-bold text-slate-800 mb-2 text-sm sm:text-base">Expert Negotiations</h3>
                   <p className="text-slate-600 text-xs sm:text-sm">
-                    Our team handles all buyer inquiries, negotiations, and test drive coordination.
+                    Our team handles all buyer inquiries, negotiations, and car viewing coordination.
                   </p>
                 </CardContent>
               </Card>
@@ -479,7 +479,7 @@ export default function ManagedSalesPage() {
                         <CheckCircle className="w-5 h-5 text-emerald-600" />
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-800">Test drive coordination</p>
+                        <p className="font-semibold text-slate-800">Car Viewing  coordination</p>
                         <p className="text-xs text-slate-600">Safe and organized viewings</p>
                       </div>
                     </div>

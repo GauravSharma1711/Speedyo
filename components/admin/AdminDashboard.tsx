@@ -56,18 +56,18 @@ type AdminUser = {
 
 const NAV = [
   { key: "managed_sales", label: "Managed Sales", icon: Handshake },
+  { key: "listings", label: "Listings", icon: Car },
   { key: "transfers", label: "Transfers", icon: ArrowRightLeft },
-  { key: "test_drives", label: "Test Drives", icon: CalendarCheck },
+  { key: "car_viewing", label: "Car Viewing", icon: CalendarCheck },
   { key: "agreements", label: "Dealership", icon: FileText },
   { key: "liaison_agreements", label: "Liaison", icon: FileText },
-  { key: "photographer_agreements", label: "Photographer", icon: FileText },
+  // { key: "photographer_agreements", label: "Photographer", icon: FileText },
   { key: "users", label: "Users", icon: Users },
-  { key: "listings", label: "Listings", icon: Car },
   { key: "edit_requests", label: "Edit Requests", icon: Edit },
   { key: "support", label: "Support", icon: LifeBuoy },
   { key: "feedback", label: "Feedback", icon: MessageSquare },
   { key: "checklists", label: "Checklists", icon: ClipboardCheck },
-  { key: "oist-trade-in", label: "OIST Trade-In", icon: RefreshCw },
+  // { key: "oist-trade-in", label: "OIST Trade-In", icon: RefreshCw },
 ] as const;
 
 function SectionPlaceholder(props: { title: string; description?: string }) {
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
                 <TabsContent value="transfers">
                   <TransferStatusManagerUI />
                 </TabsContent>
-                <TabsContent value="test_drives">
+                <TabsContent value="car_viewing">
                   <TestDriveManagementUI/>
                 </TabsContent>
                 <TabsContent value="agreements">
@@ -265,9 +265,9 @@ export default function AdminDashboard() {
                 <TabsContent value="liaison_agreements">
                  <LiaisonAgreementManagerUI/>
                 </TabsContent>
-                <TabsContent value="photographer_agreements">
+                {/* <TabsContent value="photographer_agreements">
                  <PhotographerAgreementManagerUI/>
-                </TabsContent>
+                </TabsContent> */}
                 <TabsContent value="users">
                   <UserManagementUI/>
                 </TabsContent>
@@ -286,9 +286,9 @@ export default function AdminDashboard() {
                 <TabsContent value="checklists">
                 <InspectionChecklistManagementUI/>
                 </TabsContent>
-                <TabsContent value="oist-trade-in">
+                {/* <TabsContent value="oist-trade-in">
                  <OISTTradeInRequestManagementUI/>
-                </TabsContent>
+                </TabsContent> */}
               </Tabs>
             </div>
           </div>

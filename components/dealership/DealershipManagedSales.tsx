@@ -145,7 +145,7 @@ export default function DealershipManagedSales() {
         icon: MessageCircle,
         title: "Buyer Communication",
         description:
-          "We handle all English messages, inquiries, and test drive scheduling on your behalf.",
+          "We handle all English messages, inquiries, and car viewing scheduling on your behalf.",
         color: "purple" as const,
       },
       {
@@ -191,7 +191,7 @@ export default function DealershipManagedSales() {
         number: 5,
         title: "You Close the Sale",
         description:
-          "We arrange test drives and connect qualified buyers directly to your dealership.",
+          "We arrange car viewings and connect qualified buyers directly to your dealership.",
         icon: CheckCircle,
       },
     ],
@@ -221,7 +221,7 @@ export default function DealershipManagedSales() {
       {
         icon: BarChart3,
         title: "Analytics & Reports",
-        description: "Track views, leads, test drives, and performance for each listing.",
+        description: "Track views, leads, car viewing, and performance for each listing.",
       },
     ],
     []

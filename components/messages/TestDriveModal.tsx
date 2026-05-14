@@ -178,7 +178,7 @@ export default function TestDriveModal({
         <Card className="bg-white">
           <CardHeader className="flex justify-between items-start">
             <div>
-              <CardTitle>Schedule a Test Drive</CardTitle>
+              <CardTitle>Schedule a Car Viewing</CardTitle>
               <CardDescription>Select a vehicle and choose a time that works for you.</CardDescription>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}><X className="w-5 h-5" /></Button>
@@ -215,7 +215,7 @@ export default function TestDriveModal({
                     <Alert variant="destructive">
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>
-                        This seller has not set their recurring test drive availability. Please select a date and we will coordinate with them.
+                        This seller has not set their recurring car viewing availability. Please select a date and we will coordinate with them.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -291,7 +291,7 @@ export default function TestDriveModal({
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Any questions or specific things you'd like to check during the test drive?"
+                  placeholder="Any questions or specific things you'd like to check during the car viewing?"
                 />
               </div>
 
