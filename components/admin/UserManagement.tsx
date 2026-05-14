@@ -354,8 +354,8 @@ export default function UserManagementUI() {
                     <p className="text-slate-600">{user.business_name || "Not provided"}</p>
                   </div>
                   <div>
-                    <Label className="font-medium">Tax ID</Label>
-                    <p className="text-slate-600">{user.tax_id_number || "Not provided"}</p>
+                    <Label className="font-medium">Dealer License Nuumber</Label>
+                    <p className="text-slate-600">{user.dealer_License_Number || "Not provided"}</p>
                   </div>
                   <div>
                     <Label className="font-medium">Address</Label>

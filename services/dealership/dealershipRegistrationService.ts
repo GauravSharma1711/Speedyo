@@ -7,7 +7,7 @@ export type DealershipRegistrationInput = {
   business_city: string;
   business_state: string;
   business_zip: string;
-  tax_id_number: string;
+  dealer_License_Number: string;
   business_license_files: File[];       
   existing_urls?: string[];             
 };
@@ -22,7 +22,7 @@ export const dealershipRegistrationService = {
     form.append("business_city", input.business_city);
     form.append("business_state", input.business_state);
     form.append("business_zip", input.business_zip);
-    form.append("tax_id_number", input.tax_id_number);
+    form.append("dealer_License_Number", input.dealer_License_Number);
 
     // Append each file
     for (const file of input.business_license_files) {

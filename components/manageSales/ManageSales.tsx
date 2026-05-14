@@ -377,13 +377,13 @@ export default function ManagedSalesPage() {
                                       <div class="space-y-3 sm:space-y-4">
                                         <div class="flex flex-col sm:flex-row justify-between sm:items-center py-2 sm:py-3 border-b border-slate-200 gap-1 sm:gap-0">
                                           <span class="text-slate-600 font-medium text-sm sm:text-base">Your Asking Price:</span>
-                                          <span class="text-xl sm:text-2xl font-bold text-slate-800">$${askingPrice.toLocaleString()}</span>
+                                          <span class="text-xl sm:text-2xl font-bold text-slate-800">¥${askingPrice.toLocaleString()}</span>
                                         </div>
                                         <div class="flex flex-col sm:flex-row justify-between sm:items-center py-2 sm:py-3 gap-2 sm:gap-0">
                                           <div>
                                             <span class="text-slate-600 font-medium block text-sm sm:text-base">Service Fee</span>
                                             <span class="text-xs text-slate-500">${
-                                              askingPrice < 500 ? '$300 minimum' :
+                                              askingPrice < 500 ? '¥300 minimum' :
                                               askingPrice <= 3000 ? 'Scales ¥300-¥500' :
                                               askingPrice <= 8333 ? '¥500 flat' : '6% of asking price'
                                             }</span>

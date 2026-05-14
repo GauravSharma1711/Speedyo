@@ -121,7 +121,12 @@ export async function PATCH(
         ...(description  && { description }),
         ...(primary_image && { primary_image }),
         ...(images       && { images }),
+
+
       },
+        include: {
+    author: true,
+  },
     });
 
     return NextResponse.json({ success: true, vehicle });

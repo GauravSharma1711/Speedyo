@@ -64,7 +64,7 @@ export default function NewVehicleListingEmail({
                     </p>
                     ${vehicle_price !== undefined ? `
                     <p style="margin:0 0 6px; font-size:15px; color:#334155;">
-                      <strong>Price:</strong> $${vehicle_price.toLocaleString()}
+                      <strong>Price:</strong> ¥${vehicle_price.toLocaleString()}
                     </p>` : ''}
                     ${vehicle_year !== undefined ? `
                     <p style="margin:0 0 6px; font-size:15px; color:#334155;">

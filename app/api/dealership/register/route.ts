@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const business_city = formData.get("business_city") as string;
     const business_state = formData.get("business_state") as string;
     const business_zip = formData.get("business_zip") as string;
-    const tax_id_number = formData.get("tax_id_number") as string;
+    const dealer_License_Number = formData.get("dealer_License_Number") as string;
 
     // Handle multiple file uploads
     const files = formData.getAll("files") as File[];
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         business_city,
         business_state,
         business_zip,
-        tax_id_number,
+        dealer_License_Number,
         business_license_urls: allUrls,
         dealership_verification_status: "pending_payment",
         verification_fee_paid: false,

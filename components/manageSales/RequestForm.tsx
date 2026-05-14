@@ -564,6 +564,7 @@ export default function RequestFormUI(props: Props) {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      if (currentStep !== steps.length) return;
       if (!validateCurrentStep()) {
         toast({ title: "Missing Information", description: "Please complete required fields.", variant: "destructive" });
         return;
@@ -1935,7 +1936,7 @@ export default function RequestFormUI(props: Props) {
               <>
                 <Camera className="w-10 h-10 text-slate-400 mb-3" />
                 <p className="font-semibold text-slate-700">Upload files or drag and drop</p>
-                <p className="text-sm text-slate-500">Local preview (UI-only)</p>
+                <p className="text-sm text-slate-500">PNG, JPG, GIF up to 30MB each (will be processed on client and server)</p>
               </>
             )}
 
@@ -2271,15 +2272,15 @@ export default function RequestFormUI(props: Props) {
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Your Asking Price:</span>
-              <span className="font-semibold">${asking.toLocaleString()}</span>
+              <span className="font-semibold">¥{asking.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-blue-600">
               <span>Service Fee (added to listing):</span>
-              <span className="font-semibold">+${fee.toLocaleString()}</span>
+              <span className="font-semibold">+¥{fee.toLocaleString()}</span>
             </div>
             <div className="border-t border-blue-300 pt-2 flex justify-between text-lg font-bold text-blue-800">
               <span>Vehicle Listing Price:</span>
-              <span>${buyer.toLocaleString()}</span>
+              <span>¥{buyer.toLocaleString()}</span>
             </div>
           </CardContent>
         </Card>

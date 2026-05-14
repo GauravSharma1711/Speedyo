@@ -674,7 +674,7 @@ export default function CreateVehicleModalUI({
                         {formData.year} {formData.make} {formData.model}
                       </div>
                       <div>
-                        <span className="font-medium text-slate-600">Price:</span> $
+                        <span className="font-medium text-slate-600">Price:</span> ¥
                         {Number(formData.price || 0).toLocaleString()}
                       </div>
                       <div>
