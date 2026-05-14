@@ -328,7 +328,7 @@ const TestDriveDetailsModal = ({ isOpen, request, onClose, onApprove, onDecline,
 
 export default function SellerDashboard() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+const { data: session, status, update } = useSession();
   
   const {
   fetchSlotDetails,
@@ -417,6 +417,14 @@ export default function SellerDashboard() {
       fetchDealershipSubscription();
     }
   }, [user]);
+
+  useEffect(() => {
+  const init = async () => {
+    await update();          
+    await loadSellerDashboard(); 
+  };
+  init();
+}, []);
 
   useEffect(() => {
     const loadPublicUser = async () => {
@@ -1762,7 +1770,7 @@ console.log("okook",dealershipSubscriptionDetails);
                               </div>
                             </div>
                             <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 mt-1">
-                              <span className="font-bold text-blue-600">${vehicle.price?.toLocaleString()}</span>
+                              <span className="font-bold text-blue-600">¥{vehicle.price?.toLocaleString()}</span>
                               <span className="flex items-center gap-1">
                                 <Eye className="w-4 h-4" />
                                 {vehicle.views || 0} views

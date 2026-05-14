@@ -1,6 +1,6 @@
 "use client";
-
-import React, { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, FileText, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
@@ -86,22 +86,37 @@ export default function ViewLiaisonAgreementUI() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const { toast } = useToast();
-
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const {
     agreements,
     isLoading,
     error,
     getAll,
     create,
-    addApplication
- 
+    addApplication,
+    getAgreementById,
+    agreement,
+
   } = useLiaisonAgreementStore();
 
-  const agreement = useMemo(() => {
-    const id = params?.id;
-    if (!id) return null;
-    return agreements.find((a) => a.id === id) ?? null;
-  }, [params?.id]);
+  const [hasFetched, setHasFetched] = useState(false);
+
+  useEffect(() => {
+  useLiaisonAgreementStore.setState({ agreement: null });
+}, []);
+
+      
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id"); 
+  
+useEffect(() => {
+  if (!id) return;
+  Promise.all([getAll(), getAgreementById(id)])
+    .finally(() => setHasFetched(true));  
+}, [id]);
+
+
+console.log("current agreement",agreement);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingResume, setUploadingResume] = useState(false);
@@ -122,18 +137,18 @@ export default function ViewLiaisonAgreementUI() {
   });
 
   // UI-only "loading" while params resolve
-  if (!params?.id) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-slate-600">Loading agreement...</p>
-        </div>
+if (!id || isLoading || !hasFetched) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+        <p className="text-slate-600">Loading agreement...</p>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  if (!agreement) {
+  if (!agreement && hasFetched) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex flex-col">
         <div className="flex-1 flex items-center justify-center py-12 px-4">
@@ -165,51 +180,66 @@ export default function ViewLiaisonAgreementUI() {
     setApplicationData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    setUploadingResume(true);
-    try {
-      const url = URL.createObjectURL(file);
-      setApplicationData((prev) => ({ ...prev, resume_url: url }));
-      toast({ title: "Resume added (UI-only)", description: "Local preview only. API later." });
-    } finally {
-      setUploadingResume(false);
-      e.target.value = "";
+
+const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  setResumeFile(file);
+  setApplicationData((prev) => ({ ...prev, resume_url: file.name })); 
+  e.target.value = "";
+};
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!termsAccepted) {
+    toast({
+      title: "Please accept the terms",
+      description: "Accept the agreement terms to continue.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsSubmitting(true);
+  try {
+    const formData = new FormData();
+
+    formData.append("full_name",            applicationData.full_name);
+    formData.append("email",                applicationData.email);
+    formData.append("phone",                applicationData.phone);
+    formData.append("language_proficiency", applicationData.language_proficiency);
+    formData.append("motivation",           applicationData.motivation);
+    formData.append("address",              applicationData.address ?? "");
+    formData.append("previous_experience",  applicationData.previous_experience ?? "");
+    formData.append("automotive_knowledge", applicationData.automotive_knowledge ?? "");
+    formData.append("availability",         applicationData.availability ?? "");
+
+    if (resumeFile) {
+      formData.append("resume", resumeFile);   
     }
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    await addApplication(id!, formData);       
 
-    if (!termsAccepted) {
-      toast({
-        title: "Please accept the terms",
-        description: "Accept the agreement terms to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
+    toast({ title: "Submitted", description: "Application saved successfully." });
+    setIsSuccess(true);
+  } catch {
+    toast({
+      title: "Submission failed",
+      description: "Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  
 
-    setIsSubmitting(true);
-    try {
-
-      await addApplication(params?.id,applicationData);
-
-      toast({
-        title: "Submitted",
-        description: "Application saved ",
-      });
-
-      setIsSuccess(true);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  
 
   // Success view (matches your original behavior)
-  if (isSuccess || agreement.status === "signed") {
+  if (isSuccess || agreement?.status === "signed") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex flex-col">
         <div className="flex-1 flex items-center justify-center py-12 px-4">
@@ -254,7 +284,7 @@ export default function ViewLiaisonAgreementUI() {
                 <FileText className="w-8 h-8" />
                 <div>
                   <CardTitle className="text-2xl">
-                    {agreement.agreement_title || "Speedio Dealership Partnership Liaison Agreement"}
+                    {agreement?.agreement_title || "Speedio Dealership Partnership Liaison Agreement"}
                   </CardTitle>
                   <p className="text-blue-100 mt-1">Review the agreement terms below</p>
                 </div>
@@ -273,7 +303,7 @@ export default function ViewLiaisonAgreementUI() {
 
                 <section>
                   <h3 className="text-lg font-semibold text-slate-800 mb-3">Position Title</h3>
-                  <p className="text-slate-700 font-medium">{agreement.position_title}</p>
+                  <p className="text-slate-700 font-medium">{agreement?.position_title}</p>
                 </section>
 
                 <section>
@@ -297,10 +327,10 @@ export default function ViewLiaisonAgreementUI() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-3">Compensation</h3>
                   <div className="space-y-3 text-slate-700">
                     <p>
-                      <strong>Fixed Fee:</strong> {agreement.fixed_fee_percentage}% of the service fee for each assisted sale.
+                      <strong>Fixed Fee:</strong> {agreement?.fixed_fee_percentage}% of the service fee for each assisted sale.
                     </p>
                     <p>
-                      <strong>Residual Pay:</strong> {agreement.residual_pay_percentage}% of the service fee for all subsequent sales generated from dealerships
+                      <strong>Residual Pay:</strong> {agreement?.residual_pay_percentage}% of the service fee for all subsequent sales generated from dealerships
                       for which the Liaison is credited with the assisted sale.
                     </p>
                     <p>
@@ -346,18 +376,18 @@ export default function ViewLiaisonAgreementUI() {
                     <p>
                       This agreement shall remain in effect from{" "}
                       <strong>
-                        {agreement.agreement_start_date
-                          ? new Date(agreement.agreement_start_date).toLocaleDateString()
+                        {agreement?.agreement_start_date
+                          ? new Date(agreement?.agreement_start_date).toLocaleDateString()
                           : "___________"}
                       </strong>{" "}
                       to{" "}
                       <strong>
-                        {agreement.agreement_end_date
-                          ? new Date(agreement.agreement_end_date).toLocaleDateString()
+                        {agreement?.agreement_end_date
+                          ? new Date(agreement?.agreement_end_date).toLocaleDateString()
                           : "___________"}
                       </strong>
                       , unless terminated earlier by either party with{" "}
-                      <strong>{agreement.termination_notice_days || 30}</strong> days&apos; written notice.
+                      <strong>{agreement?.termination_notice_days || 30}</strong> days&apos; written notice.
                     </p>
                     <p>
                       Speedio reserves the right to terminate this agreement immediately in cases of misconduct, breach of confidentiality, or misrepresentation.
@@ -440,7 +470,10 @@ export default function ViewLiaisonAgreementUI() {
                   <Label htmlFor="resume">Upload Resume/CV (Optional)</Label>
                   <div className="flex items-center gap-3 mt-2">
                     <Input id="resume" type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} disabled={uploadingResume} />
-                    {uploadingResume ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                    {/* {uploadingResume ? <Loader2 className="w-5 h-5 animate-spin" /> : null} */}
+                    {resumeFile && (
+  <p className="text-sm text-slate-500 mt-1">{resumeFile.name}</p>
+)}
                   </div>
                   {applicationData.resume_url ? (
                     <p className="text-sm text-emerald-600 mt-2">✓ Resume uploaded successfully</p>

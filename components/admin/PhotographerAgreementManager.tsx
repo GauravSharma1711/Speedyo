@@ -1,5 +1,6 @@
 "use client";
-
+import photographerAgreementService from "@/services/admin/photographer";
+    
 import { usePhotographerAgreementStore } from "@/store/admin/photographer";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -98,6 +99,7 @@ export default function PhotographerAgreementManagerUI() {
     error,
     getAll,
     create,
+    sendSigningMail,
     delete: deleteAgreement,
     addApplication,
   } = usePhotographerAgreementStore();
@@ -197,32 +199,35 @@ export default function PhotographerAgreementManagerUI() {
     const href = `/PhotographerAgreement?id=${a.id}`;
     const fullUrl = `${window.location.origin}${href}`;
     await navigator.clipboard.writeText(fullUrl);
-    toast({ title: "Copied", description: "Agreement link copied." });
+    // toast({ title: "Copied", description: "Agreement link copied." });
+    alert("Agreement link copied to clipboard!:\n");
   }
 
   // ── View application ───────────────────────────────────────────────────────
-  function viewApplication(applicationId: string) {
-    const app = applications.find((x) => x.id === applicationId);
-    const ag = agreements.find((x) => x.application_id === applicationId);
+  function viewApplication(agreement:PhotographerAgreement, application: PhotographerApplication) {
+    // const app = applications.find((x) => x.id === applicationId);
+    // const ag = agreements.find((x) => x.application_id === applicationId);
 
-    if (!app) {
-      toast({ title: "Not found", description: "Application details missing." });
-      return;
-    }
-    if (!ag) {
+   if (!application) {
+  toast({ title: "Not found", description: "Application details missing." });
+  return;
+}
+
+    if (!agreement) {
       toast({ title: "Not found", description: "Associated agreement not found." });
       return;
     }
-    setSelected({ agreement: ag, application: app });
+    setSelected({ agreement: agreement, application: application });
   }
 
   // ── Send signing email ─────────────────────────────────────────────────────
   async function handleSendSigningEmail(a: PhotographerAgreement) {
     if (!a.photographer_email) {
-      toast({
-        title: "Missing email",
-        description: "Set photographer email when creating the agreement.",
-      });
+      // toast({
+      //   title: "Missing email",
+      //   description: "Set photographer email when creating the agreement.",
+      // });
+      alert("Photographer email not found for this agreement. Please ensure an email is set when creating the agreement.")
       return;
     }
 
@@ -232,6 +237,11 @@ export default function PhotographerAgreementManagerUI() {
         title: "Send agreement",
         description: `Would email ${a.photographer_email} a signing link.`,
       });
+      const res = await sendSigningMail(a.id);
+      if(res.success){
+        alert("Signing mail send successfully");
+      }
+      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -241,24 +251,97 @@ export default function PhotographerAgreementManagerUI() {
   async function handleSendApplicationEmail(a: PhotographerAgreement) {
     setIsSubmitting(true);
     try {
+        const res  =  await photographerAgreementService.sendMail(a.id);
       toast({
         title: "Send email",
         description: "Would email the photographer the agreement + application summary.",
       });
-    } finally {
+      alert("Application email sent successfully!");
+    } catch{
+        alert("Failed to send mail!");
+    }finally {
       setIsSubmitting(false);
     }
   }
 
   // ── Download PDF ───────────────────────────────────────────────────────────
-  async function handleDownloadPDF(a: PhotographerAgreement) {
-    setIsSubmitting(true);
-    try {
-      toast({ title: "Download PDF", description: "PDF generation wiring pending." });
-    } finally {
-      setIsSubmitting(false);
-    }
+ async function handleDownloadPDF(a: PhotographerAgreement) {
+  console.log("Downloading agreement as PDF:", a);
+  setIsSubmitting(true);
+  try {
+    const application = a.application
+      
+
+    const termStart = a.agreement_start_date
+      ? new Date(a.agreement_start_date).toLocaleDateString()
+      : "N/A";
+    const termEnd = a.agreement_end_date
+      ? new Date(a.agreement_end_date).toLocaleDateString()
+      : "indefinite";
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Photographer_Agreement_${a.id}</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: Arial, sans-serif;
+            color: #1a1a1a;
+            padding: 60px 57px;
+            max-width: 850px;
+            margin: 0 auto;
+          }
+          h1 { font-size: 22px; font-weight: bold; margin-bottom: 32px; }
+          h2 { font-size: 15px; font-weight: bold; margin-top: 28px; margin-bottom: 10px; }
+          p { font-size: 13px; line-height: 1.8; padding-left: 14px; color: #1a1a1a; }
+        </style>
+      </head>
+      <body>
+        <h1>${a.agreement_title || "Speedio Photographer Partnership Agreement"}</h1>
+
+        <h2>Position Title</h2>
+        <p>${a.position_title || "Automotive Photographer - Speedio Platform"}</p>
+
+        <h2>Compensation</h2>
+        <p>Fixed Percentage: ${a.fixed_percentage ?? "10"}% of service fee</p>
+        <p>Payment upon vehicle sale</p>
+
+        <h2>Term</h2>
+        <p>Effective from ${termStart} to ${termEnd}</p>
+        <p>${a.termination_notice_days ?? 30} days notice required for termination</p>
+
+        ${application ? `
+        <h2>Application Information</h2>
+        <p>Name: ${application.full_name}</p>
+        <p>Email: ${application.email}</p>
+        <p>Phone: ${application.phone}</p>
+        <p>Experience: ${application.photography_experience_years ?? 0} years</p>
+        ` : a.photographer_email ? `
+        <h2>Application Information</h2>
+        <p>Email: ${a.photographer_email}</p>
+        ` : ""}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `Photographer_Agreement_${a.id}.html`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+
+    toast({ title: "Downloaded", description: `Photographer_Agreement_${a.id}.pdf saved.` });
+  } finally {
+    setIsSubmitting(false);
   }
+}
 
   // ── Delete ─────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
@@ -508,12 +591,12 @@ export default function PhotographerAgreementManagerUI() {
                       </p>
                     </div>
 
-                    {a.application_id ? (
+                    {a.application ? (
                       <div className="col-span-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => viewApplication(a.application_id as string)}
+                          onClick={() => viewApplication(a ,a.application)}
                           className="w-full"
                         >
                           <UserCheck className="w-4 h-4 mr-2" />
@@ -532,7 +615,8 @@ export default function PhotographerAgreementManagerUI() {
                           Copy Link
                         </Button>
 
-                        <Link href={`/ViewPhotographerAgreement/${a.id}`}>
+<Link href={`/PhotographerAgreement?id=${a.id}`} target="_blank" rel="noopener noreferrer">
+
                           <Button size="sm" variant="outline">
                             <Eye className="w-4 h-4 mr-2" />
                             View Agreement
@@ -553,7 +637,7 @@ export default function PhotographerAgreementManagerUI() {
                       </Button>
                     ) : null}
 
-                    {a.status === "signed" && a.application_id && associatedApplication ? (
+                    {a.status === "signed" ? (
                       <Button
                         size="sm"
                         variant="outline"

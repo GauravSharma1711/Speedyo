@@ -384,8 +384,8 @@ export default function ManagedSalesPage() {
                                             <span class="text-slate-600 font-medium block text-sm sm:text-base">Service Fee</span>
                                             <span class="text-xs text-slate-500">${
                                               askingPrice < 500 ? '$300 minimum' :
-                                              askingPrice <= 3000 ? 'Scales $300-$500' :
-                                              askingPrice <= 8333 ? '$500 flat' : '6% of asking price'
+                                              askingPrice <= 3000 ? 'Scales ¥300-¥500' :
+                                              askingPrice <= 8333 ? '¥500 flat' : '6% of asking price'
                                             }</span>
                                           </div>
                                           <div class="text-left sm:text-right">

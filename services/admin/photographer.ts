@@ -46,14 +46,32 @@ const photographerAgreementService = {
 
   addApplication: async (
     agreementId: string,
-    data: AddApplicationToAgreementData
+    data: FormData  
   ) => {
     const res = await api.post(
       `/api/admin/photographer-agreements/${agreementId}`,
-      data
+      data, {
+      headers: { "Content-Type": "multipart/form-data" }, 
+    }
     );
     return res.data;
   },
+
+  sendSigningMail: async (agreementId: string) => {
+    const res = await api.post(`/api/admin/photographer-agreements/${agreementId}/sendSigningMail`);
+    return res.data;
+  },
+
+  sendMail:async(agreementId:string)=>{
+     const res = await api.post(`/api/admin/photographer-agreements/${agreementId}/sendMail`);
+    return res.data;
+  },
+
+  getAgreementById: async(id:string)=>{
+     const res = await api.get(`/api/admin/photographer-agreements/${id}`);
+    return res.data;
+  }
+
 };
 
 export default photographerAgreementService;

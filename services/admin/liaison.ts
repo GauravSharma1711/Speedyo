@@ -5,31 +5,31 @@ agreement_title:string
 position_title:string
 fixed_fee_percentage:string
 residual_pay_percentage:string
-termination_notice_days:string
-agreement_start_date:string | null
-agreement_end_date:string | null
+termination_notice_days:string|null,
+agreement_start_date:string|null,
+agreement_end_date:string|null,
 status:string
 agreement_url:string
-admin_notes:string | null
+admin_notes:string|null,
 }
 
 
-export type AddApplicationToAgreementData = {
-  full_name: string;
-  email: string;
-  phone: string;
-  address: string;
+// export type AddApplicationToAgreementData = {
+//   full_name: string;
+//   email: string;
+//   phone: string;
+//   address: string;
 
-  language_proficiency: string;
-  previous_experience: string;
-  automotive_knowledge: string;
-  availability: string;
-  motivation: string;
+//   language_proficiency: string;
+//   previous_experience: string;
+//   automotive_knowledge: string;
+//   availability: string;
+//   motivation: string;
 
-  resume_url: string;
-};
+//   resume_url: string;
+// };
 
-
+export type AddApplicationToAgreementData = FormData;
 
 
 const lisisonAgreementService = {
@@ -55,16 +55,32 @@ getAll: async () => {
   },
 
 
-    addApplication: async (
-    agreementId: string,
-    data: AddApplicationToAgreementData
-  ) => {
-    const res = await api.post(
-      `/api/admin/liaison-agreements/${agreementId}/`,
-      data
-    );
-    return res.data;
+   addApplication: async (agreementId: string, data: FormData) => {
+  const res = await api.post(
+    `/api/admin/liaison-agreements/${agreementId}`,
+    data,
+    {
+      headers: { "Content-Type": "multipart/form-data" }, 
+    }
+  );
+  return res.data;
+},
+
+    sendSigningMail: async (agreementId: string) => {
+      const res = await api.post(`/api/admin/liaison-agreements/${agreementId}/sendSigningMail`);
+      return res.data;
+    },
+
+    
+  sendMail:async(agreementId:string)=>{
+     const res = await api.post(`/api/admin/liaison-agreements/${agreementId}/sendMail`);
+      return res.data;
   },
+  
+    getAgreementById: async(id:string)=>{
+       const res = await api.get(`/api/admin/liaison-agreements/${id}`);
+      return res.data;
+    }
 
 
 }

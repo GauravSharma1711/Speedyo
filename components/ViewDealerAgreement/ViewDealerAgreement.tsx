@@ -89,7 +89,7 @@ export default function ViewDealershipAgreementUI() {
               <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-slate-800 mb-2">Agreement Not Found</h2>
               <p className="text-slate-600 mb-6">
-                The agreement you are looking for does not exist.
+                {error ?? "The agreement you are looking for does not exist."}
               </p>
               <Button onClick={() => router.push("/")}>Return to Home</Button>
             </CardContent>
@@ -183,8 +183,8 @@ export default function ViewDealershipAgreementUI() {
                     <div>
                       <span className="text-slate-600">Service Fee:</span>
                       <p className="font-medium">
-                        {typeof agreement.service_fee_amount === "number"
-                          ? `$${agreement.service_fee_amount.toLocaleString()} per vehicle`
+                        {agreement.service_fee_amount
+                          ? `¥${Number(agreement.service_fee_amount).toLocaleString()} per vehicle`
                           : "Varies per vehicle listing"}
                       </p>
                     </div>

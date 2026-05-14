@@ -122,6 +122,50 @@ export async function PATCH(
 }
 
 
+// get dealership aggrement by id
+
+// GET dealership agreement by ID
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ aggrementId: string }> },
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { aggrementId } = await context.params;
+
+    const agreement = await prisma.dealershipVehicleAgreement.findFirst({
+      where: {
+        id: aggrementId,
+        created_by_admin_id: session.user.id,
+      },
+    });
+
+    if (!agreement) {
+      return NextResponse.json(
+        { error: "Agreement not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      agreement,
+    });
+  } catch (error) {
+    console.error("Failed to fetch dealership agreement", error);
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
 
 
 // SEND Aggrement MAIL

@@ -72,11 +72,11 @@ export default function SearchFilters({ filters, setFilters, vehicles, isOpen })
                     <SelectValue placeholder="Price Range" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0-10000" className="text-sm">Under $10,000</SelectItem>
-                    <SelectItem value="10000-25000" className="text-sm">$10,000 - $25,000</SelectItem>
-                    <SelectItem value="25000-50000" className="text-sm">$25,000 - $50,000</SelectItem>
-                    <SelectItem value="50000-100000" className="text-sm">$50,000 - $100,000</SelectItem>
-                    <SelectItem value="100000-999999" className="text-sm">$100,000+</SelectItem>
+                    <SelectItem value="0-10000" className="text-sm">Under ¥10,000</SelectItem>
+                    <SelectItem value="10000-25000" className="text-sm">¥10,000 - ¥25,000</SelectItem>
+                    <SelectItem value="25000-50000" className="text-sm">¥25,000 - ¥50,000</SelectItem>
+                    <SelectItem value="50000-100000" className="text-sm">¥50,000 - ¥100,000</SelectItem>
+                    <SelectItem value="100000-999999" className="text-sm">¥100,000+</SelectItem>
                   </SelectContent>
                 </Select>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useLiaisonAgreementStore } from "@/store/admin/liaison";
+import lisisonAgreementService from "@/services/admin/liaison";
 import type { liaisonAgreement, liaisonApplication } from "@/store/admin/liaison";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -142,11 +143,23 @@ export default function LiaisonAgreementManagerUI() {
   // ── Copy link ──────────────────────────────────────────────────────────────
   async function copyAgreementLink(a: liaisonAgreement) {
     const fullUrl = `${window.location.origin}/LiaisonAgreement?id=${a.id}`;
+    await navigator.clipboard.writeText(fullUrl);
+    toast({ title: "Copied", description: "Agreement link copied." });
+    alert("Agreement link copied to clipboard!");
+  }
+
+  // ── Send email ─────────────────────────────────────────────────────────────
+  async function handleSendApplicationEmail(a: liaisonAgreement) {
+    setIsSubmitting(true);
     try {
-      await navigator.clipboard.writeText(fullUrl);
-      alert("Agreement link copied to clipboard!");
-    } catch (err) {
-      console.error("Copy error:", err);
+      // TODO: wire real send API
+      const res = await lisisonAgreementService.sendMail(a.id);
+      toast({ title: "Send email", description: "Would email the liaison the agreement + application summary." });
+      alert("Application email sent successfully!");
+    } catch {
+      alert("Failed to send mail!");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -154,27 +167,76 @@ export default function LiaisonAgreementManagerUI() {
   async function handleDownloadPDF(a: liaisonAgreement) {
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/agreement/generateLiaisonAgreementPDF", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agreementId: a.id }),
-      });
+      const application = a.application;
 
-      if (!res.ok) throw new Error("Failed to generate PDF");
+      const termStart = a.agreement_start_date
+        ? new Date(a.agreement_start_date).toLocaleDateString()
+        : "N/A";
+      const termEnd = a.agreement_end_date
+        ? new Date(a.agreement_end_date).toLocaleDateString()
+        : "indefinite";
 
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Liaison_Agreement_${a.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Liaison_Agreement_${a.id}</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body {
+            font-family: Arial, sans-serif;
+            color: #1a1a1a;
+            padding: 60px 57px;
+            max-width: 850px;
+            margin: 0 auto;
+          }
+          h1 { font-size: 22px; font-weight: bold; margin-bottom: 32px; }
+          h2 { font-size: 15px; font-weight: bold; margin-top: 28px; margin-bottom: 10px; }
+          p { font-size: 13px; line-height: 1.8; padding-left: 14px; color: #1a1a1a; }
+        </style>
+      </head>
+      <body>
+        <h1>${a.agreement_title || "Speedio Dealership Partnership Liaison Agreement"}</h1>
 
-      toast({ title: "Downloaded", description: "PDF downloaded successfully." });
-    } catch {
-      toast({ title: "Error", description: "Failed to download PDF.", variant: "destructive" });
+        <h2>Position Title</h2>
+        <p>${a.position_title || "Bilingual Dealership Liaison — Speedio Dealership Outreach Program"}</p>
+
+        <h2>Compensation</h2>
+        <p>Fixed Fee: ${a.fixed_fee_percentage ?? "10"}% of service fee per assisted sale</p>
+        <p>Residual Pay: ${a.residual_pay_percentage ?? "3"}% for subsequent sales from referred dealerships</p>
+        <p>Payment upon successful vehicle sale</p>
+
+        <h2>Term</h2>
+        <p>Effective from ${termStart} to ${termEnd}</p>
+        <p>${a.termination_notice_days ?? 30} days notice required for termination</p>
+
+        ${application ? `
+        <h2>Application Information</h2>
+        <p>Name: ${application.full_name}</p>
+        <p>Email: ${application.email}</p>
+        <p>Phone: ${application.phone}</p>
+        <p>Language Proficiency: ${application.language_proficiency}</p>
+        ${application.address ? `<p>Address: ${application.address}</p>` : ""}
+        ${application.previous_experience ? `<p>Previous Experience: ${application.previous_experience}</p>` : ""}
+        ${application.automotive_knowledge ? `<p>Automotive Knowledge: ${application.automotive_knowledge}</p>` : ""}
+        ${application.availability ? `<p>Availability: ${application.availability}</p>` : ""}
+        ` : ""}
+      </body>
+      </html>
+    `;
+
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `Liaison_Agreement_${a.id}.html`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+
+      toast({ title: "Downloaded", description: `Liaison_Agreement_${a.id}.html saved.` });
     } finally {
       setIsSubmitting(false);
     }
@@ -285,10 +347,10 @@ export default function LiaisonAgreementManagerUI() {
 
       {/* Empty state */}
       {isLoading ? (
-  <div className="flex items-center justify-center py-16">
-    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-  </div>
-) :agreements?.length === 0 ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
+      ) : agreements?.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <UserCheck className="w-12 h-12 mx-auto text-slate-300 mb-3" />
@@ -299,76 +361,83 @@ export default function LiaisonAgreementManagerUI() {
       ) : (
         <div className="grid gap-4">
           {agreements?.map((a) => (
-                          <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-slate-800">{a.position_title}</h3>
-                      <p className="text-sm text-slate-600 mt-1">
-                        Fixed Fee: {a.fixed_fee_percentage}% | Residual: {a.residual_pay_percentage}%
-                      </p>
-                    </div>
-                    <Badge className={badgeClass(a.status)}>
-                      {a.status.replace("_", " ").toUpperCase()}
-                    </Badge>
+            <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg text-slate-800">{a.position_title}</h3>
+                    <p className="text-sm text-slate-600 mt-1">
+                      Fixed Fee: {a.fixed_fee_percentage}% | Residual: {a.residual_pay_percentage}%
+                    </p>
+                  </div>
+                  <Badge className={badgeClass(a.status)}>
+                    {a.status.replace("_", " ").toUpperCase()}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div>
+                    <span className="text-slate-500">Start Date:</span>
+                    <p className="text-slate-700">
+                      {a.agreement_start_date
+                        ? format(new Date(a.agreement_start_date), "MMM d, yyyy")
+                        : "Not set"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Created:</span>
+                    <p className="text-slate-700">{format(new Date(a.createdAt), "MMM d, yyyy")}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <div>
-                      <span className="text-slate-500">Start Date:</span>
-                      <p className="text-slate-700">
-                        {a.agreement_start_date
-                          ? format(new Date(a.agreement_start_date), "MMM d, yyyy")
-                          : "Not set"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Created:</span>
-                      <p className="text-slate-700">{format(new Date(a.createdAt), "MMM d, yyyy")}</p>
-                    </div>
-
-                    {/* ✅ Use a.application directly — no separate lookup needed */}
-                    {a.application ? (
-                      <div className="col-span-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelected({ agreement: a, application: a.application! })}
-                          className="w-full"
-                        >
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          View Submitted Application
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                      <>
-                        <Button size="sm" variant="outline" onClick={() => copyAgreementLink(a)}>
-                          <Copy className="w-4 h-4 mr-2" />Copy Link
-                        </Button>
-                        <Link href={`/ViewLiaisonAgreement/${a.id}`}>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4 mr-2" />View Agreement
-                          </Button>
-                        </Link>
-                      </>
-                    {/* // ) : null} */}
-
-                    
-                    {a.status === "signed" ? (
-                      <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(a)} disabled={isSubmitting}>
-                        <Download className="w-4 h-4 mr-2" />Download PDF
+                  {/* ✅ Use a.application directly — no separate lookup needed */}
+                  {a.application ? (
+                    <div className="col-span-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelected({ agreement: a, application: a.application! })}
+                        className="w-full"
+                      >
+                        <UserCheck className="w-4 h-4 mr-2" />
+                        View Submitted Application
                       </Button>
-                    ) : null}
+                    </div>
+                  ) : null}
+                </div>
 
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)} disabled={isSubmitting}>
-                      <XCircle className="w-4 h-4 mr-2" />Delete
+                <div className="flex flex-wrap gap-2">
+                  {a.agreement_url ? (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => copyAgreementLink(a)}>
+                        <Copy className="w-4 h-4 mr-2" />Copy Link
+                      </Button>
+
+                      <Link
+                        href={`/LiaisonAgreement?id=${a.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+
+                        <Button size="sm" variant="outline">
+                          <Eye className="w-4 h-4 mr-2" />View Agreement
+                        </Button>
+                      </Link>
+                    </>
+                  ) : null}
+
+
+                  {a.status === "signed" ? (
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(a)} disabled={isSubmitting}>
+                      <Download className="w-4 h-4 mr-2" />Download PDF
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  ) : null}
+
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)} disabled={isSubmitting}>
+                    <XCircle className="w-4 h-4 mr-2" />Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
