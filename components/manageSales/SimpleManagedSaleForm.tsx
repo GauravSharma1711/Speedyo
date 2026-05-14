@@ -10,7 +10,6 @@ import { Upload, X, Loader2, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/UseToast";
 import { managedSaleRequestService } from "@/services/managedSales/managedSaleRequestServices";
 import { profileService } from "@/services/profile/profileServices";
-import { useRouter } from "next/navigation";
 
 type ImagePreview = {
   file: File;
@@ -23,7 +22,6 @@ type SimpleManagedSaleFormProps = {
 };
 
 export default function SimpleManagedSaleForm({ onSuccess, onClose }: SimpleManagedSaleFormProps) {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     title: "",
     price: "",
@@ -102,12 +100,12 @@ export default function SimpleManagedSaleForm({ onSuccess, onClose }: SimpleMana
       fd.set("contact_email", String((me as any)?.email ?? ""));
       fd.set("contact_phone", String((me as any)?.phone ?? ""));
       fd.set("terms_agreed", "true");
+      fd.set("status", "pending_initial_review");
 
       fd.set("vehicle_title", formData.title);
       fd.set("seller_asking_price", String(formData.price));
       fd.set("vehicle_mileage", String(formData.mileage));
       fd.set("vehicle_description", formData.description);
-      fd.set("vehicle_location", String((me as any)?.location ?? ""));
 
       for (const img of images) {
         fd.append("vehicle_images", img.file);
@@ -144,7 +142,7 @@ export default function SimpleManagedSaleForm({ onSuccess, onClose }: SimpleMana
             Thank you for choosing Speedio&apos;s managed sales service. Our team will review your submission
             and contact you within 24 hours to gather additional details and finalize your listing.
           </p>
-          <Button onClick={() => router.push("/Dashboard")} className="bg-gradient-to-r from-blue-500 to-emerald-500">
+          <Button onClick={() => window.location.href = "/Dashboard"} className="bg-gradient-to-r from-blue-500 to-emerald-500">
             Go to Dashboard
           </Button>
         </CardContent>
@@ -221,61 +219,65 @@ export default function SimpleManagedSaleForm({ onSuccess, onClose }: SimpleMana
             </label>
           </div>
 
-          {/* Vehicle Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-slate-700 font-semibold">
-                Vehicle Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                placeholder="e.g., 2015 Toyota Prius"
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label className="text-slate-700 font-semibold">
-                Asking Price ($) <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                type="number"
-                value={formData.price}
-                onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
-                placeholder="e.g., 15000"
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label className="text-slate-700 font-semibold">
-                Mileage (km) <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                type="number"
-                value={formData.mileage}
-                onChange={(e) => setFormData((prev) => ({ ...prev, mileage: e.target.value }))}
-                placeholder="e.g., 75000"
-                className="mt-2"
-              />
-            </div>
+          {/* Title */}
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-slate-700 font-semibold">
+              Vehicle Title <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="title"
+              placeholder="e.g., 2018 Toyota Corolla Hybrid"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
           </div>
 
-          <div>
-            <Label className="text-slate-700 font-semibold">
-              Description <span className="text-red-500">*</span>
+          {/* Price */}
+          <div className="space-y-2">
+            <Label htmlFor="price" className="text-slate-700 font-semibold">
+              Desired Selling Price (¥) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="price"
+              type="number"
+              placeholder="e.g., 5000"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            />
+          </div>
+
+          {/* Mileage */}
+          <div className="space-y-2">
+            <Label htmlFor="mileage" className="text-slate-700 font-semibold">
+              Mileage (km) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="mileage"
+              type="number"
+              placeholder="e.g., 85000"
+              value={formData.mileage}
+              onChange={(e) => setFormData({ ...formData, mileage: e.target.value })}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-slate-700 font-semibold">
+              Vehicle Description <span className="text-red-500">*</span>
             </Label>
             <Textarea
+              id="description"
+              placeholder="Please describe your vehicle in detail. Include information such as: make, model, year, mileage, condition, fuel type, transmission, exact location, specific features, maintenance history, any modifications or upgrades, reasons for selling, etc. The more details you provide, the faster we can create your listing!"
               value={formData.description}
-              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-              placeholder="Tell us about your vehicle's condition, features, and any issues..."
-              className="mt-2 min-h-[120px]"
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="min-h-[150px]"
             />
           </div>
 
           <Button
             type="submit"
             disabled={isSubmitting || isUploading}
-            className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+            className="w-full bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
           >
             {isSubmitting ? (
               <>

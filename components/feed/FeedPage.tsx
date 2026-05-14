@@ -92,6 +92,19 @@ export default function FeedPage() {
   const handleCreatePost = async (postData: any): Promise<{ id: string } | null> => {
     try {
       const result = await createPost(postData);
+
+      if (result?.id) {
+        try {
+          await fetch("/api/notify/notifyFollowersOnNewPost", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ postId: result.id }),
+          });
+        } catch (notifyError) {
+          console.error("Failed to notify followers:", notifyError);
+        }
+      }
+
       setShowCreatePost(false);
       return result ? { id: result.id } : null;
     } catch (error) {

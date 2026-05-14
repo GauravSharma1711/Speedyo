@@ -88,6 +88,7 @@ type VehicleDetails = {
   model: string;
   year: number;
   seller_asking_price?: number | string | null;
+  images?: string[];
   images_thumbnails?: string[];
 };
 type AccessArrangements = {
@@ -602,6 +603,7 @@ export default function ManagedSalesAdminUI() {
           model: String(cur.vehicle_model ?? ""),
           year: Number(cur.vehicle_year ?? new Date().getFullYear()),
           seller_asking_price: cur.seller_asking_price ?? null,
+          images: Array.isArray(cur.vehicle_images) ? cur.vehicle_images : [],
           images_thumbnails: Array.isArray(cur.vehicle_images_thumbnails) ? cur.vehicle_images_thumbnails : [],
         },
         access_arrangements: cur.access_arrangements ?? undefined,
@@ -975,6 +977,27 @@ export default function ManagedSalesAdminUI() {
                                     View Details
                                   </DropdownMenuItem>
 
+                                  {request.status === "pending_initial_review" && (
+                                    <>
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          void openAdminEdit(request.id);
+                                        }}
+                                      >
+                                        <Edit className="w-4 h-4 mr-2 text-blue-500" />
+                                        Complete Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          void openAdminEdit(request.id);
+                                        }}
+                                      >
+                                        <Edit className="w-4 h-4 mr-2 text-slate-500" />
+                                        Admin Edit
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+
                                   {request.status === "pending_review" && !request.created_vehicle_id ? (
                                     <DropdownMenuItem onClick={() => approveAndList(request.id)}>
                                       <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
@@ -1118,7 +1141,16 @@ export default function ManagedSalesAdminUI() {
                               View
                             </Button>
 
-                            {request.status === "pending_review" && !request.created_vehicle_id ? (
+                            {request.status === "pending_initial_review" ? (
+                              <Button
+                                size="sm"
+                                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                onClick={() => openAdminEdit(request.id)}
+                              >
+                                <Edit className="w-4 h-4 mr-1" />
+                                Complete
+                              </Button>
+                            ) : request.status === "pending_review" && !request.created_vehicle_id ? (
                               <Button
                                 size="sm"
                                 className="flex-1 bg-emerald-600 hover:bg-emerald-700"

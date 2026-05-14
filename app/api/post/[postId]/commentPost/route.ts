@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
+import { emitNotification } from "@/lib/emitNotification";
 
 function validateCommentBody(body: Record<string, unknown>): string | null {
   const content = body.content;
@@ -114,6 +115,61 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: st
           ]
         : []),
     ]);
+
+    // Send notifications
+    const postWithAuthor = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true, author: { select: { full_name: true } } }
+    });
+
+    if (postWithAuthor && postWithAuthor.authorId !== session.user.id) {
+      // Notify post author about new comment - create notification record
+      await prisma.notification.create({
+        data: {
+          recipientId: postWithAuthor.authorId,
+          senderId: session.user.id as string,
+          type: "new_comment",
+          content: `${comment.author.full_name} commented on your post`,
+          related_entity_type: "Post",
+          related_entity_id: postId,
+          url: `/Feed#post-${postId}`,
+          icon: "MessageCircle",
+          read: false,
+        },
+      });
+      // Also emit socket notification
+      emitNotification(postWithAuthor.authorId, {
+        type: "new_comment",
+        message: `${comment.author.full_name} commented on your post`,
+      });
+    }
+
+    // If reply, notify parent comment author
+    if (parentCommentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentCommentId },
+        select: { authorId: true, author: { select: { full_name: true } } }
+      });
+      if (parentComment && parentComment.authorId !== session.user.id && parentComment.authorId !== postWithAuthor?.authorId) {
+        await prisma.notification.create({
+          data: {
+            recipientId: parentComment.authorId,
+            senderId: session.user.id as string,
+            type: "comment_reply",
+            content: `${comment.author.full_name} replied to your comment`,
+            related_entity_type: "Post",
+            related_entity_id: postId,
+            url: `/Feed#comment-${parentCommentId}`,
+            icon: "MessageCircle",
+            read: false,
+          },
+        });
+        emitNotification(parentComment.authorId, {
+          type: "comment_reply",
+          message: `${comment.author.full_name} replied to your comment`,
+        });
+      }
+    }
 
     return NextResponse.json({ success: true, comment }, { status: 201 });
   } catch (error) {

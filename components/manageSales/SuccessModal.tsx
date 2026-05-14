@@ -72,7 +72,7 @@ export default function SuccessModal({ onClose, isOpen = true }) {
               
               <div className="space-y-3">
                 <Button 
-                   onClick={() => router.push("/feed")}
+                   onClick={() => router.push("/Feed")}
                   className="w-full bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
                 >
                   Go to Homepage

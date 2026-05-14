@@ -172,7 +172,7 @@ export default function ShareModal({
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Add a message (optional)</label>
               <Textarea
                 value={shareMessage}
@@ -180,7 +180,7 @@ export default function ShareModal({
                 placeholder="What do you think about this post?"
                 className="h-20"
               />
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </motion.div>

@@ -101,6 +101,11 @@ export type MarkReadResponse = {
   success: true;
 };
 
+export type CreateConversationResponse = {
+  success: true;
+  conversation: Conversation;
+};
+
 
 export const messagesService = {
   getConversations: async (): Promise<GetConversationsResponse> => {
@@ -124,6 +129,14 @@ export const messagesService = {
     const res = await api.patch<MarkReadResponse>(
       `/api/user/messages/${conversationId}`
     );
+    return res.data;
+  },
+
+  createConversation: async (recipientId: string, vehicleId?: string): Promise<CreateConversationResponse> => {
+    const res = await api.put<CreateConversationResponse>("/api/user/messages", {
+      recipientId,
+      vehicleId: vehicleId ?? null,
+    });
     return res.data;
   },
 };

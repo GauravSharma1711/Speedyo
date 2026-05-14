@@ -548,12 +548,21 @@ export default function VehiclePage() {
                     size="icon"
                     className={`flex-1 ${isFavorited ? "text-red-600 border-red-200" : ""}`}
                     onClick={async () => {
-                      if (!vehicle) return;
+                      if (!vehicle || isSaving) return;
+
+
+                      const wasFavorited = isFavorited;
+                      const previousSavesCount = savesCount;
+                      setIsFavorited(!isFavorited);
+                      setSavesCount(savesCount + (wasFavorited ? -1 : 1));
+
                       try {
                         const res = await toggleSave(vehicle.id);
                         setIsFavorited(res.saved);
                         if (typeof res.saves_count === "number") setSavesCount(res.saves_count);
                       } catch (e) {
+                        setIsFavorited(wasFavorited);
+                        setSavesCount(previousSavesCount);
                         toast({
                           title: "Failed to save",
                           description: e instanceof Error ? e.message : "Failed to save",
@@ -564,7 +573,7 @@ export default function VehiclePage() {
                     disabled={isSaving}
                     aria-label="Save vehicle"
                   >
-                    <Heart className="w-4 h-4" />
+                    <Heart className={`w-4 h-4 ${isFavorited ? "fill-current" : ""}`} />
                   </Button>
                   <Button
                     variant="outline"
@@ -572,27 +581,34 @@ export default function VehiclePage() {
                     className={`flex-1 ${showShareModal ? "text-blue-600 border-blue-200" : ""}`}
                     onClick={async () => {
                       if (!vehicle) return;
+
+                      const url = window.location.href;
+
+                      if (
+                        typeof navigator !== "undefined" &&
+                        "share" in navigator &&
+                        typeof (navigator as any).share === "function"
+                      ) {
+                        try {
+                          await (navigator as any).share({ title: vehicle.title, url });
+                          // Native share succeeded, now update DB
+                          await share(vehicle.id);
+                          setShareHint("Shared");
+                          return;
+                        } catch (e) {
+                          // User cancelled or error, fall through to copy link
+                        }
+                      }
+
+                      // Fallback: copy link to clipboard
                       try {
                         await share(vehicle.id);
-
-                        const url = window.location.href;
-                        if (
-                          typeof navigator !== "undefined" &&
-                          "share" in navigator &&
-                          typeof (navigator as any).share === "function"
-                        ) {
-                          await (navigator as any).share({ title: vehicle.title, url });
-                          setShareHint("Shared");
-                        } else {
-                          await navigator.clipboard.writeText(url);
-                          setShareHint("Link copied");
-                          toast({ title: "Link copied", description: "Vehicle link copied to clipboard." });
-                        }
-
-                        setShowShareModal(true);
+                        await navigator.clipboard.writeText(url);
+                        setShareHint("Link copied");
+                        toast({ title: "Link copied", description: "Vehicle link copied to clipboard." });
                       } catch (e) {
+                        setShareHint("Failed to share");
                         toast({
-                          title: "Failed to share",
                           description: e instanceof Error ? e.message : "Failed to share",
                           variant: "destructive",
                         });

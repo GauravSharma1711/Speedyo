@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
         // Misc
         access_arrangements,
         terms_agreed:        true,
-        status:              "pending_review",
+        status:              g("status") || "pending_review",
         submitted_by_user_id: session?.user?.id ?? null,
       },
     });

@@ -1,12 +1,15 @@
 
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { enableMapSet } from "immer";
 import {
   messagesService,
   type Conversation,
   type Message,
   type SendMessageBody,
 } from "@/services/messages/messageServices";
+
+enableMapSet();
 
 type MessagesState = {
   conversations: Conversation[];
@@ -33,6 +36,10 @@ type MessagesActions = {
   clearUnread: (conversationId: string) => void;
   clearError: () => void;
   reset: () => void;
+  createConversation: (
+    recipientId: string,
+    vehicleId?: string
+  ) => Promise<Conversation | null>;
 };
 
 const extractError = (e: unknown, fallback: string): string => {
@@ -106,7 +113,8 @@ export const useMessagesStore = create<MessagesState & MessagesActions>()(
     sendMessage: async (body: SendMessageBody) => {
       set((s) => { s.isSending = true; s.error = null; });
       try {
-        const { message, conversationId } = await messagesService.sendMessage(body);
+        const response = await messagesService.sendMessage(body);
+        const { message, conversationId } = response;
 
         set((s) => {
           s.sentMessageIds.add(message.id);
@@ -190,6 +198,22 @@ export const useMessagesStore = create<MessagesState & MessagesActions>()(
         const idx = s.conversations.findIndex((c) => c.id === conversationId);
         if (idx !== -1) s.conversations[idx].unread_count = 0;
       });
+    },
+
+    createConversation: async (recipientId: string, vehicleId?: string) => {
+      try {
+        const { conversation } = await messagesService.createConversation(recipientId, vehicleId);
+        set((s) => {
+          const exists = s.conversations.some((c) => c.id === conversation.id);
+          if (!exists) {
+            s.conversations.unshift(conversation as Conversation);
+          }
+        });
+        return conversation as Conversation;
+      } catch (e) {
+        set((s) => { s.error = extractError(e, "Failed to create conversation"); });
+        throw e;
+      }
     },
   }))
 );

@@ -10,10 +10,13 @@ export default function SearchFilters({ filters, setFilters, vehicles, isOpen })
   const makes = [...new Set(vehicles.map(v => v.make).filter(Boolean))];
   
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
+    setFilters({
+      make: key === 'make' ? value : filters.make,
+      priceRange: key === 'priceRange' ? value : filters.priceRange,
+      condition: key === 'condition' ? value : filters.condition,
+      fuelType: key === 'fuelType' ? value : filters.fuelType,
+      location: key === 'location' ? value : filters.location,
+    });
   };
 
   const clearFilters = () => {

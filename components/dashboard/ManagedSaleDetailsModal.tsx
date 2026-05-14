@@ -143,6 +143,13 @@ export default function ManagedSaleDetailsModal({
 
   const getStatusInfo = (status:ManagedSaleStatus) => {
     switch (status) {
+      case 'pending_initial_review':
+        return {
+          icon: <Clock className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-yellow-100 text-yellow-800",
+          text: "Pending Initial Review",
+          description: "We've received your submission and will review it shortly. You'll hear back within 1-2 business days."
+        };
       case 'pending_review':
         return {
           icon: <Clock className="w-3 h-3 mr-1" />,

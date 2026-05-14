@@ -45,6 +45,7 @@ export default function Messages() {
     onSocketNewMessage,
     clearUnread,
     reset,
+    createConversation,
   } = useMessagesStore();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,6 +53,11 @@ export default function Messages() {
   const [isMobileView, setIsMobileView] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
+  const [newConversationData, setNewConversationData] = useState<{
+    recipientId: string;
+    vehicleId?: string;
+    managedSaleRequestId?: string;
+  } | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
 
@@ -63,14 +69,36 @@ export default function Messages() {
       fetchConversations().then(() => {
         const params = new URLSearchParams(window.location.search);
         const convId = params.get("conversationId");
-        if (convId) {
+
+
+        const recipientId = params.get("recipient");
+        const vehicleId = params.get("vehicle");
+
+
+        const currentConversations = useMessagesStore.getState().conversations;
+
+        if (recipientId) {
+          const existingConv = currentConversations.find(
+            c => c.other_user?.id === recipientId &&
+            (!vehicleId || c.vehicleId === vehicleId)
+          );
+
+          if (existingConv) {
+            selectConversation(existingConv.id);
+          } else {
+            createConversation(recipientId, vehicleId || undefined).then((newConv) => {
+              if (newConv) {
+                selectConversation(newConv.id);
+              }
+            });
+          }
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (convId) {
           selectConversation(convId);
           window.history.replaceState({}, document.title, window.location.pathname);
         } else {
-          // Auto-select first conversation if available
-          const state = useMessagesStore.getState();
-          if (state.conversations.length > 0) {
-            selectConversation(state.conversations[0].id);
+          if (currentConversations.length > 0) {
+            selectConversation(currentConversations[0].id);
           }
         }
       });
@@ -157,7 +185,8 @@ export default function Messages() {
           message_type: messageData.message_type ?? "general",
         });
         return sent ?? undefined;
-      } catch {
+      } catch (err) {
+        console.error("handleSendMessage error:", err);
         toast({
           title: "Failed to send",
           description: "Please try again.",

@@ -42,10 +42,47 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
   const { save } = useProfileUpdateStore();
   const { update } = useSession();
 
+  const [apiUserData, setApiUserData] = useState<{ full_name?: string; location?: string; profile_image?: string } | null>(null);
+
+  React.useEffect(() => {
+    const fetchApiUser = async () => {
+      try {
+        const res = await fetch("/api/user/me");
+        const json = await res.json();
+        if (json.success && json.user) {
+          setApiUserData({
+            full_name: json.user.full_name,
+            location: json.user.location,
+            profile_image: json.user.profile_image,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch user data", e);
+      }
+    };
+    fetchApiUser();
+  }, []);
+
+  const refreshApiUserData = async () => {
+    try {
+      const res = await fetch("/api/user/me");
+      const json = await res.json();
+      if (json.success && json.user) {
+        setApiUserData({
+          full_name: json.user.full_name,
+          location: json.user.location,
+          profile_image: json.user.profile_image,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to fetch user data", e);
+    }
+  };
+
   const [setupData, setSetupData] = useState<SetupData>(() => ({
-    full_name: userDisplay?.full_name || user?.full_name || "",
-    location: userDisplay?.location || user?.location || "",
-    profile_image: userDisplay?.profile_image || user?.profile_image || "",
+    full_name: apiUserData?.full_name || userDisplay?.full_name || user?.full_name || "",
+    location: apiUserData?.location || userDisplay?.location || user?.location || "",
+    profile_image: apiUserData?.profile_image || userDisplay?.profile_image || user?.profile_image || "",
   }));
 
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -55,43 +92,43 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
 
   const emailName = useMemo(() => user?.email?.split("@")[0] || "", [user?.email]);
 
+  const initial = useMemo(() => {
+    return {
+      full_name: (apiUserData?.full_name || userDisplay?.full_name || user?.full_name || "").trim(),
+      location: (apiUserData?.location || userDisplay?.location || user?.location || "").trim(),
+      profile_image: apiUserData?.profile_image || userDisplay?.profile_image || user?.profile_image || "",
+    };
+  }, [apiUserData, userDisplay?.full_name, userDisplay?.location, userDisplay?.profile_image, user?.full_name, user?.location, user?.profile_image]);
+
   const steps = useMemo(() => {
     return [
       {
         id: "profile_picture" as const,
         label: "Add Profile Picture",
         icon: Camera,
-        completed: Boolean(setupData.profile_image),
+        completed: Boolean(initial.profile_image),
         description: "Help others recognize you",
       },
       {
         id: "user_name" as const,
         label: "Set Your Name",
         icon: User,
-        completed: Boolean(setupData.full_name.trim()) && setupData.full_name.trim() !== emailName,
+        completed: Boolean(initial.full_name) && initial.full_name !== emailName,
         description: "Choose how you want to be known",
       },
       {
         id: "location" as const,
         label: "Add Location",
         icon: MapPin,
-        completed: Boolean(setupData.location.trim()),
+        completed: Boolean(initial.location),
         description: "See vehicles in your area",
       },
     ];
-  }, [setupData.full_name, setupData.location, setupData.profile_image, emailName]);
+  }, [initial.profile_image, initial.full_name, initial.location, emailName]);
 
   const completedCount = steps.filter((s) => s.completed).length;
   const progressPercentage = (completedCount / steps.length) * 100;
   const isFullyComplete = completedCount === steps.length;
-
-  const initial = useMemo(() => {
-    return {
-      full_name: (userDisplay?.full_name || user?.full_name || "").trim(),
-      location: (userDisplay?.location || user?.location || "").trim(),
-      profile_image: userDisplay?.profile_image || user?.profile_image || "",
-    };
-  }, [userDisplay?.full_name, userDisplay?.location, userDisplay?.profile_image, user?.full_name, user?.location, user?.profile_image]);
 
   const refreshSessionNameImage = async () => {
     const meRes = await fetch("/api/user/me");
@@ -162,6 +199,9 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
       if (stepId === "user_name" || stepId === "profile_picture") {
         await refreshSessionNameImage();
       }
+
+      // Refresh API data to get latest location
+      await refreshApiUserData();
 
       toast({ title: "Saved", description: "Updated successfully." });
       setActiveStep(null);

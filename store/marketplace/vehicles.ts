@@ -144,7 +144,8 @@ export const useMarketplaceVehiclesStore = create<
       });
 
       try {
-        const res = await marketplaceVehicleService.list(buildParams(get()));
+        const params = buildParams(get());
+        const res = await marketplaceVehicleService.list(params);
         set((s) => {
           s.items = res.vehicles.map(normalizeVehicle);
           s.total = res.total;

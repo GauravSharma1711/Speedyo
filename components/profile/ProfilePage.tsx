@@ -13,8 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { Badge } from "@/components/ui/Badge";
 import VehicleCard from "@/components/marketplace/VehicleCard";
 import PostCard from "@/components/feed/PostCard";
+import EditPostModal from "@/components/feed/EditPostModal";
 import EditProfileModal from "@/components/profile/EditProfileModal";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { postService } from "@/services/postService";
 import {
   LogIn,
   MapPin,
@@ -50,6 +52,9 @@ export default function ProfilePage() {
   const { react, share, syncComments } = usePostActionsStore();
 
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditPostModal, setShowEditPostModal] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   useEffect(() => {
     load(profileId);
@@ -315,7 +320,22 @@ export default function ProfilePage() {
                     if (!res) return;
                     updatePostLocal(post.id, { shares: res.shares });
                   }}
-                  onEdit={() => {}}
+                  onEdit={() => {
+                    setEditingPost(post);
+                    setShowEditPostModal(true);
+                  }}
+                  onDelete={async (post) => {
+                    if (!window.confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+                      return;
+                    }
+                    try {
+                      await postService.delete(post.id);
+                      useProfileStore.getState().load(profileId);
+                    } catch (error) {
+                      console.error("Failed to delete post:", error);
+                      alert("Failed to delete post. Please try again.");
+                    }
+                  }}
                 />
               ))}
             </div>
@@ -330,6 +350,21 @@ export default function ProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {showEditPostModal && editingPost && (
+        <EditPostModal
+          post={editingPost}
+          onClose={() => {
+            setShowEditPostModal(false);
+            setEditingPost(null);
+          }}
+          onSave={() => {
+            setShowEditPostModal(false);
+            setEditingPost(null);
+            load(profileId);
+          }}
+        />
+      )}
     </div>
   );
 }

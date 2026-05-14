@@ -57,6 +57,70 @@ export async function GET(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { recipientId, vehicleId } = body;
+
+    if (!recipientId) {
+      return NextResponse.json({ error: "recipientId is required" }, { status: 400 });
+    }
+
+    const recipient = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { id: true },
+    });
+    if (!recipient) {
+      return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
+    }
+
+    const [user1Id, user2Id] =
+      session.user.id < recipientId
+        ? [session.user.id, recipientId]
+        : [recipientId, session.user.id];
+
+    let conversation = await prisma.conversation.findFirst({
+      where: { user1Id, user2Id, vehicleId: vehicleId ?? null },
+      include: {
+        user1: { select: { id: true, full_name: true, profile_image: true, role: true } },
+        user2: { select: { id: true, full_name: true, profile_image: true, role: true } },
+      },
+    });
+
+    if (!conversation) {
+      conversation = await prisma.conversation.create({
+        data: {
+          user1Id,
+          user2Id,
+          vehicleId: vehicleId ?? null,
+          user2_unread: session.user.id === user1Id ? 0 : 1,
+          user1_unread: session.user.id === user1Id ? 1 : 0,
+        },
+        include: {
+          user1: { select: { id: true, full_name: true, profile_image: true, role: true } },
+          user2: { select: { id: true, full_name: true, profile_image: true, role: true } },
+        },
+      });
+    }
+
+    const result = {
+      ...conversation,
+      unread_count: conversation.user1Id === session.user.id ? conversation.user1_unread : conversation.user2_unread,
+      other_user: conversation.user1Id === session.user.id ? conversation.user2 : conversation.user1,
+    };
+
+    return NextResponse.json({ success: true, conversation: result });
+  } catch (error) {
+    console.error("PUT /api/user/messages failed", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
