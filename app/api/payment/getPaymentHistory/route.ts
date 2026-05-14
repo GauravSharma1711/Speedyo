@@ -11,10 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId    = session.user.id;
-    const userEmail = session.user.email;
+    const userId = session.user.id;
 
-    // Fetch user with subscription from DB
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { seller_subscription: true },
@@ -22,10 +20,11 @@ export async function GET(request: NextRequest) {
 
     let payments: any[] = [];
     let subscriptionDetails = null;
+    let dbTransactions: any[] = [];
 
-    // 1. Fetch payments from our DB (most reliable source)
+    // 1. Fetch payments from DB
     try {
-      const dbTransactions = await prisma.paymentTransaction.findMany({
+      dbTransactions = await prisma.paymentTransaction.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
         include: { invoice: true },
@@ -33,6 +32,7 @@ export async function GET(request: NextRequest) {
 
       payments = dbTransactions.map((tx) => ({
         id: tx.square_payment_id ?? tx.id,
+         invoice_id: tx.invoice?.id ?? null, 
         amount: Number(tx.amount),
         currency: tx.currency,
         status: tx.status,
@@ -48,54 +48,72 @@ export async function GET(request: NextRequest) {
       console.error("Error fetching transactions from DB:", error);
     }
 
-    // 2. Fetch subscription details from Square if exists
-    if (user?.seller_subscription?.square_subscription_id) {
-      try {
+    // 2. Fetch subscription details
+    if (user?.seller_subscription) {
+      const dbSub = user.seller_subscription;
 
-        
-const subResponse = await squareClient.subscriptions.get({
-  subscriptionId: user.seller_subscription.square_subscription_id,
-});
-
-        const subscription = subResponse.subscription;
-
+      if (dbSub.square_subscription_id) {
+        // Has Square subscription — fetch live data
+        try {
+          const subResponse = await squareClient.subscriptions.get({
+            subscriptionId: dbSub.square_subscription_id,
+          });
+          const sq = subResponse.subscription;
+          subscriptionDetails = {
+            id: sq?.id,
+            status: sq?.status?.toLowerCase() ?? "unknown",
+            current_period_start: sq?.startDate ?? null,
+            current_period_end: sq?.chargedThroughDate ?? null,
+            cancel_at_period_end: sq?.canceledDate ? true : false,
+            canceled_at: sq?.canceledDate ?? null,
+            tier: dbSub.tier,
+            vehicles_sold_this_year: dbSub.vehicles_sold_this_year,
+          };
+        } catch (error) {
+          console.error("Error fetching subscription from Square:", error);
+          // Fallback to DB
+          subscriptionDetails = {
+            id: dbSub.square_subscription_id,
+            status: dbSub.cancellation_date
+              ? "canceled"
+              : dbSub.expires_at && dbSub.expires_at < new Date()
+              ? "expired"
+              : "active",
+            current_period_start: dbSub.last_payment_at ?? null,
+            current_period_end: dbSub.expires_at ?? null,
+            cancel_at_period_end: !!dbSub.cancellation_date,
+            canceled_at: dbSub.cancellation_date ?? null,
+            tier: dbSub.tier,
+            vehicles_sold_this_year: dbSub.vehicles_sold_this_year,
+          };
+        }
+      } else {
+        // Manual subscription — no Square sub ID, derive status from DB
         subscriptionDetails = {
-          id: subscription?.id,
-          status: subscription?.status,
-          current_period_start: subscription?.startDate,
-          current_period_end: subscription?.chargedThroughDate,
-          cancel_at_period_end: subscription?.canceledDate ? true : false,
-          canceled_at: subscription?.canceledDate ?? null,
-          tier: user.seller_subscription.tier,
-        };
-      } catch (error) {
-        console.error("Error fetching subscription from Square:", error);
-
-        // Fallback to DB data if Square call fails
-        subscriptionDetails = {
-          id: user.seller_subscription.square_subscription_id,
-          status: "unknown",
-          current_period_start: null,
-          current_period_end: user.seller_subscription.expires_at,
-          cancel_at_period_end: !!user.seller_subscription.cancellation_date,
-          canceled_at: user.seller_subscription.cancellation_date ?? null,
-          tier: user.seller_subscription.tier,
+          id: dbSub.id,
+          status: dbSub.cancellation_date
+            ? "canceled"
+            : dbSub.expires_at && dbSub.expires_at < new Date()
+            ? "expired"
+            : "active",
+          current_period_start: dbSub.last_payment_at ?? null,
+          current_period_end: dbSub.expires_at ?? null,
+          cancel_at_period_end: !!dbSub.cancellation_date,
+          canceled_at: dbSub.cancellation_date ?? null,
+          tier: dbSub.tier,
+          vehicles_sold_this_year: dbSub.vehicles_sold_this_year,
         };
       }
     }
 
-    // 3. Also include activated guest purchases
+    // 3. Include activated guest purchases
     try {
       const guestPurchases = await prisma.guestPurchase.findMany({
-        where: {
-          activated_for_user_id: userId,
-          payment_gateway: "square",
-        },
+        where: { activated_for_user_id: userId, payment_gateway: "square" },
         orderBy: { createdAt: "desc" },
       });
 
       guestPurchases.forEach((purchase) => {
-        // Only add if not already in payments list
         const alreadyExists = payments.some((p) => p.id === purchase.payment_id);
         if (!alreadyExists) {
           payments.push({
@@ -122,25 +140,26 @@ const subResponse = await squareClient.subscriptions.get({
       (a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()
     );
 
-    // Fetch invoices from DB
-    const invoices = await prisma.invoice.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-    }).catch(() => []);
+    // Build invoices — single map, all fields passed through
+    const invoices = dbTransactions
+      .filter((tx) => tx.invoice !== null)
+      .map((tx) => ({
+        id: tx.invoice!.id,
+        invoice_number: tx.invoice!.invoice_number,
+        amount: Number(tx.invoice!.amount),
+        currency: tx.invoice!.currency,
+        status: tx.invoice!.status,
+        description: tx.invoice!.description,
+        created: tx.invoice!.createdAt,
+        paid_at: tx.invoice!.paid_at,
+        invoice_url: tx.invoice!.invoice_url,
+        period_start: tx.invoice!.period_start,
+        period_end: tx.invoice!.period_end,
+      }));
 
     return NextResponse.json({
       payments,
-      invoices: invoices.map((inv) => ({
-        id: inv.id,
-        invoice_number: inv.invoice_number,
-        amount: Number(inv.amount),
-        currency: inv.currency,
-        status: inv.status,
-        description: inv.description,
-        created: inv.createdAt,
-        paid_at: inv.paid_at,
-        invoice_url: inv.invoice_url,
-      })),
+      invoices,        
       subscription: subscriptionDetails,
     });
 

@@ -876,6 +876,9 @@ model Invoice {
   paid_at             DateTime?
   invoice_url         String?        // generated PDF url if needed
 
+    period_start        DateTime?      
+  period_end          DateTime? 
+
   user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   transaction         PaymentTransaction @relation(fields: [transactionId], references: [id])
 

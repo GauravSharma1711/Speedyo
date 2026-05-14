@@ -14,10 +14,6 @@ import {
   Bell,
   LogOut,
   LogIn,
-<<<<<<< HEAD
-  JapaneseYen ,
-=======
->>>>>>> 8487b8d92962b574a6b334790da60c3e0856a0b3
   Handshake,
   MessageSquare,
   ClipboardList,

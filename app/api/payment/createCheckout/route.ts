@@ -86,34 +86,52 @@ export async function POST(request: NextRequest) {
       const currentUsed      = user.private_seller_slots?.used ?? 0;
       const wasGuest         = user.user_type === "guest";
 
-      await prisma.$transaction([
-        prisma.privateSellerSlots.upsert({
-          where: { userId },
-          update: { purchased: currentPurchased + quantity },
-          create: { userId, purchased: quantity, used: 0 },
-        }),
-        ...(wasGuest
-          ? [prisma.user.update({
-              where: { id: userId },
-              data: { user_type: "private_seller" },
-            })]
-          : []),
-      ]);
-
-      // Save transaction
-      await prisma.paymentTransaction.create({
-        data: {
+  const tx = await prisma.$transaction(async (prisma) => {
+  const tx = await prisma.paymentTransaction.create({
+    data: {
+      userId,
+      transaction_type: "slot_purchase",
+      amount: totalAmount,
+      currency: CURRENCY,
+      status: "completed",
+      square_payment_id: payment.id!,
+      square_receipt_url: payment.receiptUrl ?? null,
+      slots_purchased: quantity,
+      promo_code_used: hasPromo ? promoCode : null,
+      invoice: {
+        create: {
           userId,
-          transaction_type: "slot_purchase",
+          invoice_number: `INV-${new Date().getFullYear()}-${Date.now()}-${randomUUID().slice(0,6).toUpperCase()}`,
           amount: totalAmount,
-            currency: CURRENCY,  
-          status: "completed",
-          square_payment_id: payment.id!,
-          square_receipt_url: payment.receiptUrl ?? null,
-          slots_purchased: quantity,
-          promo_code_used: hasPromo ? promoCode : null,
+          currency: CURRENCY,
+          status: "paid",
+          description: `Private Seller Slots — ${quantity} slot(s)${hasPromo ? " (20% off)" : ""}`,
+          paid_at: new Date(),
+              period_start: new Date(),                                    
+    period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
-      });
+      },
+    },
+  });
+
+  await prisma.privateSellerSlots.upsert({
+    where: { userId },
+    update: { purchased: currentPurchased + quantity },
+    create: { userId, purchased: quantity, used: 0 },
+  });
+
+  if (wasGuest) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { user_type: "private_seller" },
+    });
+  }
+
+  return tx;
+});
+
+
+
 
       try {
         await sendPaymentConfirmationMail(
@@ -139,45 +157,63 @@ export async function POST(request: NextRequest) {
     }
 
     // ── Dealership Verification — one-time fee ──
-    if (purpose === "dealership_verification") {
-      const totalAmount = 25000; 
+   if (purpose === "dealership_verification") {
+  const totalAmount = 25000;
 
-      const response = await squareClient.payments.create({
-        sourceId: paymentToken,
-        idempotencyKey: randomUUID(),
-        amountMoney: { amount: BigInt(totalAmount), currency: CURRENCY },
-        buyerEmailAddress: userEmail,
-        note: "Speedio Dealership Verification Fee",
-        referenceId: `dealership_verification_${Date.now()}`,
-      });
+  const response = await squareClient.payments.create({
+    sourceId: paymentToken,
+    idempotencyKey: randomUUID(),
+    amountMoney: { amount: BigInt(totalAmount), currency: CURRENCY },
+    buyerEmailAddress: userEmail,
+    note: "Speedio Dealership Verification Fee",
+    referenceId: `dealership_verification_${Date.now()}`,
+  });
 
-      console.log("Square dealership_verification payment response:", response);  
+  const payment = response.payment;
+  if (!payment || payment.status !== "COMPLETED") {
+    throw new Error("Payment not completed");
+  }
 
-      const payment = response.payment;
-      if (!payment || payment.status !== "COMPLETED") {
-        throw new Error("Payment not completed");
-      }
+  
+  await prisma.$transaction(async (prisma) => {
+  await prisma.paymentTransaction.create({
+    data: {
+      userId,
+      transaction_type: "one_time_service",
+      amount: totalAmount,
+      currency: CURRENCY,
+      status: "completed",
+      square_payment_id: payment.id!,
+      square_receipt_url: payment.receiptUrl ?? null,
+      invoice: {
+        create: {
+          userId,
+          invoice_number: `INV-${new Date().getFullYear()}-${Date.now()}-${randomUUID().slice(0,6).toUpperCase()}`,
+          amount: totalAmount,
+          currency: CURRENCY,
+          status: "paid",
+          description: "Dealership Verification Fee — One-time payment",
+          paid_at: new Date(),
+              period_start: new Date(),                                    
+    period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      },
+    },
+  });
 
-      await prisma.$transaction([
-        prisma.user.update({
-          where: { id: userId },
-          data: {
-            verification_fee_paid: true,
-            dealership_verification_status: "pending_review",
-          },
-        }),
-        prisma.paymentTransaction.create({
-          data: {
-            userId,
-            transaction_type: "one_time_service",
-            amount: totalAmount,
-            currency: CURRENCY,
-            status: "completed",
-            square_payment_id: payment.id!,
-            square_receipt_url: payment.receiptUrl ?? null,
-          },
-        }),
-      ]);
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      verification_fee_paid: true,
+      dealership_verification_status: "pending_review",
+    },
+  });
+});
+
+  
+  
+  
+ 
 
       try {
         await sendDealershipVerificationPaymentMail(
@@ -250,52 +286,66 @@ export async function POST(request: NextRequest) {
   const expiresAt = new Date(now);
   expiresAt.setDate(expiresAt.getDate() + 30);
 
+  await prisma.$transaction(async (prisma) => {
+  await prisma.paymentTransaction.create({
+    data: {
+      userId,
+      transaction_type: "subscription_purchase",
+      amount: TIER_PRICES[tier].amount,
+      currency: CURRENCY,
+      status: "completed",
+      square_payment_id: payment.id,
+      square_customer_id: squareCustomerId,
+      subscription_tier: tierId as any,
+      invoice: {
+        create: {
+          userId,
+          invoice_number: `INV-${new Date().getFullYear()}-${Date.now()}-${randomUUID().slice(0,6).toUpperCase()}`,
+          amount: TIER_PRICES[tier].amount,
+          currency: CURRENCY,
+          status: "paid",
+          description: `${TIER_PRICES[tier].name} — Monthly Subscription`,
+          paid_at: new Date(),
+              period_start: new Date(),                                    
+    period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      },
+    },
+  });
 
-   
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: userId },
-      data: {
-        user_type: "dealership",
-        dealership_verification_status: "approved",
-      },
-    }),
-    prisma.sellerSubscription.upsert({
-      where: { userId },
-      update: {
-        tier: tierId as any,
-        square_customer_id: squareCustomerId,
-        expires_at: expiresAt,
-        next_billing_date: expiresAt,
-        last_payment_at: now,
-        last_payment_amount: TIER_PRICES[tier].amount,
-      },
-      create: {
-        userId,
-        tier: tierId as any,
-        square_customer_id: squareCustomerId,
-        expires_at: expiresAt,
-        next_billing_date: expiresAt,
-        last_payment_at: now,
-        last_payment_amount: TIER_PRICES[tier].amount,
-      },
-    }),
-    prisma.paymentTransaction.create({
-      data: {
-        userId,
-        transaction_type: "subscription_purchase",
-        amount: TIER_PRICES[tier].amount,
-        currency: CURRENCY,
-        status: "completed",
-        square_payment_id: payment.id,
-        square_customer_id: squareCustomerId,
-        subscription_tier: tierId as any,
-      },
-    }),
-  ]);
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      user_type: "dealership",
+      dealership_verification_status: "approved",
+    },
+  });
+
+  await prisma.sellerSubscription.upsert({
+    where: { userId },
+    update: {
+      tier: tierId as any,
+      square_customer_id: squareCustomerId,
+      expires_at: expiresAt,
+      next_billing_date: expiresAt,
+      last_payment_at: now,
+      last_payment_amount: TIER_PRICES[tier].amount,
+    },
+    create: {
+      userId,
+      tier: tierId as any,
+      square_customer_id: squareCustomerId,
+      expires_at: expiresAt,
+      next_billing_date: expiresAt,
+      last_payment_at: now,
+      last_payment_amount: TIER_PRICES[tier].amount,
+    },
+  });
+});
 
 
-     
+
+ 
 
       const tierNames: Record<string, string> = {
         tier1: "Standard",
