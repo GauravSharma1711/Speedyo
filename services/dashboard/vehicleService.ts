@@ -10,6 +10,7 @@ export type DashboardVehicle = {
   model?: string | null;
   price?: number | null;
   status?: string | null;
+  recurring_availability?: Record<string, any> | null;
   primary_image?: string | null;
   primary_image_thumbnail?: string | null;
   views?: number | null;

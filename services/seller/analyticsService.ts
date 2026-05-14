@@ -1,9 +1,9 @@
 import axios from "@/lib/axios";
 
 export type SellerAnalytics = {
-  active_listings: { count: number; total: number };
-  total_views: { all_time: number; this_week: number };
-  test_drive_requests: { all_time: number };
+  active_listings: { count: number; total: number,trend:number };
+  total_views: { all_time: number; this_week: number ,trend:number};
+  test_drive_requests: { all_time: number,trend:number };
   avg_list_price: number;
 };
 

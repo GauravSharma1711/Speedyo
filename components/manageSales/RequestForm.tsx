@@ -735,7 +735,7 @@ export default function RequestFormUI(props: Props) {
 
             <div className="space-y-2">
               <Label htmlFor="seller_asking_price">
-                Your Asking Price ($) <span className="text-red-500">*</span>
+                Your Asking Price (¥) <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="seller_asking_price"
@@ -759,20 +759,20 @@ export default function RequestFormUI(props: Props) {
                   <p className="text-sm text-slate-600 flex justify-between mb-2">
                     <span className="font-medium">Your Asking Price:</span>
                     <span className="font-semibold">
-                      ${Number(formData.vehicle_details.seller_asking_price).toLocaleString()}
+                      ¥{Number(formData.vehicle_details.seller_asking_price).toLocaleString()}
                     </span>
                   </p>
                   <p className="text-xs text-blue-600 flex justify-between mt-1">
                     <span className="font-medium">Service Fee:</span>
                     <span className="font-semibold">
-                      +$
+                      +¥
                       {calculateServiceFeeAmount(Number(formData.vehicle_details.seller_asking_price)).toLocaleString()}
                     </span>
                   </p>
                   <p className="text-sm text-blue-800 flex justify-between font-bold border-t border-blue-300 pt-2 mt-2">
                     <span>Vehicle Listing Price:</span>
                     <span>
-                      $
+                      ¥
                       {(
                         Number(formData.vehicle_details.seller_asking_price) +
                         calculateServiceFeeAmount(Number(formData.vehicle_details.seller_asking_price))

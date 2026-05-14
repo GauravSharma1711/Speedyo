@@ -397,12 +397,32 @@ useEffect(() => {
   getUsers();
 }, []);
 
-  const [vehicleId, setVehicleId] = useState<string>(vehicles[0]?.id ?? "");
+  const [vehicleId, setVehicleId] = useState<string>("");
   const [transferType, setTransferType] = useState<TransferType>("speedio_managed");
-  const [buyerId, setBuyerId] = useState<string>(users[0]?.id ?? "");
+  const [buyerId, setBuyerId] = useState<string>("");
   const [sellerId, setSellerId] = useState<string>("");
   const [userFacingNotes, setUserFacingNotes] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
+
+    useEffect(() => {
+    if (vehicles.length > 0 && !vehicleId) {
+      setVehicleId(vehicles[0].id);
+    }
+  }, [vehicles]);
+
+  useEffect(() => {
+    if (users.length > 0 && !buyerId) {
+      setBuyerId(users[0].id);
+    }
+  }, [users]);
+
+    useEffect(() => {
+    if (users.length > 0 && !buyerId) {
+      setSellerId(users[0].id);
+    }
+  }, [users]);
+
+
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -410,6 +430,13 @@ useEffect(() => {
       toast({ title: "Missing fields", variant: "destructive" });
       return;
     }
+
+    console.log( "abc",   vehicleId,
+      transferType,
+      buyerId,
+      sellerId,
+
+)
 
     onCreate({
       vehicleId,

@@ -53,6 +53,8 @@ export default function TestDriveAvailabilityManager({ vehicle, onClose, onSave 
     setNewSlot(prev => ({ ...prev, [field]: value }));
   };
 
+  console.log("vehicle",vehicle);
+
   return (
     <motion.div
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
