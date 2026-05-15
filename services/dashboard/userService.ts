@@ -4,6 +4,7 @@ export type DashboardUser = {
   id: string;
   email?: string | null;
   full_name?: string | null;
+  phone?: string | null;
   profile_image?: string | null;
   user_type?: "guest" | "private_seller" | "dealership" | null;
   role?: string | null;

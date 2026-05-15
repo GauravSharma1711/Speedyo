@@ -30,8 +30,6 @@ export async function GET(req: NextRequest) {
             private_seller_slots: true,
             seller_subscription: true,
             createdAt: true,
-
-                dealership_verification_status: true,
     dealership_selected_tier: true,
     business_name: true,
     business_address: true,
@@ -41,8 +39,6 @@ export async function GET(req: NextRequest) {
     business_license_urls: true,
     dealer_License_Number: true,
     verification_fee_paid: true,
-    admin_verification_notes: true,
-
         },
     });
     if (!user) {
@@ -69,8 +65,6 @@ export async function GET(req: NextRequest) {
             private_seller_slots: user.private_seller_slots,
             seller_subscription: user.seller_subscription,
             created_date: user.createdAt,
-
-              dealership_verification_status: user.dealership_verification_status,
     dealership_selected_tier: user.dealership_selected_tier,
     business_name: user.business_name,
     business_address: user.business_address,
@@ -80,7 +74,6 @@ export async function GET(req: NextRequest) {
     business_license_urls: user.business_license_urls,
     dealer_License_Number: user.dealer_License_Number,
     verification_fee_paid: user.verification_fee_paid,
-    admin_verification_notes: user.admin_verification_notes,
         },
     },
         { status: 200 }

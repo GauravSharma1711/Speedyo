@@ -1,4 +1,3 @@
-
 "use client"
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -8,13 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { CheckCircle, ArrowRight, Clock, Mail } from "lucide-react";
 
 
-export default function SuccessModal({ onClose, isOpen = true }) {
+export default function SuccessModal({ onClose, isOpen = true }: { onClose: () => void; isOpen?: boolean }) {
   const router = useRouter();
-
-  // Prevent the modal from closing accidentally
-  const handleBackdropClick = (e) => {
-    e.stopPropagation();
-  };
 
   if (!isOpen) return null;
 
@@ -25,7 +19,7 @@ export default function SuccessModal({ onClose, isOpen = true }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-        onClick={handleBackdropClick}
+        onClick={onClose}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -37,15 +31,12 @@ export default function SuccessModal({ onClose, isOpen = true }) {
           <Card className="bg-white/95 backdrop-blur-md border-0 shadow-2xl">
             <CardContent className="text-center py-12 px-8">
               <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
-              
               <h2 className="text-2xl font-bold text-slate-800 mb-4">
                 Request Submitted Successfully!
               </h2>
-              
               <p className="text-slate-600 mb-6 leading-relaxed">
                 Thank you for choosing our managed sales service. We've received your request and will review it within 24-48 hours.
               </p>
-              
               <div className="bg-blue-50 rounded-lg p-4 mb-6 text-left">
                 <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
@@ -59,7 +50,6 @@ export default function SuccessModal({ onClose, isOpen = true }) {
                   <li>• You'll receive payment (minus 6% fee) when sold</li>
                 </ul>
               </div>
-              
               <div className="bg-emerald-50 rounded-lg p-4 mb-6">
                 <div className="flex items-center gap-2 text-emerald-800 mb-1">
                   <Mail className="w-4 h-4" />
@@ -69,7 +59,7 @@ export default function SuccessModal({ onClose, isOpen = true }) {
                   A confirmation email with your request details and fee breakdown has been sent to your email address.
                 </p>
               </div>
-              
+
               <div className="space-y-3">
                 <Button 
                    onClick={() => router.push("/Feed")}
@@ -78,7 +68,6 @@ export default function SuccessModal({ onClose, isOpen = true }) {
                   Go to Homepage
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-                
                 <Button variant="outline" onClick={onClose} className="w-full">
                   Close
                 </Button>
