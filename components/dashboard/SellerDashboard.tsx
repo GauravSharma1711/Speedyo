@@ -918,6 +918,31 @@ export default function SellerDashboard() {
     loadSellerDashboard();
   };
 
+  const handleCreateDirectListing = async () => {
+    if (!user) return;
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        contact_full_name: user.full_name || "",
+        contact_email: user.email || "",
+        contact_phone: user.phone || "",
+        listing_type: "direct",
+        status: "pending_approval",
+        service_fee_amount: 0,
+        owner_receives_amount: 0,
+        final_sale_price_for_buyer: 0,
+        terms_agreed: true,
+      };
+      await managedSaleService.create(payload);
+      toast({ title: "Success", description: "Direct listing submitted for approval" });
+      loadSellerDashboard();
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to create listing", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleUpdateRequest = async (
     requestData: any,
     originalRequest: any,
@@ -2929,17 +2954,27 @@ export default function SellerDashboard() {
                   <Handshake className="w-5 h-5 text-emerald-500" />
                   Managed Sale Vehicles
                 </CardTitle>
-                <Button
-                  onClick={() => {
-                    setEditingRequest(null);
-                    setShowRequestForm(true);
-                  }}
-                  className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
-                  disabled={!canPostVehicle()}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Managed Sale
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleCreateDirectListing}
+                    variant="outline"
+                    disabled={!canPostVehicle() || isSubmitting}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Direct Listing
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditingRequest(null);
+                      setShowRequestForm(true);
+                    }}
+                    className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
+                    disabled={!canPostVehicle()}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Managed Sale
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {managedSaleVehicles.length === 0 ? (

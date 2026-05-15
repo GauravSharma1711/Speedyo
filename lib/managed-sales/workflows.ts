@@ -757,6 +757,21 @@ export async function workflowAdminPatchMsr(
   const data: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body)) {
     if (forbid.has(k)) continue;
+
+
+    const numericFields = ['vehicle_year', 'vehicle_mileage', 'seller_asking_price', 'final_sale_price_for_buyer', 'service_fee_amount', 'owner_receives_amount'];
+    if (numericFields.includes(k) && typeof v === 'string' && v !== '') {
+      const num = Number(v);
+      if (!Number.isNaN(num)) {
+        data[k] = num;
+        continue;
+      }
+    }
+    if (k === 'terms_agreed') {
+      data[k] = v === 'true';
+      continue;
+    }
+
     data[k] = v;
   }
 

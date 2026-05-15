@@ -170,6 +170,7 @@ type FormData = {
 export type ManagedSaleRequestEditTarget = {
   id: string;
   submitted_by_user_id?: string;
+  status?: string;
   requester_contact_info?: Partial<ContactInfo>;
   vehicle_details?: Partial<VehicleDetails>;
   access_arrangements?: Partial<AccessArrangements>;
@@ -584,7 +585,7 @@ export default function RequestFormUI(props: Props) {
         access_arrangements: formData.access_arrangements,
         terms_agreed: Boolean(formData.terms_agreed),
         submitted_by_user_id: props.requestToEdit.submitted_by_user_id,
-        status: "pending_review",
+        status: props.requestToEdit.status === "pending_initial_review" ? "pending_review" : (props.requestToEdit.status || "pending_review"),
         final_sale_price_for_buyer: buyerPrice,
         service_fee_amount: fee,
         owner_receives_amount: asking,
@@ -593,8 +594,13 @@ export default function RequestFormUI(props: Props) {
       setIsSubmitting(true);
       try {
         await props.onSave(payload);
-        toast({ title: "Saved", description: "Saved to local state (UI-only)." });
-        setShowSuccessModal(true);
+        const isAdminEdit = Boolean(props.requestToEdit?.id);
+        if (isAdminEdit) {
+          toast({ title: "Details Saved", description: "Status updated to pending_review" });
+          props.onClose();
+        } else {
+          setShowSuccessModal(true);
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -758,20 +764,20 @@ export default function RequestFormUI(props: Props) {
                   <p className="text-sm text-slate-600 flex justify-between mb-2">
                     <span className="font-medium">Your Asking Price:</span>
                     <span className="font-semibold">
-                      ${Number(formData.vehicle_details.seller_asking_price).toLocaleString()}
+                      ¥{Number(formData.vehicle_details.seller_asking_price).toLocaleString()}
                     </span>
                   </p>
                   <p className="text-xs text-blue-600 flex justify-between mt-1">
                     <span className="font-medium">Service Fee:</span>
                     <span className="font-semibold">
-                      +$
+                      +¥
                       {calculateServiceFeeAmount(Number(formData.vehicle_details.seller_asking_price)).toLocaleString()}
                     </span>
                   </p>
                   <p className="text-sm text-blue-800 flex justify-between font-bold border-t border-blue-300 pt-2 mt-2">
                     <span>Vehicle Listing Price:</span>
                     <span>
-                      $
+                      ¥
                       {(
                         Number(formData.vehicle_details.seller_asking_price) +
                         calculateServiceFeeAmount(Number(formData.vehicle_details.seller_asking_price))
@@ -1935,7 +1941,7 @@ export default function RequestFormUI(props: Props) {
               <>
                 <Camera className="w-10 h-10 text-slate-400 mb-3" />
                 <p className="font-semibold text-slate-700">Upload files or drag and drop</p>
-                <p className="text-sm text-slate-500">Local preview (UI-only)</p>
+                <p className="text-sm text-slate-500">PNG, JPG, GIF up to 30MB each (will be processed on client and server)</p>
               </>
             )}
 
@@ -2271,15 +2277,15 @@ export default function RequestFormUI(props: Props) {
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Your Asking Price:</span>
-              <span className="font-semibold">${asking.toLocaleString()}</span>
+              <span className="font-semibold">¥{asking.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-blue-600">
               <span>Service Fee (added to listing):</span>
-              <span className="font-semibold">+${fee.toLocaleString()}</span>
+              <span className="font-semibold">+¥{fee.toLocaleString()}</span>
             </div>
             <div className="border-t border-blue-300 pt-2 flex justify-between text-lg font-bold text-blue-800">
               <span>Vehicle Listing Price:</span>
-              <span>${buyer.toLocaleString()}</span>
+              <span>¥{buyer.toLocaleString()}</span>
             </div>
           </CardContent>
         </Card>
@@ -2378,6 +2384,7 @@ export default function RequestFormUI(props: Props) {
               </Button>
             </div>
 
+            
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
                 <motion.div
@@ -2401,7 +2408,8 @@ export default function RequestFormUI(props: Props) {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => { e.preventDefault(); }}>
+              <input type="submit" style={{ display: 'none' }} disabled />
               <div className="p-6 flex-grow max-h-[60vh] overflow-y-auto">
                 <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
               </div>
@@ -2419,7 +2427,8 @@ export default function RequestFormUI(props: Props) {
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
+                    onClick={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
                     disabled={isSubmitting || Object.keys(validationErrors).length > 0}
                     className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
                   >

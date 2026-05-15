@@ -76,9 +76,14 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         // Parse all non-file fields
     for (const [key, value] of formData.entries()) {
       if (typeof value === "string") {
-        try {
-          body[key] = JSON.parse(value);
-        } catch {
+
+        if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+          try {
+            body[key] = JSON.parse(value);
+          } catch {
+            body[key] = value;
+          }
+        } else {
           body[key] = value;
         }
       }
