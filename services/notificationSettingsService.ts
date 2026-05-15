@@ -15,12 +15,15 @@ export interface NotificationPreferences {
 
 const notificationSettingsService = {
   getSettings: async () => {
-    const res = await api.get("/api/user/notification-settings");
-    return res.data;
+    const res = await api.get("/api/seller/settings/notifications");
+    return res.data.data;
   },
 
   updateSettings: async (preferences: NotificationPreferences) => {
-    const res = await api.put("/api/user/notification-settings", preferences);
+    const res = await api.patch("/api/seller/settings/notifications", {
+          email: preferences.email_notifications,   
+          in_app: preferences.inapp_notifications,
+    });
     return res.data;
   },
 };

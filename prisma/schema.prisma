@@ -1054,6 +1054,7 @@ enum ManagedSaleStatus {
   cancelled
   cancellation_requested
   edit_requested
+  pending_approval
 }
 
 enum MessageType {

@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     const transfers = await prisma.vehicleTransfer.findMany({
-      where: { buyerId: session.user.id },
+      where: { sellerId: session.user.id },
       include: {
         vehicle: {
           select: {

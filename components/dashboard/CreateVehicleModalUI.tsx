@@ -290,10 +290,7 @@ export default function CreateVehicleModalUI({
        };
     });
 
-    toast({
-      title: "Images added",
-      description: "Saved locally for preview.",
-    });
+ 
 
     e.target.value = "";
   };
@@ -596,7 +593,7 @@ export default function CreateVehicleModalUI({
       };
     });
 
-    toast({ title: "Images added", description: "Saved locally for preview." });
+    
   }
 }}
                   >

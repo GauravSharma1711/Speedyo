@@ -27,6 +27,7 @@ interface SellerDashboardState {
   managedSaleRequests: ManagedSaleRequest[];
   managedSaleVehicles: ManagedSaleVehicle[];
   listings: DashboardVehicle[];
+sentTestDrives: TestDriveRequestData[];
   messages: Conversation[];
   buyers: PublicUser[];
   stats: {
@@ -36,6 +37,9 @@ interface SellerDashboardState {
     avgPrice: number;
     totalInquiries: number;
     thisWeekViews: number;
+      viewsTrend: number;
+  listingsTrend: number;
+  inquiriesTrend: number;   
   };
   isLoading: boolean;
   error: string | null;
@@ -48,6 +52,7 @@ export const useSellerDashboardStore = create<SellerDashboardState>()(
     user: null,
     performance: null,
     testDrives: [],
+    sentTestDrives: [],
     sellerTransfers: [],
     buyerTransfers: [],
     managedSaleRequests: [],
@@ -62,6 +67,9 @@ export const useSellerDashboardStore = create<SellerDashboardState>()(
       avgPrice: 0,
       totalInquiries: 0,
       thisWeekViews: 0,
+            viewsTrend: 0,
+  listingsTrend: 0,
+  inquiriesTrend: 0,
     },
     isLoading: false,
     error: null,
@@ -69,11 +77,12 @@ export const useSellerDashboardStore = create<SellerDashboardState>()(
     async loadSellerDashboard() {
       set({ isLoading: true, error: null });
       try {
-        const [user, performance, testDrives, sellerTransfers, managedSaleRequests, listings, messages, buyers, analytics] =
+        const [user, performance,  testDrives, sentTestDrives, sellerTransfers, managedSaleRequests, listings, messages, buyers, analytics] =
           await Promise.all([
             userService.me(),
             sellerPerformanceService.get("week"),
-            testDriveRequestService.listByRole("seller"),
+             testDriveRequestService.listByRole("seller"),
+            testDriveRequestService.listByRole("buyer"),    
             sellerTransferService.list(),
             managedSaleService.listByUser("me"),
             vehicleService.listMyVehicles("me"),
@@ -124,10 +133,15 @@ export const useSellerDashboardStore = create<SellerDashboardState>()(
         const totalInquiries = analytics?.test_drive_requests?.all_time ?? testDrives.length;
         const thisWeekViews = analytics?.total_views?.this_week ?? Math.floor(totalViews * 0.3);
 
+                 const viewsTrend= analytics?.total_views.trend
+  const listingsTrend= analytics?.active_listings.trend
+  const inquiriesTrend= analytics?.test_drive_requests.trend
+
         set({
           user,
           performance,
           testDrives,
+            sentTestDrives,   
           sellerTransfers,
           buyerTransfers,
           managedSaleRequests,
@@ -142,6 +156,9 @@ export const useSellerDashboardStore = create<SellerDashboardState>()(
             avgPrice,
             totalInquiries,
             thisWeekViews,
+                  viewsTrend,
+  listingsTrend,
+  inquiriesTrend,  
           },
           isLoading: false,
         });

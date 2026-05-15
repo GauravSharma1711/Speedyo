@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDashboardStore } from "@/store/dashboard";
 
+
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -75,7 +77,7 @@ import BuyMoreSlotsModal from "./BuyMoreSlotsModal";
 import NotificationSettings from "./NotificationSettings";
 import TransferProgressTracker from "./TransferProgressTracker";
 import { usePaymentStore } from "@/store/paymentStore";
-import { useSellerDashboardStore } from "@/store/dashboard";
+import { useSellerDashboardStore } from "@/store/dashboard/sellerDashboardStore";
 import {
   vehicleService,
   managedSaleService,
@@ -137,6 +139,12 @@ const getAdmins = async () => {
   const res = await axios.get("/api/users/admins");
   return res.data.admins ?? [];
 };
+
+const formatTrend = (trend: number) => ({
+  direction: trend >= 0 ? "up" : "down",
+  label: `${trend >= 0 ? "+" : ""}${trend}%`,
+} as const);
+
 
 type ManagedSaleDetailsModalProps = {
   isOpen: boolean;
@@ -485,14 +493,11 @@ export default function SellerDashboard() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [editingRequest, setEditingRequest] = useState<any | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
-  const [stats, setStats] = useState({
-    totalListings: 0,
-    totalViews: 0,
-    activeListings: 0,
-    avgPrice: 0,
-    totalInquiries: 0,
-    thisWeekViews: 0,
-  });
+
+
+
+
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewingRequest, setViewingRequest] = useState<any | null>(null);
@@ -524,6 +529,7 @@ export default function SellerDashboard() {
     user,
     performance,
     testDrives,
+    sentTestDrives,
     managedSaleRequests,
     managedSaleVehicles,
     listings,
@@ -533,6 +539,8 @@ export default function SellerDashboard() {
     buyerTransfers,
     isLoading: storeLoading,
     loadSellerDashboard,
+    stats,
+  
   } = useSellerDashboardStore();
 
   // Combine all transfers for display
@@ -540,6 +548,9 @@ export default function SellerDashboard() {
 
   // Derive testDriveRequests from testDrives
   const testDriveRequests = testDrives;
+  const sentTestDrivesRequests  = sentTestDrives;
+
+  console.log("test drive req",testDriveRequests,sentTestDrivesRequests)
 
   // Tabs state
   const [activeTab, setActiveTab] = useState("listings");
@@ -1747,7 +1758,7 @@ export default function SellerDashboard() {
   };
 
   const isGuest = session?.user?.user_type === "guest";
-  console.log("okook", dealershipSubscriptionDetails);
+  console.log("dealershipSubscriptionDetails", dealershipSubscriptionDetails);
   return (
     <div className="space-y-6">
       {getDealershipVerificationAlert()}
@@ -1876,33 +1887,33 @@ export default function SellerDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            icon={Car}
-            title="Active Listings"
-            value={stats.activeListings}
-            subtitle={`${stats.totalListings} total`}
-            color="blue"
-            trend="up"
-            trendValue="+8%"
-          />
-          <StatCard
-            icon={Eye}
-            title="Total Views"
-            value={stats.totalViews.toLocaleString()}
-            subtitle={`${stats.thisWeekViews} this week`}
-            color="emerald"
-            trend="up"
-            trendValue="+15%"
-          />
-          <StatCard
-            icon={CalendarCheck}
-            title="Car Viewing Requests"
-            value={stats.totalInquiries}
-            subtitle="All time"
-            color="purple"
-            trend="up"
-            trendValue="+5%"
-          />
+         <StatCard
+  icon={Car}
+  title="Active Listings"
+  value={stats.activeListings}
+  subtitle={`${stats.totalListings} total`}
+  color="blue"
+  trend={formatTrend(stats.listingsTrend).direction}
+  trendValue={formatTrend(stats.listingsTrend).label}
+/>
+<StatCard
+  icon={Eye}
+  title="Total Views"
+  value={stats.totalViews.toLocaleString()}
+  subtitle={`${stats.thisWeekViews} this week`}
+  color="emerald"
+  trend={formatTrend(stats.viewsTrend).direction}
+  trendValue={formatTrend(stats.viewsTrend).label}
+/>
+<StatCard
+  icon={CalendarCheck}
+  title="Car Viewing Requests"
+  value={stats.totalInquiries}
+  subtitle="All time"
+  color="purple"
+  trend={formatTrend(stats.inquiriesTrend).direction}
+  trendValue={formatTrend(stats.inquiriesTrend).label}
+/>
           <StatCard
             icon={JapaneseYenIcon}
             title="Avg. List Price"
@@ -1937,12 +1948,13 @@ export default function SellerDashboard() {
               value="test_drives"
               className="whitespace-nowrap flex-shrink-0 px-3 py-2 text-sm md:px-4"
             >
-              Car Viewing (
-              {testDriveRequests.filter((req) => req.recipient_id === user.id)
+              {/* Car Viewing ( */}
+              {/* {testDriveRequests.filter((req) => req.recipient_id === user.id)
                 .length +
                 testDriveRequests.filter((req) => req.sender_id === user.id)
-                  .length}
-              )
+                  .length} */}
+              {/* ) */}
+                  Car Viewing ({testDrives.length + sentTestDrives.length})
             </TabsTrigger>
             <TabsTrigger
               value="performance"
@@ -2402,7 +2414,7 @@ export default function SellerDashboard() {
                         value="sent"
                         className="text-xs sm:text-sm px-2 py-2"
                       >
-                        Sent (0)
+                       Sent ({sentTestDrives.length})
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -2802,13 +2814,9 @@ export default function SellerDashboard() {
                         </p>
                       </div>
 
-                      {testDriveRequests.filter(
-                        (req) => req.sender_id === user.id,
-                      ).length > 0 ? (
+                      {sentTestDrivesRequests.length > 0 ? (
                         <div className="space-y-3">
-                          {testDriveRequests
-                            .filter((req) => req.sender_id === user.id)
-                            .map((request) => {
+                          {sentTestDrivesRequests.map((request) => {
                               const vehicle = getVehicleById(
                                 request.vehicle_id,
                               );

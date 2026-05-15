@@ -37,11 +37,17 @@ type Props = {
   message: MessageLike;
   isOwn: boolean;
   currentUser: UserLike;
+   canTranslate?: boolean;
   otherUser: UserLike;
   relatedVehicle: any;
   onApproveTestDrive: (messageId: string) => void | Promise<void>;
   onDeclineTestDrive: (messageId: string) => void | Promise<void>;
 };
+
+
+const translationApiKey = process.env.NEXT_PUBLIC_CLOUD_TRANSLATION_API
+
+  
 
 export default function MessageBubble({
   message,
@@ -51,11 +57,18 @@ export default function MessageBubble({
   relatedVehicle,
   onApproveTestDrive,
   onDeclineTestDrive,
+   canTranslate = false,
 }: Props) {
-  const [showTranslation, setShowTranslation] = useState(false);
+
+  console.log("current user",currentUser);
+
+      const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const senderId = message.senderId ?? message.sender_id;
   const createdAt = message.createdAt ?? message.created_date;
+    const messageText = message.content  ?? "";
+      const isTranslated = translatedText !== null;
 
   const isMyMessage = isOwn || senderId === currentUser?.user_id;
   const bubbleStyles = isMyMessage
@@ -70,17 +83,48 @@ export default function MessageBubble({
         return (
           <div className="flex items-center gap-2 text-sm text-slate-600 italic">
             <Info className="w-4 h-4" />
-            <span>{message.content}</span>
+            <span>{isTranslated ? translatedText : message.content}</span>
           </div>
         );
 
       case "test_drive_request": {
-        const details = message.test_drive_details;
-        if (!details) return "Car Viewing request details are missing.";
+        let details = message.test_drive_details;
+
+  if (!details && message.content) {
+    try {
+      const parsed = JSON.parse(message.content);
+      details = {
+        preferred_date: parsed.requested_date,
+        preferred_time: parsed.requested_time,
+        location: parsed.location,
+        status: parsed.status ?? "pending",
+        notes: parsed.additional_notes,
+        vehicleTitle: parsed.vehicle_title,
+      };
+    } catch {
+      // not JSON, show as plain text
+    }
+  }
+        
+          if (!details) return (
+    <div className="flex items-center gap-2 text-sm text-slate-600 italic">
+      <Info className="w-4 h-4" />
+   <span>{isTranslated ? translatedText : message.content}</span>
+    </div>
+  );
+
+
 
         return (
           <Card className="bg-white/80 border-slate-200/80">
             <CardContent className="p-4 space-y-3">
+               {isTranslated ? (
+      
+        <div className="text-sm text-slate-700 whitespace-pre-line">
+          {translatedText}
+        </div>
+      ) : (
+        <>
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-semibold text-slate-800">Car Viewing  Request</p>
@@ -98,12 +142,19 @@ export default function MessageBubble({
                 <p>
                   <strong>Location:</strong> {details.location}
                 </p>
-                {message.content && !message.content.startsWith("Car Viewing request for") && (
+                {/* {message.content && !message.content.startsWith("Car Viewing request for") && (
                   <p className="pt-2 border-t border-slate-200/50 text-sm text-slate-600 italic">
-                    {message.content}
+                 {isTranslated ? translatedText : message.content}
                   </p>
-                )}
+                )} */}
+                {details.notes && (
+  <p className="pt-2 border-t border-slate-200/50 text-sm text-slate-600 italic">
+    {isTranslated ? translatedText : details.notes}
+  </p>
+)}
               </div>
+  </>
+      )}
 
               {details.status === "pending" && !isMyMessage && (
                 <div className="flex gap-2 pt-2 border-t border-slate-200/80">
@@ -133,14 +184,70 @@ export default function MessageBubble({
         return (
           <div className="flex items-center gap-2 text-sm text-slate-600 italic">
             <Info className="w-4 h-4" />
-            <span>{message.content}</span>
+            <span>{isTranslated ? translatedText : message.content}</span>
           </div>
         );
 
       default:
-        return <span>{message.content}</span>;
+      return <span>{isTranslated ? translatedText : message.content}</span>;
     }
   };
+
+
+const handleToggleTranslation = async () => {
+    if (isTranslated) {
+      setTranslatedText(null);
+      return;
+    }
+   let textToTranslate = messageText;
+
+  if (message.message_type === "test_drive_request" && messageText) {
+    try {
+      const parsed = JSON.parse(messageText);
+      // Build readable text from all fields so everything gets translated
+      textToTranslate = [
+       `Car Viewing Request`,
+      `For: ${relatedVehicle?.title || parsed.vehicle_title || "Vehicle"}`,
+      `Status: ${parsed.status ?? "pending"}`,
+      parsed.requested_date && `Date: ${format(new Date(parsed.requested_date), "EEE, MMM d, yyyy")}`,
+      parsed.requested_time && `Time: ${parsed.requested_time}`,
+      parsed.location && `Location: ${parsed.location}`,
+      parsed.additional_notes && `Notes: ${parsed.additional_notes}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    } catch {
+      // not JSON, translate raw content as-is
+    }
+  }
+
+  if (!textToTranslate) return;
+  setIsTranslating(true);
+
+    try {
+      const response = await fetch(
+        `https://translation.googleapis.com/language/translate/v2?key=${translationApiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            q: textToTranslate,
+            target: "ja",
+            source: "en",
+            format: "text",
+          }),
+        }
+      );
+      const data = await response.json();
+      const translated = data?.data?.translations?.[0]?.translatedText;
+      if (translated) setTranslatedText(translated);
+    } catch (err) {
+      console.error("Translation failed:", err);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
 
   return (
     <div className={`flex gap-3 mb-4 ${isMyMessage ? "justify-end" : "justify-start"}`}>
@@ -156,33 +263,28 @@ export default function MessageBubble({
       <div className={`max-w-[70%] ${opacity}`}>
         <div className={`rounded-lg px-4 py-2 ${bubbleStyles}`}>
           {renderMessageContent()}
-
-          {message.translated_content && showTranslation && (
-            <div className="mt-2 pt-2 border-t border-slate-200/50">
-              <div className="flex items-center gap-1 text-xs text-slate-500 mb-1">
-                <Languages className="w-3 h-3" />
-                <span>Translated to {message.translated_to}</span>
-              </div>
-              <p className="text-sm italic">{message.translated_content}</p>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
           {createdAt && <span>{formatDistanceToNow(new Date(createdAt), { addSuffix: true })}</span>}
           {message.read && <span>• Read</span>}
 
-          {message.translated_content && (
+           {messageText && canTranslate    && (
             <button
               type="button"
-              onClick={() => setShowTranslation((v) => !v)}
-              className="ml-auto inline-flex items-center gap-1 text-slate-400 hover:text-slate-600"
-              title={showTranslation ? "Hide translation" : "Show translation"}
+              onClick={handleToggleTranslation}
+              disabled={isTranslating}
+              className={`ml-auto inline-flex items-center gap-1 hover:text-slate-600 transition-colors ${
+                isTranslating ? "animate-pulse text-slate-400" : ""
+              } ${isTranslated ? "text-blue-500" : "text-slate-400"}`}
+              title={isTranslated ? "Show original" : "Translate to Japanese"}
             >
               <Languages className="w-3 h-3" />
-              <span>{showTranslation ? "Hide" : "Translate"}</span>
+              <span>{isTranslating ? "..." : isTranslated ? "Hide" : "See translation"}</span>
             </button>
           )}
+
+         
         </div>
       </div>
 

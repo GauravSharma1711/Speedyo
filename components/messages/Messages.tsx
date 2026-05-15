@@ -17,6 +17,8 @@ import { useToast } from "@/components/ui/UseToast";
 import { useMessagesStore } from "@/store/messages/messages";
 import type { Conversation, Message } from "@/services/messages/messageServices";
 
+
+
 type VehicleType = {
   id: string;
   title?: string | null ;
@@ -26,9 +28,17 @@ type VehicleType = {
 };
 
 export default function Messages() {
-  const router = useRouter();
-  const { data: session, status } = useSession();
+  const router = useRouter();;
   const { toast } = useToast();
+
+  const { data: session, status, update } = useSession();
+
+  useEffect(() => {
+  if (status === "authenticated") {
+    update(); 
+  }
+}, [status]);
+
 
   const {
     conversations,

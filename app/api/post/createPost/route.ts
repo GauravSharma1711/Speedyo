@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
+import { User } from "lucide-react";
+import { sendNewPostNotificationMail } from "@/helpers/sendNewPostNotificationMail";
+import { emitNotification } from "@/lib/emitNotification";
 
 const VALID_POST_TYPES = ["text", "image", "video", "article", "vehicle_promo"] as const;
 
@@ -173,6 +176,7 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
 
     return NextResponse.json({ success: true, post }, { status: 201 });
   } catch (error) {
