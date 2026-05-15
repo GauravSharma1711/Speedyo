@@ -43,6 +43,11 @@ type Props = {
   onDeclineTestDrive: (messageId: string) => void | Promise<void>;
 };
 
+
+const translationApiKey = process.env.NEXT_PUBLIC_CLOUD_TRANSLATION_API
+
+  
+
 export default function MessageBubble({
   message,
   isOwn,
@@ -52,10 +57,15 @@ export default function MessageBubble({
   onApproveTestDrive,
   onDeclineTestDrive,
 }: Props) {
-  const [showTranslation, setShowTranslation] = useState(false);
+
+
+      const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const senderId = message.senderId ?? message.sender_id;
   const createdAt = message.createdAt ?? message.created_date;
+    const messageText = message.content  ?? "";
+      const isTranslated = translatedText !== null;
 
   const isMyMessage = isOwn || senderId === currentUser?.user_id;
   const bubbleStyles = isMyMessage
@@ -70,7 +80,7 @@ export default function MessageBubble({
         return (
           <div className="flex items-center gap-2 text-sm text-slate-600 italic">
             <Info className="w-4 h-4" />
-            <span>{message.content}</span>
+            <span>{isTranslated ? translatedText : message.content}</span>
           </div>
         );
 
@@ -100,7 +110,7 @@ export default function MessageBubble({
                 </p>
                 {message.content && !message.content.startsWith("Car Viewing request for") && (
                   <p className="pt-2 border-t border-slate-200/50 text-sm text-slate-600 italic">
-                    {message.content}
+                 {isTranslated ? translatedText : message.content}
                   </p>
                 )}
               </div>
@@ -133,14 +143,47 @@ export default function MessageBubble({
         return (
           <div className="flex items-center gap-2 text-sm text-slate-600 italic">
             <Info className="w-4 h-4" />
-            <span>{message.content}</span>
+            <span>{isTranslated ? translatedText : message.content}</span>
           </div>
         );
 
       default:
-        return <span>{message.content}</span>;
+      return <span>{isTranslated ? translatedText : message.content}</span>;
     }
   };
+
+
+const handleToggleTranslation = async () => {
+    if (isTranslated) {
+      setTranslatedText(null);
+      return;
+    }
+    if (!messageText) return;
+    setIsTranslating(true);
+    try {
+      const response = await fetch(
+        `https://translation.googleapis.com/language/translate/v2?key=${translationApiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            q: messageText,
+            target: "ja",
+            source: "en",
+            format: "text",
+          }),
+        }
+      );
+      const data = await response.json();
+      const translated = data?.data?.translations?.[0]?.translatedText;
+      if (translated) setTranslatedText(translated);
+    } catch (err) {
+      console.error("Translation failed:", err);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
 
   return (
     <div className={`flex gap-3 mb-4 ${isMyMessage ? "justify-end" : "justify-start"}`}>
@@ -156,33 +199,28 @@ export default function MessageBubble({
       <div className={`max-w-[70%] ${opacity}`}>
         <div className={`rounded-lg px-4 py-2 ${bubbleStyles}`}>
           {renderMessageContent()}
-
-          {message.translated_content && showTranslation && (
-            <div className="mt-2 pt-2 border-t border-slate-200/50">
-              <div className="flex items-center gap-1 text-xs text-slate-500 mb-1">
-                <Languages className="w-3 h-3" />
-                <span>Translated to {message.translated_to}</span>
-              </div>
-              <p className="text-sm italic">{message.translated_content}</p>
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
           {createdAt && <span>{formatDistanceToNow(new Date(createdAt), { addSuffix: true })}</span>}
           {message.read && <span>• Read</span>}
 
-          {message.translated_content && (
+           {messageText   && (
             <button
               type="button"
-              onClick={() => setShowTranslation((v) => !v)}
-              className="ml-auto inline-flex items-center gap-1 text-slate-400 hover:text-slate-600"
-              title={showTranslation ? "Hide translation" : "Show translation"}
+              onClick={handleToggleTranslation}
+              disabled={isTranslating}
+              className={`ml-auto inline-flex items-center gap-1 hover:text-slate-600 transition-colors ${
+                isTranslating ? "animate-pulse text-slate-400" : ""
+              } ${isTranslated ? "text-blue-500" : "text-slate-400"}`}
+              title={isTranslated ? "Show original" : "Translate to Japanese"}
             >
               <Languages className="w-3 h-3" />
-              <span>{showTranslation ? "Hide" : "Translate"}</span>
+              <span>{isTranslating ? "..." : isTranslated ? "Hide" : "Translate"}</span>
             </button>
           )}
+
+         
         </div>
       </div>
 

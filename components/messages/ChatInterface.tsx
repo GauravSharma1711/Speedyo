@@ -11,6 +11,8 @@ import {
 import MessageBubble from "./MessageBubble";
 import QuickActions from "./QuickActions";
 
+
+
 export default function ChatInterface({
   conversation,
   currentUser,
@@ -87,13 +89,13 @@ export default function ChatInterface({
           <h3 className="font-semibold text-slate-800 truncate ml-2 text-sm">
             {otherUser?.full_name || "Unknown User"}
           </h3>
-          <Button
+          {/* <Button
             size="sm" variant="ghost"
             onClick={() => setShowTranslations(!showTranslations)}
             className={`ml-auto px-2 ${showTranslations ? "bg-blue-50 text-blue-600" : "text-slate-600"}`}
           >
             <Languages className="w-4 h-4" />
-          </Button>
+          </Button> */}
           <Button size="icon" variant="ghost" className="flex-shrink-0">
             <MoreVertical className="w-4 h-4" />
           </Button>
@@ -128,14 +130,14 @@ export default function ChatInterface({
           </div>
         </div>
         <div className="flex gap-1 ml-2 flex-shrink-0">
-          <Button
+          {/* <Button
             size="sm" variant="ghost"
             onClick={() => setShowTranslations(!showTranslations)}
             className={`px-3 ${showTranslations ? "bg-blue-50 text-blue-600" : "text-slate-600"}`}
           >
             <Languages className="w-4 h-4" />
             <span className="ml-2">{showTranslations ? "Hide" : "Show"}</span>
-          </Button>
+          </Button> */}
           <Button size="icon" variant="ghost" disabled className="hidden sm:inline-flex text-slate-400 cursor-not-allowed">
             <Phone className="w-4 h-4" />
           </Button>
