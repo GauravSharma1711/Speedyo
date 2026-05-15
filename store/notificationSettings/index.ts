@@ -45,24 +45,14 @@ export const useNotificationSettingsStore = create<NotificationSettingsState>()(
       set({ isLoading: true, error: null });
       try {
         const res = await notificationSettingsService.getSettings();
-        if (res.email_notifications) {
-          set({
-            emailSettings: {
-              all_emails: res.email_notifications.all_emails,
-              new_follower_post: res.email_notifications.new_follower_post,
-              new_follower_vehicle: res.email_notifications.new_follower_vehicle,
-            },
-          });
-        }
-        if (res.inapp_notifications) {
-          set({
-            inappSettings: {
-              all_notifications: res.inapp_notifications.all_notifications,
-              new_follower_post: res.inapp_notifications.new_follower_post,
-              new_follower_vehicle: res.inapp_notifications.new_follower_vehicle,
-            },
-          });
-        }
+     
+        if (res.email) {
+  set({ emailSettings: { ...res.email } });
+}
+if (res.in_app) {
+  set({ inappSettings: { ...res.in_app } });
+}
+
         set({ isLoading: false });
       } catch (error: any) {
         set({

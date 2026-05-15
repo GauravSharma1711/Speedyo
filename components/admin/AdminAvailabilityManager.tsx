@@ -107,10 +107,7 @@ export default function AdminAvailabilityManagerUI(props: {
     setIsSaving(true);
     try {
       onSave(availability);
-      toast({
-        title: "Availability updated",
-        description: "Saved locally — API wiring pending.",
-      });
+  
       onClose();
     } finally {
       setIsSaving(false);
