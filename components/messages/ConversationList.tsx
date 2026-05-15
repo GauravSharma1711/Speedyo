@@ -26,6 +26,8 @@ export default function ConversationList({
     );
   }
 
+
+
   return (
     <div className="divide-y divide-slate-200/60">
       {conversations.map((conversation) => {
@@ -89,7 +91,17 @@ export default function ConversationList({
 
                 {(() => {
                   const lastMsg = conversation.messages?.[conversation.messages.length - 1];
-                  const displayContent = lastMsg?.content ?? conversation.last_message;
+                  let displayContent = lastMsg?.content ?? conversation.last_message;
+
+                    if (lastMsg?.message_type === "test_drive_request" && displayContent) {
+    try {
+      const parsed = JSON.parse(displayContent);
+      displayContent = `Car Viewing: ${parsed.vehicle_title} on ${parsed.requested_date}`;
+    } catch {
+      displayContent = "Car Viewing Request";
+    }
+  }
+
                   return displayContent && (
                     <p className="text-sm text-slate-600 truncate mb-2">
                       {lastMsg?.message_type === "system" ? (

@@ -85,12 +85,43 @@ export default function MessageBubble({
         );
 
       case "test_drive_request": {
-        const details = message.test_drive_details;
-        if (!details) return "Car Viewing request details are missing.";
+        let details = message.test_drive_details;
+
+  if (!details && message.content) {
+    try {
+      const parsed = JSON.parse(message.content);
+      details = {
+        preferred_date: parsed.requested_date,
+        preferred_time: parsed.requested_time,
+        location: parsed.location,
+        status: parsed.status ?? "pending",
+        notes: parsed.additional_notes,
+        vehicleTitle: parsed.vehicle_title,
+      };
+    } catch {
+      // not JSON, show as plain text
+    }
+  }
+        
+          if (!details) return (
+    <div className="flex items-center gap-2 text-sm text-slate-600 italic">
+      <Info className="w-4 h-4" />
+   <span>{isTranslated ? translatedText : message.content}</span>
+    </div>
+  );
+
+
 
         return (
           <Card className="bg-white/80 border-slate-200/80">
             <CardContent className="p-4 space-y-3">
+               {isTranslated ? (
+      
+        <div className="text-sm text-slate-700 whitespace-pre-line">
+          {translatedText}
+        </div>
+      ) : (
+        <>
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-semibold text-slate-800">Car Viewing  Request</p>
@@ -108,13 +139,20 @@ export default function MessageBubble({
                 <p>
                   <strong>Location:</strong> {details.location}
                 </p>
-                {message.content && !message.content.startsWith("Car Viewing request for") && (
+                {/* {message.content && !message.content.startsWith("Car Viewing request for") && (
                   <p className="pt-2 border-t border-slate-200/50 text-sm text-slate-600 italic">
                  {isTranslated ? translatedText : message.content}
                   </p>
-                )}
+                )} */}
+                {details.notes && (
+  <p className="pt-2 border-t border-slate-200/50 text-sm text-slate-600 italic">
+    {isTranslated ? translatedText : details.notes}
+  </p>
+)}
               </div>
-
+  </>
+      )}
+      
               {details.status === "pending" && !isMyMessage && (
                 <div className="flex gap-2 pt-2 border-t border-slate-200/80">
                   <Button
@@ -158,8 +196,31 @@ const handleToggleTranslation = async () => {
       setTranslatedText(null);
       return;
     }
-    if (!messageText) return;
-    setIsTranslating(true);
+   let textToTranslate = messageText;
+
+  if (message.message_type === "test_drive_request" && messageText) {
+    try {
+      const parsed = JSON.parse(messageText);
+      // Build readable text from all fields so everything gets translated
+      textToTranslate = [
+       `Car Viewing Request`,
+      `For: ${relatedVehicle?.title || parsed.vehicle_title || "Vehicle"}`,
+      `Status: ${parsed.status ?? "pending"}`,
+      parsed.requested_date && `Date: ${format(new Date(parsed.requested_date), "EEE, MMM d, yyyy")}`,
+      parsed.requested_time && `Time: ${parsed.requested_time}`,
+      parsed.location && `Location: ${parsed.location}`,
+      parsed.additional_notes && `Notes: ${parsed.additional_notes}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    } catch {
+      // not JSON, translate raw content as-is
+    }
+  }
+
+  if (!textToTranslate) return;
+  setIsTranslating(true);
+
     try {
       const response = await fetch(
         `https://translation.googleapis.com/language/translate/v2?key=${translationApiKey}`,
@@ -167,7 +228,7 @@ const handleToggleTranslation = async () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            q: messageText,
+            q: textToTranslate,
             target: "ja",
             source: "en",
             format: "text",
