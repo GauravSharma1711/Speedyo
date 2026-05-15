@@ -1,4 +1,5 @@
 import axios from "@/lib/axios";
+import { GuestDashboardVehicle } from "@/store/dashboard/guestDashboardStore";
 
 export type DashboardVehicle = {
   id: string;
@@ -34,4 +35,20 @@ export const vehicleService = {
     });
     return res.data.vehicles;
   },
+
+
+async getDirectListings(): Promise<GuestDashboardVehicle[]> {
+  const res = await axios.get("/api/vehicles/getDirectListedVehicles");  
+  return res.data.vehicles;
+},
+
+async createListing(
+  data: Omit<GuestDashboardVehicle, 'id' | 'isDirectListing'>, 
+  isDirectListing: boolean = false
+) {
+  const res = await axios.post("/api/vehicles/create", { ...data, isDirectListing });
+  return res.data.vehicle;
+},
+
+
 };

@@ -261,6 +261,7 @@ model Vehicle {
   condition               VehicleCondition?
   description             String?
   location                String?
+  isDirectListing         Boolean?
   fuel_type               FuelType?
   transmission            Transmission?
   primary_image           String?
@@ -1061,7 +1062,7 @@ enum ManagedSaleStatus {
   cancelled
   cancellation_requested
   edit_requested
-  pending_approval
+  
 }
 
 enum MessageType {

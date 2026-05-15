@@ -59,6 +59,7 @@ export type CreateVehiclePatch = {
 
 type Props = {
   isOpen: boolean;
+     isDirectListing?: boolean; 
   onClose: () => void;
   vehicleToEdit?: Vehicle | null;
   onSave: (patch: CreateVehiclePatch) => void | Promise<void>;
@@ -75,6 +76,7 @@ export default function CreateVehicleModalUI({
   vehicleToEdit,
   onSave,
   isSubmitting,
+  isDirectListing = false,
 }: Props) {
   const { toast } = useToast();
 

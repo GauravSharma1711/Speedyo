@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       images,
       primary_image,
       featured,
+      isDirectListing
     } = body as Record<string, unknown>;
 
     if (!title || !make || !model || year === undefined || price === undefined) {
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
           featured: Boolean(featured ?? false),
           authorId: session.user.id,
           original_owner_id: session.user.id,
+             isDirectListing: Boolean(isDirectListing ?? false),
         },
       });
 
@@ -112,6 +114,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Increment used slots for private sellers
+    if(!result.vehicle.isDirectListing)
 await prisma.privateSellerSlots.updateMany({
   where: { userId: session.user.id },
   data: { used: { increment: 1 } },

@@ -11,7 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import {
   Heart, MessageCircle, Calendar, Eye, Car, TrendingUp, Handshake,
   Check, Clock, CheckCircle, XCircle, ExternalLink, Edit, Trash2,
-  Info, Plus, FileText, X
+  Info, Plus, FileText, X,
+  AlertTriangle,
+  Shield,
+  MoreHorizontal
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -24,14 +27,17 @@ import ManagedSalesActions from "./ManagedSalesActions";
 import TransferProgressTracker from "./TransferProgressTracker";
 import { useToast } from "@/components/ui/UseToast";
 import { useGuestDashboardStore } from "@/store/dashboard";
-import { managedSaleService, messageService, publicUserService } from "@/services/dashboard";
+import { managedSaleService, messageService, publicUserService, vehicleService } from "@/services/dashboard";
 import axios from "@/lib/axios";
+import CreateVehicleModalUI from "./CreateVehicleModalUI";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/DropdownMenu";
+import TestDriveAvailabilityManager from "./TestDriveAvailabilityManager";
 
 export default function GuestDashboard({ user }: { user: any }) {
   const router = useRouter();
   const {
     conversations, transfers, managedSales, sellers, recentlyViewed, isLoading,
-    loadGuestDashboard,
+    loadGuestDashboard, directListings,
   } = useGuestDashboardStore() as any;
 
   const messagesWithContext = conversations?.flatMap((c: any) =>
@@ -78,6 +84,18 @@ export default function GuestDashboard({ user }: { user: any }) {
   const [showRequestDetailsModal, setShowRequestDetailsModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [vehiclePerformance, setVehiclePerformance] = useState<Record<string, any>>({});
+
+const [isSubmitting, setIsSubmitting] = useState(false);
+ const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [availabilityVehicle, setAvailabilityVehicle] = useState<any | null>(
+    null,
+  );
+
+  useEffect(() => {
+  loadGuestDashboard();
+  }, [])
+  
 
   // Combine transfers
   const vehicleTransfers = transfers || [];
@@ -521,7 +539,200 @@ export default function GuestDashboard({ user }: { user: any }) {
     return null;
   };
 
+
+  const handleCreateVehicle = async (vehicleData: any) => {
+  setIsSubmitting(true);
+  try {
+    await vehicleService.createListing({
+      title: vehicleData.title,
+      make: vehicleData.make,
+      model: vehicleData.model,
+      year: vehicleData.year,
+      price: vehicleData.price,
+      mileage: vehicleData.mileage || 0,
+      condition: vehicleData.condition || "good",
+      description: vehicleData.description || "",
+      fuel_type: vehicleData.fuel_type || "gasoline",
+      transmission: vehicleData.transmission || "automatic",
+      location: vehicleData.location,
+      images: vehicleData.images || [],
+      primary_image: vehicleData.primary_image || null,
+    } as any, true);
+
+    setShowCreateModal(false);
+    setEditingVehicle(null);
+    await loadDashboardData(); 
+    toast({ title: "Direct Listing Submitted", variant: "success" });
+  } catch (error) {
+    toast({ title: "Creation Failed", variant: "destructive" });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  
+   const handleSaveVehicleAvailability = async (
+    vehicleId: string,
+    availabilityData: any,
+  ) => {
+    try {
+      await Vehicle.update(vehicleId, availabilityData);
+      await loadGuestDashboard();
+      setAvailabilityVehicle(null);
+      toast({
+        title: "Availability Saved",
+        description:
+          "Your vehicle's car viewing availability has been updated.",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Failed to save car viewing availability:", error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save availability. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+  const handleUpdateVehicle = async (vehicleData: any) => {
+  if (!editingVehicle) return;
+  try {
+    await axios.patch(`/api/vehicles/${editingVehicle.id}`, vehicleData); 
+    setEditingVehicle(null);
+    setShowCreateModal(false);
+    await loadDashboardData();
+    toast({ title: "Vehicle Updated", variant: "success" });
+  } catch (error) {
+    toast({ title: "Update Failed", variant: "destructive" });
+  }
+};
+
   const currentPublicUser = sellers.find((s: any) => s.id === user?.id);
+
+
+  console.log("direct listing",directListings);
+
+  // Real API implementations
+const Vehicle = {
+  create: async (data: any) => {
+    const res = await axios.post("/api/vehicles/create", data);
+    return res.data.vehicle;
+  },
+  update: async (id: string, data: any) => {
+    const res = await axios.patch(`/api/vehicles/${id}`, data);
+    return res.data.vehicle;
+  },
+  delete: async (id: string) => {
+    await axios.delete(`/api/vehicles/${id}`);
+  },
+};
+
+
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+const handleEditVehicle = useCallback((vehicle: any) => {
+    setEditingVehicle(vehicle);
+    setShowCreateModal(true);
+  }, []);
+
+  const handleDeleteVehicle = useCallback(
+    async (vehicleId: string) => {
+      if (confirm("Are you sure you want to delete this listing?")) {
+        try {
+          await Vehicle.delete(vehicleId);
+          toast({
+            title: "Listing Deleted",
+            description: "The vehicle listing has been permanently removed.",
+            variant: "success",
+          });
+          loadGuestDashboard();
+        } catch (error) {
+          console.error("Failed to delete vehicle:", error);
+          toast({
+            title: "Deletion Failed",
+            description: "Could not delete the listing. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    },
+    [loadGuestDashboard, toast],
+  );
+
+  const handleMarkAsSold = useCallback(
+    async (vehicleId: string) => {
+      if (
+        window.confirm(
+          "Are you sure you want to mark this vehicle as sold? This will remove it from active listings.",
+        )
+      ) {
+        setIsUpdating(vehicleId);
+        try {
+          await Vehicle.update(vehicleId, { status: "sold" });
+          toast({
+            title: "Vehicle Marked as Sold",
+            description:
+              "The listing has been updated and removed from the marketplace.",
+            variant: "success",
+          });
+          await loadGuestDashboard();
+        } catch (error) {
+          console.error("Failed to mark vehicle as sold:", error);
+          toast({
+            title: "Update Failed",
+            description:
+              "Could not mark the vehicle as sold. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsUpdating(null);
+        }
+      }
+    },
+    [loadGuestDashboard, toast],
+  );
+
+  const handleMarkAsUnavailable = useCallback(
+    async (vehicleId: string) => {
+      if (
+        window.confirm(
+          "Mark this vehicle as temporarily unavailable? You can make it available again anytime.",
+        )
+      ) {
+        setIsUpdating(vehicleId);
+        try {
+          await Vehicle.update(vehicleId, { status: "unavailable" });
+          toast({ title: "Vehicle Marked as Unavailable", variant: "success" });
+          await loadGuestDashboard();
+        } catch (error) {
+          console.error("Failed to mark vehicle as unavailable:", error);
+          toast({ title: "Update Failed", variant: "destructive" });
+        } finally {
+          setIsUpdating(null);
+        }
+      }
+    },
+    [loadGuestDashboard, toast],
+  );
+
+  const handleMarkAsAvailable = useCallback(
+    async (vehicleId: string) => {
+      setIsUpdating(vehicleId);
+      try {
+        await Vehicle.update(vehicleId, { status: "available" });
+        toast({ title: "Vehicle Marked as Available", variant: "success" });
+        await loadGuestDashboard();
+      } catch (error) {
+        console.error("Failed to mark vehicle as available:", error);
+        toast({ title: "Update Failed", variant: "destructive" });
+      } finally {
+        setIsUpdating(null);
+      }
+    },
+    [loadGuestDashboard, toast],
+  );
+
 
   return (
     <div className="space-y-6 py-4">
@@ -578,7 +789,13 @@ export default function GuestDashboard({ user }: { user: any }) {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="flex w-full flex-grow flex-1 overflow-x-auto scrollbar-hide md:grid md:grid-cols-4 h-auto !justify-between p-0">
+          <TabsList className="flex w-full flex-grow flex-1 overflow-x-auto scrollbar-hide md:grid md:grid-cols-5 h-auto !justify-between p-0">
+                <TabsTrigger
+                          value="listings"
+                          className="whitespace-nowrap flex-shrink-0 px-3 py-2 text-sm md:px-4"
+                        >
+                          Your Listings ({directListings.length})
+                        </TabsTrigger>
             <TabsTrigger 
               value="dashboard"
               className="flex-1 px-4 py-2 text-sm md:w-full md:justify-center rounded-none first:rounded-l-md last:rounded-r-md"
@@ -596,6 +813,243 @@ export default function GuestDashboard({ user }: { user: any }) {
               className="flex-1 px-4 py-2 text-sm md:w-full md:justify-center rounded-none first:rounded-l-md last:rounded-r-md"
             >Browse</TabsTrigger>
           </TabsList>
+
+
+           <TabsContent value="listings" className="mt-6">
+                      <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                          <CardTitle className="flex items-center gap-2">
+                            <Car className="w-5 h-5 text-blue-500" />
+                            Your Vehicle Listings
+                          </CardTitle>
+                          <Button
+                            onClick={() => {
+                              setEditingVehicle(null);
+                              setShowCreateModal(true);
+                            }}
+                            className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
+                            disabled={isSubmitting}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            {isSubmitting ? "Adding..." : "Add Vehicle"}
+                          </Button>
+                        </CardHeader>
+                        <CardContent>
+                         
+
+          
+                          {directListings.length === 0 ? (
+                            <div className="text-center py-8 text-slate-500">
+                              <Car className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                              <p>No vehicles listed yet</p>
+                              <p className="text-sm">
+                                Create your first listing to get started
+                              </p>
+                            
+                                <Button
+                                  onClick={() =>{ 
+                                 setEditingVehicle(null)
+                              setShowCreateModal(true)}}
+                                  className="mt-3"
+                                  disabled={isSubmitting}
+                                >
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  {isSubmitting
+                                    ? "Creating..."
+                                    : "Create Your First Listing"}
+                                </Button>
+                          
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {directListings.map((vehicle) => (
+                                <div
+                                  key={vehicle.id}
+                                  className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                >
+                                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                                    <div className="w-full md:w-32 h-32 md:h-20 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">
+                                      {vehicle.primary_image ? (
+                                        <img
+                                          src={vehicle.primary_image}
+                                          alt={vehicle.title || "Vehicle"}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="flex items-center justify-center h-full">
+                                          <Car className="w-10 h-10 text-slate-400" />
+                                        </div>
+                                      )}
+                                    </div>
+          
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-start gap-2 mb-1">
+                                        <h3 className="font-semibold text-slate-800 leading-tight">
+                                          {vehicle.title}
+                                        </h3>
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          {vehicle.verified && (
+                                            <TooltipProvider>
+                                              <Tooltip>
+                                                <TooltipTrigger>
+                                                  <Shield className="w-4 h-4 text-blue-500" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  <p>Verified Listing</p>
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </TooltipProvider>
+                                          )}
+                                          {vehicle.website_managed && (
+                                            <Badge
+                                              variant="outline"
+                                              className="text-xs bg-slate-100 text-slate-700 border-slate-300 whitespace-nowrap"
+                                            >
+                                              {" "}
+                                              {/* FIX: Changed badge color */}
+                                              Managed by Speedio
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 mt-1">
+                                        <span className="font-bold text-blue-600">
+                                          ¥{vehicle.price?.toLocaleString()}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                          <Eye className="w-4 h-4" />
+                                          {vehicle.views || 0} views
+                                        </span>
+                                        <Badge
+                                          variant="outline"
+                                          className={`capitalize text-xs ${
+                                            vehicle.status === "sold"
+                                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                              : vehicle.status === "unavailable"
+                                                ? "bg-amber-50 text-amber-700 border-amber-300"
+                                                : ""
+                                          }`}
+                                        >
+                                          {vehicle.status}
+                                        </Badge>
+                                      </div>
+                                    </div>
+          
+                                    <div className="flex flex-shrink-0 flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
+                                      <Link
+                                        href={`/vehicle?id=${vehicle.id}`}
+                                        className="w-full sm:w-auto"
+                                      >
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="w-full justify-center"
+                                        >
+                                          <Eye className="w-4 h-4 mr-2" />
+                                          View
+                                        </Button>
+                                      </Link>
+          
+                                      {vehicle.website_managed ? (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="w-full sm:w-auto justify-center"
+                                          onClick={() =>
+                                            setShowVehicleEditRequestModal(vehicle)
+                                          }
+                                        >
+                                          <Edit className="w-4 h-4 mr-2" />
+                                          Request Edit
+                                        </Button>
+                                      ) : (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="w-full sm:w-auto justify-center"
+                                          onClick={() => setAvailabilityVehicle(vehicle)}
+                                        >
+                                          <Calendar className="w-4 h-4 mr-2" />
+                                          Availability
+                                        </Button>
+                                      )}
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button size="icon" variant="ghost">
+                                            <MoreHorizontal className="w-4 h-4" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          {!vehicle.website_managed && (
+                                            <DropdownMenuItem
+                                              onClick={() => handleEditVehicle(vehicle)}
+                                            >
+                                              <Edit className="mr-2 h-4 w-4" />
+                                              Edit Listing
+                                            </DropdownMenuItem>
+                                          )}
+                                          {vehicle.status === "unavailable" ? (
+                                            <DropdownMenuItem
+                                              onClick={() =>
+                                                handleMarkAsAvailable(vehicle.id)
+                                              }
+                                              disabled={isUpdating === vehicle.id}
+                                            >
+                                              <CheckCircle className="mr-2 h-4 w-4" />
+                                              {isUpdating === vehicle.id
+                                                ? "Updating..."
+                                                : "Mark as Available"}
+                                            </DropdownMenuItem>
+                                          ) : (
+                                            <DropdownMenuItem
+                                              onClick={() =>
+                                                handleMarkAsUnavailable(vehicle.id)
+                                              }
+                                              disabled={
+                                                isUpdating === vehicle.id ||
+                                                vehicle.status === "sold" ||
+                                                vehicle.status === "edit_requested"
+                                              }
+                                            >
+                                              <XCircle className="mr-2 h-4 w-4" />
+                                              {isUpdating === vehicle.id
+                                                ? "Updating..."
+                                                : "Mark as Unavailable"}
+                                            </DropdownMenuItem>
+                                          )}
+                                          <DropdownMenuItem
+                                            onClick={() => handleMarkAsSold(vehicle.id)}
+                                            disabled={
+                                              isUpdating === vehicle.id ||
+                                              vehicle.status === "sold"
+                                            }
+                                          >
+                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                            {isUpdating === vehicle.id
+                                              ? "Updating..."
+                                              : "Mark as Sold"}
+                                          </DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem
+                                            className="text-red-600"
+                                            onClick={() =>
+                                              handleDeleteVehicle(vehicle.id)
+                                            }
+                                          >
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete Listing
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
 
           <TabsContent value="dashboard" className="mt-6 space-y-6">
             {/* Main Content Grid */}
@@ -1121,6 +1575,14 @@ export default function GuestDashboard({ user }: { user: any }) {
           />
         )}
       </AnimatePresence>
+
+      {availabilityVehicle && (
+              <TestDriveAvailabilityManager
+                vehicle={availabilityVehicle}
+                onSave={handleSaveVehicleAvailability}
+                onClose={() => setAvailabilityVehicle(null)}
+              />
+            )}
       
       {/* Details Modal */}
       {showRequestDetailsModal && selectedRequest && (
@@ -1151,6 +1613,20 @@ export default function GuestDashboard({ user }: { user: any }) {
           />
         );
       })()}
+
+         {showCreateModal && (
+              <CreateVehicleModalUI
+                isOpen={showCreateModal}
+                vehicleToEdit={editingVehicle}
+                onSave={editingVehicle ? handleUpdateVehicle : handleCreateVehicle}
+                onClose={() => {
+                  setShowCreateModal(false);
+                  setEditingVehicle(null);
+                }}
+                isSubmitting={isSubmitting}
+                 isDirectListing={true} 
+              />
+            )}
 
       {/* Transfer Details Modal */}
       <AnimatePresence>
@@ -1184,5 +1660,8 @@ export default function GuestDashboard({ user }: { user: any }) {
         )}
       </AnimatePresence>
     </div>
+
+
+
   );
 }
