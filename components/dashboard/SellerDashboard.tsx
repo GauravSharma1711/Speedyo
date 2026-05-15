@@ -742,23 +742,44 @@ export default function SellerDashboard() {
   const handleCreateVehicle = async (vehicleData: any) => {
     setIsSubmitting(true);
     try {
-      const res = await axios.post("/api/vehicles/create", vehicleData);
+      const payload = {
+        contact_full_name: user?.full_name || "",
+        contact_email: user?.email || "",
+        contact_phone: user?.phone || "",
+        vehicle_title: vehicleData.title || `${vehicleData.year} ${vehicleData.make} ${vehicleData.model}`,
+        vehicle_make: vehicleData.make,
+        vehicle_model: vehicleData.model,
+        vehicle_year: vehicleData.year,
+        vehicle_mileage: vehicleData.mileage || 0,
+        vehicle_condition: vehicleData.condition || "good",
+        vehicle_description: vehicleData.description || "",
+        vehicle_fuel_type: vehicleData.fuel_type || "gasoline",
+        vehicle_transmission: vehicleData.transmission || "automatic",
+        vehicle_location: vehicleData.location,
+        seller_asking_price: vehicleData.price,
+        listing_type: "direct",
+        status: "pending_approval",
+        service_fee_amount: 0,
+        owner_receives_amount: vehicleData.price,
+        final_sale_price_for_buyer: vehicleData.price,
+        terms_agreed: true,
+      };
+
+      await managedSaleService.create(payload);
 
       setShowCreateModal(false);
       setEditingVehicle(null);
       loadSellerDashboard();
       toast({
-        title: "Vehicle Created",
-        description: "Your vehicle listing has been successfully created.",
+        title: "Direct Listing Submitted",
+        description: "Your vehicle will be listed after admin approval.",
         variant: "success",
       });
-
-      return res.data.vehicle;
     } catch (error) {
-      console.error("Failed to create vehicle:", error);
+      console.error("Failed to create listing:", error);
       toast({
         title: "Creation Failed",
-        description: "Could not create the vehicle listing. Please try again.",
+        description: "Could not submit your listing. Please try again.",
         variant: "destructive",
       });
       throw error;
@@ -916,31 +937,6 @@ export default function SellerDashboard() {
     setShowRequestForm(false);
     setEditingRequest(null);
     loadSellerDashboard();
-  };
-
-  const handleCreateDirectListing = async () => {
-    if (!user) return;
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        contact_full_name: user.full_name || "",
-        contact_email: user.email || "",
-        contact_phone: user.phone || "",
-        listing_type: "direct",
-        status: "pending_approval",
-        service_fee_amount: 0,
-        owner_receives_amount: 0,
-        final_sale_price_for_buyer: 0,
-        terms_agreed: true,
-      };
-      await managedSaleService.create(payload);
-      toast({ title: "Success", description: "Direct listing submitted for approval" });
-      loadSellerDashboard();
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to create listing", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleUpdateRequest = async (
@@ -2955,14 +2951,6 @@ export default function SellerDashboard() {
                   Managed Sale Vehicles
                 </CardTitle>
                 <div className="flex gap-2">
-                  <Button
-                    onClick={handleCreateDirectListing}
-                    variant="outline"
-                    disabled={!canPostVehicle() || isSubmitting}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Direct Listing
-                  </Button>
                   <Button
                     onClick={() => {
                       setEditingRequest(null);
