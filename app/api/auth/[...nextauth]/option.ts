@@ -53,6 +53,9 @@ export const authOptions: NextAuthOptions = {
   
         (token as any).image = (user as any).profile_image ?? (user as any).image ?? undefined;
 
+        (token as any).dealership_selected_tier = (user as any).dealership_selected_tier ?? null;
+      
+
         (token as any).verification_fee_paid = (user as any).verification_fee_paid ?? false;
 (token as any).dealership_verification_status = (user as any).dealership_verification_status ?? "not_submitted";
 
@@ -84,6 +87,7 @@ export const authOptions: NextAuthOptions = {
       (token as any).isVerified = freshUser.isVerified;
       (token as any).verification_fee_paid = freshUser.verification_fee_paid ?? false;
        (token as any).dealership_verification_status = freshUser.dealership_verification_status ?? "not_submitted";
+       (token as any).dealership_selected_tier = freshUser.dealership_selected_tier ?? null;
     }
   }
   
@@ -104,6 +108,8 @@ export const authOptions: NextAuthOptions = {
       (session.user as any).location = (token as any).location ?? null;
       (session.user as any).setup_completed = (token as any).setup_completed ?? false;
       (session.user as any).user_type = (token as any).user_type ?? "guest";
+
+   (session.user as any).dealership_selected_tier = (token as any).dealership_selected_tier ?? null;
 
       (session.user as any).verification_fee_paid = (token as any).verification_fee_paid ?? false;
 (session.user as any).dealership_verification_status = (token as any).dealership_verification_status ?? "not_submitted";

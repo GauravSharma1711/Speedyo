@@ -13,6 +13,7 @@ import QuickActions from "./QuickActions";
 
 
 
+
 export default function ChatInterface({
   conversation,
   currentUser,
@@ -161,6 +162,7 @@ export default function ChatInterface({
                 message={message}
                 isOwn={(message.senderId ?? message.sender_id) === currentUser?.user_id}
                 currentUser={currentUser}
+                 canTranslate={currentUser?.dealership_selected_tier === "tier2" || currentUser?.dealership_selected_tier === "tier3"} // ✅
                 otherUser={otherUser}
                 relatedVehicle={
                   (message.vehicleId ?? message.vehicle_id)

@@ -37,6 +37,7 @@ type Props = {
   message: MessageLike;
   isOwn: boolean;
   currentUser: UserLike;
+   canTranslate?: boolean;
   otherUser: UserLike;
   relatedVehicle: any;
   onApproveTestDrive: (messageId: string) => void | Promise<void>;
@@ -56,8 +57,10 @@ export default function MessageBubble({
   relatedVehicle,
   onApproveTestDrive,
   onDeclineTestDrive,
+   canTranslate = false,
 }: Props) {
 
+  console.log("current user",currentUser);
 
       const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -152,7 +155,7 @@ export default function MessageBubble({
               </div>
   </>
       )}
-      
+
               {details.status === "pending" && !isMyMessage && (
                 <div className="flex gap-2 pt-2 border-t border-slate-200/80">
                   <Button
@@ -266,7 +269,7 @@ const handleToggleTranslation = async () => {
           {createdAt && <span>{formatDistanceToNow(new Date(createdAt), { addSuffix: true })}</span>}
           {message.read && <span>• Read</span>}
 
-           {messageText   && (
+           {messageText && canTranslate    && (
             <button
               type="button"
               onClick={handleToggleTranslation}
@@ -277,7 +280,7 @@ const handleToggleTranslation = async () => {
               title={isTranslated ? "Show original" : "Translate to Japanese"}
             >
               <Languages className="w-3 h-3" />
-              <span>{isTranslating ? "..." : isTranslated ? "Hide" : "Translate"}</span>
+              <span>{isTranslating ? "..." : isTranslated ? "Hide" : "See translation"}</span>
             </button>
           )}
 

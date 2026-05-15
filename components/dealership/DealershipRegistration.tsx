@@ -55,18 +55,18 @@ const tierOptions = [
     ],
     popular: true,
   },
-  {
-    id: "tier3" as const,
-    name: "Enterprise",
-    price: "¥150,000",
-    features: [
-      "Unlimited active listings",
-      "Top-tier marketplace visibility",
-      "Full analytics suite",
-      "Dedicated account manager",
-      "API access (coming soon)",
-    ],
-  },
+  // {
+  //   id: "tier3" as const,
+  //   name: "Enterprise",
+  //   price: "¥150,000",
+  //   features: [
+  //     "Unlimited active listings",
+  //     "Top-tier marketplace visibility",
+  //     "Full analytics suite",
+  //     "Dedicated account manager",
+  //     "API access (coming soon)",
+  //   ],
+  // },
 ];
 
 type FormDataState = {
