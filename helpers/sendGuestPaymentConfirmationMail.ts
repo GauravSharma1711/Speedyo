@@ -16,7 +16,7 @@ export async function sendGuestPaymentConfirmationMail(
       from: fromEmail,
       to: guest_email,
       subject: '✅ Payment Confirmed - Welcome to Speedio!',
-      react: GuestPaymentConfirmationEmail({
+      html: GuestPaymentConfirmationEmail({
         guest_name,
         guest_email,
         amount_paid,

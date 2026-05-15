@@ -72,7 +72,7 @@ export default function AdminPurchaseNotificationEmail({
                       <strong>Slots Purchased:</strong> ${quantity}
                     </p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
-                      <strong>Amount:</strong> $${formattedAmount} JPY
+                      <strong>Amount:</strong> ¥${formattedAmount} JPY
                     </p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
                       <strong>Promo Code:</strong> ${has_promo ? `✅ ${promo_code} (20% discount applied)` : '❌ None'}

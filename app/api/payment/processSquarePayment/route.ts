@@ -3,15 +3,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
-import { SquareClient, SquareEnvironment } from "square";
+
 import prisma from "@/db/prisma";
 import { sendGuestPaymentConfirmationMail } from "@/helpers/sendGuestPaymentConfirmationMail";
 import { sendSlotsAddedConfirmationMail } from "@/helpers/sendSlotsAddedConfirmationMail";
+import { squareClient } from "@/lib/payment/square"; 
 
-const squareClient = new SquareClient({
-  token: process.env.SQUARE_ACCESS_TOKEN,
-  environment: SquareEnvironment.Production,
-});
 
 export async function POST(request: NextRequest) {
   try {

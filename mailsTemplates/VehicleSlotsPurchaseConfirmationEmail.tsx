@@ -58,7 +58,7 @@ export default function VehicleSlotsPurchaseConfirmationEmail({
                   <td style="background-color:#f0fdf4; border-left:4px solid #10b981; border-radius:4px; padding:20px 24px;">
                     <p style="margin:0 0 12px; font-size:16px; font-weight:700; color:#10b981;">Payment Details</p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
-                      <strong>Amount Paid:</strong> $${amount_paid} JPY
+                      <strong>Amount Paid:</strong> ¥${amount_paid} JPY
                     </p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
                       <strong>Vehicle Slots Purchased:</strong> ${quantity}

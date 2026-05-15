@@ -38,7 +38,7 @@ const posts = await prisma.post.findMany({
         business_state: true,
         business_zip: true,
         business_license_urls: true,
-        tax_id_number: true,
+        dealer_License_Number: true,
         verification_fee_paid: true,
         admin_verification_notes: true,
         welcome_email_sent: true,

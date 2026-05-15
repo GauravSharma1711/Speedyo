@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     business_state: true,
     business_zip: true,
     business_license_urls: true,
-    tax_id_number: true,
+    dealer_License_Number: true,
     verification_fee_paid: true,
         },
     });
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
     business_state: user.business_state,
     business_zip: user.business_zip,
     business_license_urls: user.business_license_urls,
-    tax_id_number: user.tax_id_number,
+    dealer_License_Number: user.dealer_License_Number,
     verification_fee_paid: user.verification_fee_paid,
         },
     },

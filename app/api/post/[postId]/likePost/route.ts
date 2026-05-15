@@ -79,7 +79,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ postId: st
             senderId: userId,
             type: "post_like",
             content: `${session.user.full_name ?? "Someone"} liked your post`,
-            url: `/feed`,
+            url: `/Feed`,
             icon: "Heart",
             read: false,
           },

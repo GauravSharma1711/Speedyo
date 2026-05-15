@@ -515,15 +515,15 @@ export default function ManagedSaleDetailsModal({
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Your asking price:</span>
-                    <span>${vehicleDetails.seller_asking_price ? Number(vehicleDetails.seller_asking_price).toLocaleString() : "0"}</span>
+                    <span>¥{vehicleDetails.seller_asking_price ? Number(vehicleDetails.seller_asking_price).toLocaleString() : "0"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Service fee (6%):</span>
-                    <span>${request.service_fee_amount ? Number(request.service_fee_amount).toLocaleString() : "0"}</span>
+                    <span>¥{request.service_fee_amount ? Number(request.service_fee_amount).toLocaleString() : "0"}</span>
                   </div>
                   <div className="flex justify-between font-semibold border-t pt-2">
                     <span>Buyer pays:</span>
-                    <span className="text-green-600">${request.calculated_buyer_price ? Number(request.calculated_buyer_price).toLocaleString() : "0"}</span>
+                    <span className="text-green-600">¥{request.calculated_buyer_price ? Number(request.calculated_buyer_price).toLocaleString() : "0"}</span>
                   </div>
                 </div>
               </CardContent>

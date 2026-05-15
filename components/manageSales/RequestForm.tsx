@@ -565,6 +565,7 @@ export default function RequestFormUI(props: Props) {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
+      if (currentStep !== steps.length) return;
       if (!validateCurrentStep()) {
         toast({ title: "Missing Information", description: "Please complete required fields.", variant: "destructive" });
         return;

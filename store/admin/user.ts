@@ -22,7 +22,7 @@ export type User = {
   business_state: string | null;
   business_zip: string | null;
   business_license_urls: string[];
-  tax_id_number: string | null;
+  dealer_License_Number: string | null;
   verification_fee_paid: boolean;
   admin_verification_notes: string | null;
   welcome_email_sent: boolean;

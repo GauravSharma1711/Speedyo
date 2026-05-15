@@ -63,7 +63,7 @@ export type Post = {
 
     business_license_urls: string[];
 
-    tax_id_number: string | null;
+    dealer_License_Number: string | null;
 
     verification_fee_paid: boolean;
 

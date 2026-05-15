@@ -93,6 +93,11 @@ if(existingUserByEmail){
     },{status:500})
    }
 
+
+     
+
+
+
    
 
         return NextResponse.json({  

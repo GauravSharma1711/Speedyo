@@ -60,7 +60,7 @@ export default function DealershipSubscriptionConfirmationEmail({
                       <strong>Plan:</strong> ${tier_name} Dealership Plan
                     </p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
-                      <strong>Amount:</strong> $${amount_paid} JPY/month
+                      <strong>Amount:</strong> ¥${amount_paid} JPY/month
                     </p>
                     <p style="margin:0 0 8px; font-size:15px; color:#333333;">
                       <strong>Start Date:</strong> ${startDate}

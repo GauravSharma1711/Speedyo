@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
+import { sendSupportTicketMails } from "@/helpers/sendSupportTicketMails";
 
 const VALID_TICKET_TYPES = ["general", "billing", "technical", "listing_issue"] as const;
 const VALID_PRIORITIES   = ["low", "medium", "high", "urgent"] as const;
@@ -61,6 +62,16 @@ export async function POST(req: NextRequest) {
         status:      "open",
       },
     });
+
+     await sendSupportTicketMails({
+      ticket_id:   ticket.id,
+      name:        ticket.name,
+      email:       ticket.email,
+      ticket_type: ticket.ticket_type,
+      subject:     ticket.subject,
+      message:     ticket.message,
+    });
+
 
     return NextResponse.json({ success: true, ticket }, { status: 201 });
   } catch (error) {

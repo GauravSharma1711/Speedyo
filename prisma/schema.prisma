@@ -96,7 +96,7 @@ model User {
   business_state                   String?
   business_zip                     String?
   business_license_urls            String[]
-  tax_id_number                    String?
+  dealer_License_Number                    String?
   verification_fee_paid            Boolean                      @default(false)
   admin_verification_notes         String?
   welcome_email_sent               Boolean                      @default(false)
