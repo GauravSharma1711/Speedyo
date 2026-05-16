@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/option";
+
 function toInt(value: string | null, fallback: number) {
   const n = value ? Number.parseInt(value, 10) : NaN;
   return Number.isFinite(n) ? n : fallback;
@@ -47,10 +50,17 @@ export async function GET(req: NextRequest) {
       toFloat(searchParams.get("priceMax")) ?? (rangeMax ? Number.parseFloat(rangeMax) : null);
     const status = (searchParams.get("status") ?? "").trim();
 
+        const session = await getServerSession(authOptions);
+    const isGuest = session?.user?.user_type === "guest";
+
+    console.log("sesion",session);
+
     const where: any = {
       AND: [],
     };
-    if (status) {
+       if (isGuest) {
+      where.AND.push({isDirectListing: { not: true } });
+    }if (status) {
       where.AND.push({ status });
     } else {
       where.AND.push({ OR: [{ status: "available" }, { status: "unavailable" }] });
@@ -103,6 +113,7 @@ export async function GET(req: NextRequest) {
           fuel_type: true,
           transmission: true,
           status: true,
+          isDirectListing:true,
           featured: true,
           verified: true,
           website_managed: true,

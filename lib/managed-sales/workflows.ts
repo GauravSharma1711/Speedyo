@@ -65,6 +65,7 @@ function buildVehicleData(
     primary_image_thumbnail: imgs.images_thumbnails[0] ?? null,
     primary_image_small: imgs.images_small[0] ?? null,
     primary_image_medium: imgs.images_medium[0] ?? null,
+     isDirectListing: msr.listing_type ==='direct',
   };
 }
 

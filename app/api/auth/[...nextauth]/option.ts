@@ -40,80 +40,71 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      // Set on initial login
       if (user) {
         (token as any).id = (user as any).id?.toString();
         (token as any).isVerified = (user as any).isVerified;
         (token as any).full_name = (user as any).full_name;
         (token as any).role = (user as any).role;
         (token as any).email = (user as any).email;
-  
         (token as any).location = (user as any).location ?? null;
         (token as any).setup_completed = (user as any).setup_completed ?? false;
         (token as any).user_type = (user as any).user_type ?? "guest";
-  
         (token as any).image = (user as any).profile_image ?? (user as any).image ?? undefined;
-
         (token as any).dealership_selected_tier = (user as any).dealership_selected_tier ?? null;
-      
-
         (token as any).verification_fee_paid = (user as any).verification_fee_paid ?? false;
-(token as any).dealership_verification_status = (user as any).dealership_verification_status ?? "not_submitted";
-
+        (token as any).dealership_verification_status = (user as any).dealership_verification_status ?? "not_submitted";
       }
-  
-      // if (trigger === "update" && session?.user) {
-      //   (token as any).full_name = (session.user as any).full_name ?? (token as any).full_name;
-      //   (token as any).image = (session.user as any).image ?? (token as any).image;
-  
-      //   (token as any).location = (session.user as any).location ?? (token as any).location;
-      //   (token as any).setup_completed =
-      //     (session.user as any).setup_completed ?? (token as any).setup_completed;
-      //   (token as any).user_type = (session.user as any).user_type ?? (token as any).user_type;
-      // }
-      
 
-       if (trigger === "update" ) {
-    const freshUser = await prisma.user.findUnique({
-      where: { id: (token as any).id },
-    });
+      // Always refresh from DB
+      if ((token as any).id) {
+        const freshUser = await prisma.user.findUnique({
+          where: { id: (token as any).id },
+          select: {
+            full_name: true,
+            profile_image: true,
+            location: true,
+            setup_completed: true,
+            user_type: true,
+            role: true,
+            isVerified: true,
+            verification_fee_paid: true,
+            dealership_verification_status: true,
+            dealership_selected_tier: true,
+          }
+        });
 
-    if (freshUser) {
-      (token as any).full_name = freshUser.full_name;
-      (token as any).image = freshUser.profile_image ?? (token as any).image;
-      (token as any).location = freshUser.location ?? null;
-      (token as any).setup_completed = freshUser.setup_completed ?? false;
-      (token as any).user_type = freshUser.user_type ?? "guest";
-      (token as any).role = freshUser.role;
-      (token as any).isVerified = freshUser.isVerified;
-      (token as any).verification_fee_paid = freshUser.verification_fee_paid ?? false;
-       (token as any).dealership_verification_status = freshUser.dealership_verification_status ?? "not_submitted";
-       (token as any).dealership_selected_tier = freshUser.dealership_selected_tier ?? null;
-    }
-  }
-  
+        if (freshUser) {
+          (token as any).full_name = freshUser.full_name;
+          (token as any).image = freshUser.profile_image ?? (token as any).image;
+          (token as any).location = freshUser.location ?? null;
+          (token as any).setup_completed = freshUser.setup_completed ?? false;
+          (token as any).user_type = freshUser.user_type ?? "guest";
+          (token as any).role = freshUser.role;
+          (token as any).isVerified = freshUser.isVerified;
+          (token as any).verification_fee_paid = freshUser.verification_fee_paid ?? false;
+          (token as any).dealership_verification_status = freshUser.dealership_verification_status ?? "not_submitted";
+          (token as any).dealership_selected_tier = freshUser.dealership_selected_tier ?? null;
+        }
+      }
+
       return token;
     },
 
-    
-  
     async session({ session, token }) {
       session.user.id = ((token as any).id ?? "") as string;
       (session.user as any).isVerified = (token as any).isVerified;
       (session.user as any).full_name = (token as any).full_name;
       (session.user as any).role = (token as any).role;
       session.user.email = ((token as any).email ?? session.user.email ?? "") as string;
-  
       (session.user as any).image = (token as any).image ?? (session.user as any).image ?? undefined;
-
       (session.user as any).location = (token as any).location ?? null;
       (session.user as any).setup_completed = (token as any).setup_completed ?? false;
       (session.user as any).user_type = (token as any).user_type ?? "guest";
-
-   (session.user as any).dealership_selected_tier = (token as any).dealership_selected_tier ?? null;
-
+      (session.user as any).dealership_selected_tier = (token as any).dealership_selected_tier ?? null;
       (session.user as any).verification_fee_paid = (token as any).verification_fee_paid ?? false;
-(session.user as any).dealership_verification_status = (token as any).dealership_verification_status ?? "not_submitted";
-  
+      (session.user as any).dealership_verification_status = (token as any).dealership_verification_status ?? "not_submitted";
+
       return session;
     },
   },

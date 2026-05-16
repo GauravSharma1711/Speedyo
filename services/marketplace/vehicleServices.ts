@@ -20,6 +20,7 @@ export type ListVehiclesParams = {
 export type VehicleListItemApi = {
   id: string;
   createdAt: string;
+  isDirectListing:boolean
   updatedAt: string;
   title: string | null;
   make: string | null;

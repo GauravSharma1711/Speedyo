@@ -269,7 +269,7 @@ export default function UserManagementUI() {
     if (!user || !isOpen) return null;
 
     const tiers: Record<DealershipTier, { name: string; price: string }> = {
-      tier1: { name: "Standard", price: "¥40,000/month" },
+      tier1: { name: "Standard", price: "¥39,999/month" },
       tier2: { name: "Professional", price: "¥75,000/month" },
       tier3: { name: "Enterprise", price: "¥150,000/month" },
     };

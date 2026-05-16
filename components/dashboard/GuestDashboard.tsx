@@ -27,6 +27,7 @@ import ManagedSalesActions from "./ManagedSalesActions";
 import TransferProgressTracker from "./TransferProgressTracker";
 import { useToast } from "@/components/ui/UseToast";
 import { useGuestDashboardStore } from "@/store/dashboard";
+import { useSellerDashboardStore } from "@/store/dashboard";
 import { managedSaleService, messageService, publicUserService, vehicleService } from "@/services/dashboard";
 import axios from "@/lib/axios";
 import CreateVehicleModalUI from "./CreateVehicleModalUI";
@@ -39,6 +40,9 @@ export default function GuestDashboard({ user }: { user: any }) {
     conversations, transfers, managedSales, sellers, recentlyViewed, isLoading,
     loadGuestDashboard, directListings,
   } = useGuestDashboardStore() as any;
+  const {
+  listings,  loadSellerDashboard
+} = useSellerDashboardStore();
 
   const messagesWithContext = conversations?.flatMap((c: any) =>
     (c.messages || []).map((m: any) => {
@@ -94,6 +98,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
   loadGuestDashboard();
+    loadSellerDashboard();
   }, [])
   
 
@@ -539,79 +544,98 @@ const [isSubmitting, setIsSubmitting] = useState(false);
     return null;
   };
 
-
-  const handleCreateVehicle = async (vehicleData: any) => {
+const handleCreateVehicle = async (vehicleData: any) => {
   setIsSubmitting(true);
   try {
-    await vehicleService.createListing({
-      title: vehicleData.title,
-      make: vehicleData.make,
-      model: vehicleData.model,
-      year: vehicleData.year,
-      price: vehicleData.price,
-      mileage: vehicleData.mileage || 0,
-      condition: vehicleData.condition || "good",
-      description: vehicleData.description || "",
-      fuel_type: vehicleData.fuel_type || "gasoline",
-      transmission: vehicleData.transmission || "automatic",
-      location: vehicleData.location,
-      images: vehicleData.images || [],
-      primary_image: vehicleData.primary_image || null,
-    } as any, true);
+    const payload = {
+      contact_full_name: user?.full_name || "",
+      contact_email: user?.email || "",
+      contact_phone: user?.phone || "",
+      vehicle_title: vehicleData.title || `${vehicleData.year} ${vehicleData.make} ${vehicleData.model}`,
+      vehicle_make: vehicleData.make,
+      vehicle_model: vehicleData.model,
+      vehicle_year: vehicleData.year,
+      vehicle_mileage: vehicleData.mileage || 0,
+      vehicle_condition: vehicleData.condition || "good",
+      vehicle_description: vehicleData.description || "",
+      vehicle_fuel_type: vehicleData.fuel_type || "gasoline",
+      vehicle_transmission: vehicleData.transmission || "automatic",
+      vehicle_location: vehicleData.location,
+      seller_asking_price: vehicleData.price,
+      listing_type: "direct",
+      status: "pending_approval",
+      service_fee_amount: 0,
+      owner_receives_amount: vehicleData.price,
+      final_sale_price_for_buyer: vehicleData.price,
+      terms_agreed: true,
+    };
+
+    await managedSaleService.create(payload);
 
     setShowCreateModal(false);
     setEditingVehicle(null);
-    await loadDashboardData(); 
-    toast({ title: "Direct Listing Submitted", variant: "success" });
+    loadSellerDashboard(); 
+    toast({
+      title: "Direct Listing Submitted",
+      description: "Your vehicle will be listed after admin approval.",
+      variant: "success",
+    });
   } catch (error) {
-    toast({ title: "Creation Failed", variant: "destructive" });
+    console.error("Failed to create listing:", error);
+    toast({
+      title: "Creation Failed",
+      description: "Could not submit your listing. Please try again.",
+      variant: "destructive",
+    });
+    throw error;
   } finally {
     setIsSubmitting(false);
   }
 };
-  
-   const handleSaveVehicleAvailability = async (
-    vehicleId: string,
-    availabilityData: any,
-  ) => {
-    try {
-      await Vehicle.update(vehicleId, availabilityData);
-      await loadGuestDashboard();
-      setAvailabilityVehicle(null);
-      toast({
-        title: "Availability Saved",
-        description:
-          "Your vehicle's car viewing availability has been updated.",
-        variant: "success",
-      });
-    } catch (error) {
-      console.error("Failed to save car viewing availability:", error);
-      toast({
-        title: "Save Failed",
-        description: "Failed to save availability. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
 
-  const handleUpdateVehicle = async (vehicleData: any) => {
+const handleUpdateVehicle = async (vehicleData: any) => {
   if (!editingVehicle) return;
   try {
-    await axios.patch(`/api/vehicles/${editingVehicle.id}`, vehicleData); 
+    await Vehicle.update(editingVehicle.id, vehicleData);
     setEditingVehicle(null);
     setShowCreateModal(false);
-    await loadDashboardData();
-    toast({ title: "Vehicle Updated", variant: "success" });
+    loadSellerDashboard();
+    toast({
+      title: "Vehicle Updated",
+      description: "Your vehicle listing has been successfully updated.",
+      variant: "success",
+    });
   } catch (error) {
-    toast({ title: "Update Failed", variant: "destructive" });
+    console.error("Failed to update vehicle:", error);
+    toast({
+      title: "Update Failed",
+      description: "Could not update the vehicle listing. Please try again.",
+      variant: "destructive",
+    });
   }
 };
+
+  
+  const handleSaveVehicleAvailability = async (vehicleId: string, availabilityData: any) => {
+  try {
+    await Vehicle.update(vehicleId, availabilityData);
+    await loadSellerDashboard();
+    setAvailabilityVehicle(null);
+    toast({ title: "Availability Saved", description: "Your vehicle's car viewing availability has been updated.", variant: "success" });
+  } catch (error) {
+    console.error("Failed to save car viewing availability:", error);
+    toast({ title: "Save Failed", description: "Failed to save availability. Please try again.", variant: "destructive" });
+  }
+};
+
+
+  
 
   const currentPublicUser = sellers.find((s: any) => s.id === user?.id);
 
 
-  console.log("direct listing",directListings);
+  console.log("direct listing",listings );
 
   // Real API implementations
 const Vehicle = {
@@ -636,102 +660,65 @@ const handleEditVehicle = useCallback((vehicle: any) => {
     setShowCreateModal(true);
   }, []);
 
-  const handleDeleteVehicle = useCallback(
-    async (vehicleId: string) => {
-      if (confirm("Are you sure you want to delete this listing?")) {
-        try {
-          await Vehicle.delete(vehicleId);
-          toast({
-            title: "Listing Deleted",
-            description: "The vehicle listing has been permanently removed.",
-            variant: "success",
-          });
-          loadGuestDashboard();
-        } catch (error) {
-          console.error("Failed to delete vehicle:", error);
-          toast({
-            title: "Deletion Failed",
-            description: "Could not delete the listing. Please try again.",
-            variant: "destructive",
-          });
-        }
-      }
-    },
-    [loadGuestDashboard, toast],
-  );
+  
+  const handleDeleteVehicle = useCallback(async (vehicleId: string) => {
+  if (confirm("Are you sure you want to delete this listing?")) {
+    try {
+      await Vehicle.delete(vehicleId);
+      toast({ title: "Listing Deleted", description: "The vehicle listing has been permanently removed.", variant: "success" });
+      loadSellerDashboard();
+    } catch (error) {
+      console.error("Failed to delete vehicle:", error);
+      toast({ title: "Deletion Failed", description: "Could not delete the listing. Please try again.", variant: "destructive" });
+    }
+  }
+}, [loadSellerDashboard, toast]);
 
-  const handleMarkAsSold = useCallback(
-    async (vehicleId: string) => {
-      if (
-        window.confirm(
-          "Are you sure you want to mark this vehicle as sold? This will remove it from active listings.",
-        )
-      ) {
-        setIsUpdating(vehicleId);
-        try {
-          await Vehicle.update(vehicleId, { status: "sold" });
-          toast({
-            title: "Vehicle Marked as Sold",
-            description:
-              "The listing has been updated and removed from the marketplace.",
-            variant: "success",
-          });
-          await loadGuestDashboard();
-        } catch (error) {
-          console.error("Failed to mark vehicle as sold:", error);
-          toast({
-            title: "Update Failed",
-            description:
-              "Could not mark the vehicle as sold. Please try again.",
-            variant: "destructive",
-          });
-        } finally {
-          setIsUpdating(null);
-        }
-      }
-    },
-    [loadGuestDashboard, toast],
-  );
+const handleMarkAsSold = useCallback(async (vehicleId: string) => {
+  if (window.confirm("Are you sure you want to mark this vehicle as sold? This will remove it from active listings.")) {
+    setIsUpdating(vehicleId);
+    try {
+      await Vehicle.update(vehicleId, { status: "sold" });
+      toast({ title: "Vehicle Marked as Sold", description: "The listing has been updated and removed from the marketplace.", variant: "success" });
+      await loadSellerDashboard();
+    } catch (error) {
+      console.error("Failed to mark vehicle as sold:", error);
+      toast({ title: "Update Failed", description: "Could not mark the vehicle as sold. Please try again.", variant: "destructive" });
+    } finally {
+      setIsUpdating(null);
+    }
+  }
+}, [loadSellerDashboard, toast]);
 
-  const handleMarkAsUnavailable = useCallback(
-    async (vehicleId: string) => {
-      if (
-        window.confirm(
-          "Mark this vehicle as temporarily unavailable? You can make it available again anytime.",
-        )
-      ) {
-        setIsUpdating(vehicleId);
-        try {
-          await Vehicle.update(vehicleId, { status: "unavailable" });
-          toast({ title: "Vehicle Marked as Unavailable", variant: "success" });
-          await loadGuestDashboard();
-        } catch (error) {
-          console.error("Failed to mark vehicle as unavailable:", error);
-          toast({ title: "Update Failed", variant: "destructive" });
-        } finally {
-          setIsUpdating(null);
-        }
-      }
-    },
-    [loadGuestDashboard, toast],
-  );
+const handleMarkAsUnavailable = useCallback(async (vehicleId: string) => {
+  if (window.confirm("Mark this vehicle as temporarily unavailable? You can make it available again anytime.")) {
+    setIsUpdating(vehicleId);
+    try {
+      await Vehicle.update(vehicleId, { status: "unavailable" });
+      toast({ title: "Vehicle Marked as Unavailable", variant: "success" });
+      await loadSellerDashboard();
+    } catch (error) {
+      console.error("Failed to mark vehicle as unavailable:", error);
+      toast({ title: "Update Failed", variant: "destructive" });
+    } finally {
+      setIsUpdating(null);
+    }
+  }
+}, [loadSellerDashboard, toast]);
 
-  const handleMarkAsAvailable = useCallback(
-    async (vehicleId: string) => {
-      setIsUpdating(vehicleId);
-      try {
-        await Vehicle.update(vehicleId, { status: "available" });
-        toast({ title: "Vehicle Marked as Available", variant: "success" });
-        await loadGuestDashboard();
-      } catch (error) {
-        console.error("Failed to mark vehicle as available:", error);
-        toast({ title: "Update Failed", variant: "destructive" });
-      } finally {
-        setIsUpdating(null);
-      }
-    },
-    [loadGuestDashboard, toast],
-  );
+const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
+  setIsUpdating(vehicleId);
+  try {
+    await Vehicle.update(vehicleId, { status: "available" });
+    toast({ title: "Vehicle Marked as Available", variant: "success" });
+    await loadSellerDashboard();
+  } catch (error) {
+    console.error("Failed to mark vehicle as available:", error);
+    toast({ title: "Update Failed", variant: "destructive" });
+  } finally {
+    setIsUpdating(null);
+  }
+}, [loadSellerDashboard, toast]);
 
 
   return (
@@ -794,7 +781,7 @@ const handleEditVehicle = useCallback((vehicle: any) => {
                           value="listings"
                           className="whitespace-nowrap flex-shrink-0 px-3 py-2 text-sm md:px-4"
                         >
-                          Your Listings ({directListings.length})
+                          Your Listings ({listings.length})
                         </TabsTrigger>
             <TabsTrigger 
               value="dashboard"
@@ -838,7 +825,7 @@ const handleEditVehicle = useCallback((vehicle: any) => {
                          
 
           
-                          {directListings.length === 0 ? (
+                          {listings.length === 0 ? (
                             <div className="text-center py-8 text-slate-500">
                               <Car className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                               <p>No vehicles listed yet</p>
@@ -862,7 +849,7 @@ const handleEditVehicle = useCallback((vehicle: any) => {
                             </div>
                           ) : (
                             <div className="space-y-3">
-                              {directListings.map((vehicle) => (
+                              {listings.map((vehicle) => (
                                 <div
                                   key={vehicle.id}
                                   className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
