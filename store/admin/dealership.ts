@@ -92,64 +92,42 @@ export const useDealershipAgreementStore = create<DealershipAgreementState>()(
   }
 },
 
-    async create(data) {
-      set({ isLoading: true, error: null });
-      try {
-        const res = await dealershipAgreementService.create(data);
-        // API should return { agreement: DealershipAgreement }
-        set((state) => {
-          state.agreements.unshift(res.agreement);
-        });
-        set({ isLoading: false });
-      } catch (error: any) {
-        set({
-          isLoading: false,
-          error:
-            error?.response?.data?.message ??
-            "Failed to create dealership agreement",
-        });
-        throw error;
-      }
-    },
+ async create(data) {
+  set({ error: null });
+  try {
+    const res = await dealershipAgreementService.create(data);
+    set((state) => { state.agreements.unshift(res.agreement); });
+  } catch (error: any) {
+    set({ error: error?.response?.data?.message ?? "Failed to create dealership agreement" });
+    throw error;
+  }
+},
 
-    async update(agreementId, data) {
-      set({ isLoading: true, error: null });
-      try {
-        const res = await dealershipAgreementService.update(agreementId, data);
-        // API should return { agreement: DealershipAgreement }
-        set((state) => {
-          const index = state.agreements.findIndex((a) => a.id === agreementId);
-          if (index !== -1) state.agreements[index] = res.agreement;
-        });
-        set({ isLoading: false });
-      } catch (error: any) {
-        set({
-          isLoading: false,
-          error:
-            error?.response?.data?.message ??
-            "Failed to update dealership agreement",
-        });
-        throw error;
-      }
-    },
+async update(agreementId, data) {
+  set({ error: null });
+  try {
+    const res = await dealershipAgreementService.update(agreementId, data);
+    set((state) => {
+      const index = state.agreements.findIndex((a) => a.id === agreementId);
+      if (index !== -1) state.agreements[index] = res.agreement;
+    });
+  } catch (error: any) {
+    set({ error: error?.response?.data?.message ?? "Failed to update dealership agreement" });
+    throw error;
+  }
+},
 
-    async delete(agreementId) {
-      set({ isLoading: true, error: null });
-      try {
-        await dealershipAgreementService.delete(agreementId);
-        set((state) => {
-          state.agreements = state.agreements.filter((a) => a.id !== agreementId);
-        });
-        set({ isLoading: false });
-      } catch (error: any) {
-        set({
-          isLoading: false,
-          error:
-            error?.response?.data?.message ??
-            "Failed to delete dealership agreement",
-        });
-        throw error;
-      }
-    },
+async delete(agreementId) {
+  set({ error: null });
+  try {
+    await dealershipAgreementService.delete(agreementId);
+    set((state) => {
+      state.agreements = state.agreements.filter((a) => a.id !== agreementId);
+    });
+  } catch (error: any) {
+    set({ error: error?.response?.data?.message ?? "Failed to delete dealership agreement" });
+    throw error;
+  }
+},
   }))
 );

@@ -4,6 +4,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Info, MapPin, Plus, Trash2, X } from "lucide-react";
 
+import { useToast } from "@/components/ui/UseToast";
+
+
+ 
+
+
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -17,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/TextArea";
-import { useToast } from "@/components/ui/UseToast";
+
 
 export type AvailabilityDay =
   | "monday"
@@ -68,6 +74,9 @@ export default function AdminAvailabilityManagerUI(props: {
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([defaultSlot]);
   const [isSaving, setIsSaving] = useState(false);
 
+
+
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -107,7 +116,11 @@ export default function AdminAvailabilityManagerUI(props: {
     setIsSaving(true);
     try {
       onSave(availability);
-  
+     toast({
+        title: "Time Slot Availability",
+        description: "Availability updated successfully.",
+        variant: 'success',
+      });
       onClose();
     } finally {
       setIsSaving(false);

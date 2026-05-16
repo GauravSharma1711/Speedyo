@@ -102,11 +102,11 @@ export default function VehicleEditRequestManagementUI() {
       },
       vehicle: r.vehicle
         ? {
-            ...r.vehicle,
-            id: r.vehicle.id,
-            title: r.vehicle.title,
-            price: r.vehicle.price,
-          }
+          ...r.vehicle,
+          id: r.vehicle.id,
+          title: r.vehicle.title,
+          price: r.vehicle.price,
+        }
         : null,
     }));
   }, [items]);
@@ -348,8 +348,12 @@ export default function VehicleEditRequestManagementUI() {
                             disabled={isSaving === request.id}
                             className="text-red-600 border-red-300 hover:bg-red-50"
                           >
-                            <XCircle className="w-4 h-4 mr-2" />
-                            Decline Request
+                            {isSaving === request.id ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <XCircle className="w-4 h-4 mr-2" />
+                            )}
+                            {isSaving === request.id ? "Declining..." : "Decline Request"}
                           </Button>
 
                           <Button
@@ -357,8 +361,12 @@ export default function VehicleEditRequestManagementUI() {
                             disabled={isSaving === request.id}
                             className="bg-green-600 hover:bg-green-700"
                           >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Approve & Apply Changes
+                            {isSaving === request.id ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                            )}
+                            {isSaving === request.id ? "Approving..." : "Approve & Apply Changes"}
                           </Button>
                         </div>
                       </div>

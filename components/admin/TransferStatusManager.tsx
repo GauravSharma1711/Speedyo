@@ -124,6 +124,9 @@ export default function TransferStatusManagerUI() {
 
     const { transfers, isLoading, error, create, update, getAll } = useTransferStore();
 
+const [creating, setCreating] = useState(false);
+const [updatingId, setUpdatingId] = useState<string | null>(null);
+
 
 
   // const [transfers, setTransfers] = useState<VehicleTransfer[]>(MOCK_TRANSFERS);
@@ -165,7 +168,7 @@ export default function TransferStatusManagerUI() {
     // setTransfers((prev) => [created, ...prev]);
     // setCreateOpen(false);
     // toast({ title: "Transfer created", description: "" });
-
+setCreating(true);
 
     try {
     await create({
@@ -183,6 +186,8 @@ export default function TransferStatusManagerUI() {
     toast({ title: "Transfer created" });
   } catch {
     toast({ title: "Failed to create transfer", variant: "destructive" });
+  }finally{
+    setCreating(false); 
   }
   
 
@@ -190,6 +195,7 @@ export default function TransferStatusManagerUI() {
   };
 
   const handleUpdate = async(transferId: string, updates: Partial<VehicleTransfer>) => {
+  setUpdatingId(transferId);
     try {
       await update(transferId, {
         steps_completed: updates.stepsCompleted,
@@ -233,6 +239,8 @@ export default function TransferStatusManagerUI() {
       toast({ title: "Saved", description: "Transfer updated. Buyer and seller notified." });
     } catch {
       toast({ title: "Failed to update transfer", variant: "destructive" });
+    }finally{
+      setUpdatingId(null);
     }
   };
 
@@ -244,10 +252,11 @@ export default function TransferStatusManagerUI() {
         </h2>
         <Button
           onClick={() => setCreateOpen(true)}
+          disabled={creating}
           className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Transfer
+           {creating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+  {creating ? "Creating..." : "Create Transfer"}
         </Button>
       </div>
 
@@ -319,14 +328,10 @@ export default function TransferStatusManagerUI() {
                       </div>
                     </div>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditOpenForId(t.id)}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Update
-                    </Button>
+                  <Button variant="outline" size="sm" onClick={() => setEditOpenForId(t.id)} disabled={updatingId === t.id}>
+  {updatingId === t.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Edit className="w-4 h-4 mr-2" />}
+  {updatingId === t.id ? "Saving..." : "Update"}
+</Button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -385,7 +390,7 @@ function CreateTransferModal(props: {
   // vehicles: Vehicle[];
   // users: PublicUser[];
   onClose: () => void;
-  onCreate: (payload: Omit<VehicleTransfer, "id" | "createdAt">) => void;
+  onCreate: (payload: Omit<VehicleTransfer, "id" | "createdAt">) => Promise<void>;
 }) {
   const {  onClose, onCreate } = props;
 
@@ -403,6 +408,8 @@ useEffect(() => {
   const [sellerId, setSellerId] = useState<string>("");
   const [userFacingNotes, setUserFacingNotes] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
     if (vehicles.length > 0 && !vehicleId) {
@@ -424,31 +431,36 @@ useEffect(() => {
 
 
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vehicleId || !buyerId) {
-      toast({ title: "Missing fields", variant: "destructive" });
-      return;
-    }
+    
+    try {
+      if (!vehicleId || !buyerId) {
+        toast({ title: "Missing fields", variant: "destructive" });
+        return;
+      }
+      
+      setSubmitting(true);
 
-    console.log( "abc",   vehicleId,
-      transferType,
-      buyerId,
-      sellerId,
 
-)
 
-    onCreate({
-      vehicleId,
-      transferType,
-      buyerId,
-      sellerId: sellerId || null,
-      currentStep: 1,
-      stepsCompleted: [],
-      status: "in_progress",
-      userFacingNotes,
-      adminNotes,
-    });
+ 
+  await   onCreate({
+       vehicleId,
+       transferType,
+       buyerId,
+       sellerId: sellerId || null,
+       currentStep: 1,
+       stepsCompleted: [],
+       status: "in_progress",
+       userFacingNotes,
+       adminNotes,
+     });
+   } catch (error) {
+     setSubmitting(false);
+   }finally{
+     setSubmitting(false);
+   }
   };
 
   return (
@@ -547,7 +559,10 @@ useEffect(() => {
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Create Transfer</Button>
+          <Button type="submit" disabled={submitting}>
+  {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+  {submitting ? "Creating..." : "Create Transfer"}
+</Button>
           </div>
         </form>
       </div>
@@ -561,7 +576,7 @@ function EditTransferModal(props: {
   onSave: (updates: Partial<VehicleTransfer>) => void;
 }) {
   const { transfer, onClose, onSave } = props;
-
+const [saving, setSaving] = useState(false);
   const steps =
     transfer.transfer_type  === "speedio_managed"
       ? SPEEDIO_MANAGED_STEPS
@@ -593,15 +608,24 @@ function EditTransferModal(props: {
     // });
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      status,
-      userFacingNotes,
-      adminNotes,
-      stepsCompleted,
-    });
-    toast({ title: "Saved", description: "" });
+      setSaving(true);
+
+
+   try {
+   await  onSave({
+       status,
+       userFacingNotes,
+       adminNotes,
+       stepsCompleted,
+     });
+   } catch (error) {
+      toast({ title: "Failed to save", variant: "destructive" });
+   }finally{
+       setSaving(false);
+   }
+   
     onClose();
   };
 
@@ -681,7 +705,10 @@ function EditTransferModal(props: {
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Save Changes</Button>
+           <Button type="submit" disabled={saving}>
+  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+  {saving ? "Saving..." : "Save Changes"}
+</Button>
           </div>
         </form>
       </div>

@@ -115,6 +115,9 @@ export default function UserManagementUI() {
   const [messageContent, setMessageContent] = useState("");
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
+const [isSavingStatus, setIsSavingStatus] = useState(false);
+const [isDeclining, setIsDeclining] = useState(false);
+const [approvingId, setApprovingId] = useState<string | null>(null);
 
 
   const filteredUsers = useMemo(() => {
@@ -186,7 +189,7 @@ export default function UserManagementUI() {
 
   const handleSaveUserStatus = async () => {
     if (!editingUser) return;
-
+setIsSavingStatus(true);
     try {
       await update(editingUser.id, {
         user_type: newUserType,
@@ -206,11 +209,12 @@ export default function UserManagementUI() {
       setEditingUser(null);
     } catch {
       toast.error("Failed to update user");
-    }
+    }finally { setIsSavingStatus(false); }
   };
 
   const handleApproveUser = async (userId: string) => {
     try {
+      setApprovingId(userId);
       await update(userId, {
         user_type: "dealership",
         dealership_verification_status: "approved",
@@ -228,11 +232,12 @@ export default function UserManagementUI() {
       setShowDetailsModal(false);
     } catch {
       toast.error("Failed to approve user");
-    }
+    }finally { setApprovingId(null); }
   };
 
  const handleDeclineDealership = async () => {
   if (!declineModalData) return;
+  setIsDeclining(true);
   try {
     await update(declineModalData.userId, {
       dealership_verification_status: "declined",
@@ -254,7 +259,7 @@ export default function UserManagementUI() {
     setShowDetailsModal(false);
   } catch {
     toast.error("Failed to decline application");
-  }
+  } finally { setIsDeclining(false); }
 };
 
   const UserDetailsModal = ({
@@ -414,16 +419,16 @@ export default function UserManagementUI() {
             ) : null}
 
             <div className="flex gap-3 pt-4 border-t mt-6">
-              <Button
-                onClick={() => handleApproveUser(user.id)}
-                className="bg-emerald-600 hover:bg-emerald-700"
-                disabled={user.dealership_verification_status === "approved"}
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                {user.dealership_verification_status === "approved"
-                  ? "Already Approved"
-                  : "Approve Application"}
-              </Button>
+         <Button
+  onClick={() => handleApproveUser(user.id)}
+  className="bg-emerald-600 hover:bg-emerald-700"
+  disabled={user.dealership_verification_status === "approved" || approvingId === user.id}
+>
+  {approvingId === user.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+  {approvingId === user.id ? "Approving..." : user.dealership_verification_status === "approved" ? "Already Approved" : "Approve Application"}
+</Button>
+
+
 
               <Button
                 variant="destructive"
@@ -582,7 +587,10 @@ export default function UserManagementUI() {
             <Button variant="ghost" onClick={() => setShowEditStatusModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveUserStatus}>Save Changes</Button>
+            <Button onClick={handleSaveUserStatus} disabled={isSavingStatus}>
+  {isSavingStatus ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+  {isSavingStatus ? "Saving..." : "Save Changes"}
+</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -607,9 +615,10 @@ export default function UserManagementUI() {
             <Button variant="ghost" onClick={() => setShowDeclineModal(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeclineDealership}>
-              Confirm Decline
-            </Button>
+          <Button variant="destructive" onClick={handleDeclineDealership} disabled={isDeclining}>
+  {isDeclining ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+  {isDeclining ? "Declining..." : "Confirm Decline"}
+</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

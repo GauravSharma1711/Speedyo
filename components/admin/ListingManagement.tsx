@@ -105,6 +105,12 @@ export default function ListingManagementUI(props: {
   initialEditVehicleId?: string | null;
 }) {
 
+const [deletingId, setDeletingId] = useState<string | null>(null);
+const [markingSoldId, setMarkingSoldId] = useState<string | null>(null);
+const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(null);
+const [savingAssociation, setSavingAssociation] = useState(false);
+
+
 
    const {
     vehicles,
@@ -184,13 +190,17 @@ export default function ListingManagementUI(props: {
 
    const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this listing permanently?")) return;
+      setDeletingId(id);
     try {
       await remove(id);
       toast({ title: "Deleted", description: "Vehicle listing deleted." });
     } catch {
       toast({ title: "Error", description: "Failed to delete vehicle.", variant: "destructive" });
+    }finally{
+      setDeletingId(null);
     }
   };
+      
 
   const handleEditVehicle = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
@@ -230,21 +240,27 @@ export default function ListingManagementUI(props: {
   }
 };
 
-    const handleToggleFeatured = async (vehicleId: string) => {
-    try {
-      await toggleFeatured(vehicleId);
-    } catch {
-      toast({ title: "Error", description: "Failed to toggle featured.", variant: "destructive" });
-    }
-  };
+ const handleToggleFeatured = async (vehicleId: string) => {
+  setTogglingFeaturedId(vehicleId);
+  try {
+    await toggleFeatured(vehicleId);
+  } catch {
+    toast({ title: "Error", description: "Failed to toggle featured.", variant: "destructive" });
+  } finally {
+    setTogglingFeaturedId(null);
+  }
+};
 
 
   const handleMarkAsSold = async (vehicleId: string) => {
     if (!window.confirm("Mark this vehicle as sold?")) return;
+      setMarkingSoldId(vehicleId);
     try {
       await markSold(vehicleId);
     } catch {
       toast({ title: "Error", description: "Failed to mark as sold.", variant: "destructive" });
+    }finally{
+         setMarkingSoldId(null);
     }
   };
 
@@ -254,19 +270,21 @@ export default function ListingManagementUI(props: {
     setShowAssociateDealershipModal(true);
   };
 
-    const handleSaveAssociation = async () => {
-    if (!selectedVehicleForAssociation || !selectedDealershipId) return;
-    try {
-      await associateDealership(selectedVehicleForAssociation.id, selectedDealershipId);
-      setShowAssociateDealershipModal(false);
-      setSelectedVehicleForAssociation(null);
-      setSelectedDealershipId("");
-      toast({ title: "Saved", description: "Dealership associated." });
-    } catch {
-      toast({ title: "Error", description: "Failed to associate dealership.", variant: "destructive" });
-    }
-  };
-
+  const handleSaveAssociation = async () => {
+  if (!selectedVehicleForAssociation || !selectedDealershipId) return;
+  setSavingAssociation(true);
+  try {
+    await associateDealership(selectedVehicleForAssociation.id, selectedDealershipId);
+    setShowAssociateDealershipModal(false);
+    setSelectedVehicleForAssociation(null);
+    setSelectedDealershipId("");
+    toast({ title: "Saved", description: "Dealership associated." });
+  } catch {
+    toast({ title: "Error", description: "Failed to associate dealership.", variant: "destructive" });
+  } finally {
+    setSavingAssociation(false);
+  }
+};
    const handleRemoveAssociation = async (vehicle: Vehicle) => {
     if (!window.confirm("Remove dealership association from this vehicle?")) return;
     try {
@@ -448,30 +466,16 @@ export default function ListingManagementUI(props: {
                       </Button>
 
                       {vehicle.status === "available" ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleMarkAsSold(vehicle.id)}
-                          className="text-slate-700 border-slate-300 hover:bg-slate-100"
-                        >
-                          <JapaneseYenIcon className="w-4 h-4 mr-2" />
-                          Mark as Sold
-                        </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleMarkAsSold(vehicle.id)} disabled={markingSoldId === vehicle.id} className="text-slate-700 border-slate-300 hover:bg-slate-100">
+  {markingSoldId === vehicle.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <JapaneseYenIcon className="w-4 h-4 mr-2" />}
+  {markingSoldId === vehicle.id ? "Saving..." : "Mark as Sold"}
+</Button>
                       ) : null}
 
-                      <Button
-                        variant={vehicle.featured ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleToggleFeatured(vehicle.id)}
-                        className={
-                          vehicle.featured
-                            ? "bg-amber-500 hover:bg-amber-600 text-white"
-                            : "text-slate-700 border-slate-300 hover:bg-slate-100"
-                        }
-                      >
-                        <Star className="w-4 h-4 mr-2" />
-                        {vehicle.featured ? "Remove Featured" : "Make Featured"}
-                      </Button>
+                    <Button variant={vehicle.featured ? "default" : "outline"} size="sm" onClick={() => handleToggleFeatured(vehicle.id)} disabled={togglingFeaturedId === vehicle.id} className={vehicle.featured ? "bg-amber-500 hover:bg-amber-600 text-white" : "text-slate-700 border-slate-300 hover:bg-slate-100"}>
+  {togglingFeaturedId === vehicle.id ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Star className="w-4 h-4 mr-2" />}
+  {togglingFeaturedId === vehicle.id ? "Updating..." : vehicle.featured ? "Remove Featured" : "Make Featured"}
+</Button>
 
                       <Button
                         size="sm"
@@ -495,14 +499,10 @@ export default function ListingManagementUI(props: {
                         </Button>
                       ) : null}
 
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(vehicle.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Listing
-                      </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(vehicle.id)} disabled={deletingId === vehicle.id}>
+  {deletingId === vehicle.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+  {deletingId === vehicle.id ? "Deleting..." : "Delete Listing"}
+</Button>
                     </div>
                   </div>
                 </CardContent>
@@ -593,13 +593,10 @@ export default function ListingManagementUI(props: {
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleSaveAssociation}
-                  disabled={!selectedDealershipId}
-                  className="bg-gradient-to-r from-blue-500 to-emerald-500"
-                >
-                  Associate
-                </Button>
+              <Button onClick={handleSaveAssociation} disabled={!selectedDealershipId || savingAssociation} className="bg-gradient-to-r from-blue-500 to-emerald-500">
+  {savingAssociation ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+  {savingAssociation ? "Saving..." : "Associate"}
+</Button>
               </div>
             </div>
           </DialogContent>

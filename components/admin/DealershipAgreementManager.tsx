@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Copy, Eye, FileText, Loader2, Plus, Send, XCircle } from "lucide-react";
 
 import { DealershipAgreement, useDealershipAgreementStore } from "@/store/admin/dealership";
+import { useToast } from "@/components/ui/UseToast";
 
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -20,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/Dialog";
-import { useToast } from "@/components/ui/UseToast";
+
 import { AgreementStatus } from "@/lib/generated/prisma/enums";
 
 // ── Local form state ───────────────────────────────────────────────────────────
@@ -31,42 +32,9 @@ type FormState = {
   phone: string;
   email: string;
   license_number: string;
-  service_fee_amount: string; // string for input, sent as string to API
+  service_fee_amount: string;
   admin_notes: string;
 };
-
-const MOCK: DealershipAgreement[] = [
-  {
-    id: "agr_001",
-    dealership_name: "Taka Cars",
-    representative_name: "Taka",
-    address: "Shibuya, Tokyo",
-    phone: "+81-90-1111-2222",
-    email: "dealership@takacars.jp",
-    license_number: "TK-2025-118",
-    service_fee_amount: null,
-    admin_notes: "High volume partner.",
-    status: "signed",
-    agreement_url: "/SignAgreement/agr_001",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40).toISOString(),
-    signed_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 35).toISOString(),
-  },
-  {
-    id: "agr_002",
-    dealership_name: "Ok Motors",
-    representative_name: "Ok",
-    address: "",
-    phone: "",
-    email: "ops@okmotors.jp",
-    license_number: "",
-    service_fee_amount: 200,
-    admin_notes: "",
-    status: "pending_signature",
-    agreement_url: "/SignAgreement/agr_002",
-    created_date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-    signed_at: null,
-  },
-];
 
 function statusBadgeClass(status: AgreementStatus) {
   if (status === "signed") return "bg-emerald-100 text-emerald-700";
@@ -96,7 +64,21 @@ export default function DealershipAgreementManagerUI() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Local UI state ─────────────────────────────────────────────────────────
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Maps agreementId → which action is currently in flight ("send" | "email" | "delete")
+  const [submittingIds, setSubmittingIds] = useState<Record<string, string>>({});
+
+  function setSubmitting(id: string, action: string | null) {
+    setSubmittingIds((prev) => {
+      if (action === null) {
+        const { [id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [id]: action };
+    });
+  }
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -146,10 +128,11 @@ export default function DealershipAgreementManagerUI() {
     e.preventDefault();
     if (!canCreate) return;
 
-    setIsSubmitting(true);
+    setIsCreating(true);
     try {
-      const serviceFee = formData.service_fee_amount ? parseFloat(formData.service_fee_amount) : null;
-      const agreementId = `agr_${Date.now()}`;
+      const serviceFee = formData.service_fee_amount
+        ? parseFloat(formData.service_fee_amount)
+        : null;
 
       await create({
         dealership_name: formData.dealership_name.trim(),
@@ -164,7 +147,11 @@ export default function DealershipAgreementManagerUI() {
 
       setShowCreateModal(false);
       resetForm();
-      toast({ title: "Agreement created", description: "Agreement saved successfully." });
+      toast({
+        title: "Agreement created",
+        description: "Agreement saved successfully.",
+        variant: "success",
+      });
     } catch (err: any) {
       console.error("Create failed:", err);
       toast({
@@ -173,44 +160,91 @@ export default function DealershipAgreementManagerUI() {
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setIsCreating(false);
     }
   }
 
-  // ── Send signing email (draft → pending_signature via API) ─────────────────
-  async function handleSendSigningEmail(id: string, email: string, currentStatus: string) {
+  // ── Send signing email ─────────────────────────────────────────────────────
+  async function handleSendSigningEmail(
+    id: string,
+    email: string,
+    currentStatus: string,
+  ) {
     if (currentStatus !== "draft" && currentStatus !== "pending_signature") return;
-
-    setIsSubmitting(true);
+    setSubmitting(id, "send");
     try {
-      // Update status to pending_signature in DB, then notify
-      await update(id, { status: "pending_signature" });
+      const res = await fetch(
+        `/api/admin/dealership-agreements/${id}/sendSigningMail`,
+        { method: "POST" },
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to send agreement.");
+      }
+      await getAll();
       toast({
         title: "Sent to dealership",
         description: `Signing link sent to ${email}.`,
+        variant: "success",
       });
-    } catch {
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: error ?? "Failed to send agreement.",
+        description: err.message ?? "Failed to send agreement.",
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(id, null);
     }
   }
 
-  // ── Send signed agreement email (stub — wire real email API) ──────────────
-  async function handleSendAgreementEmail(email: string) {
-    setIsSubmitting(true);
+  // ── Send signed agreement email ────────────────────────────────────────────
+  async function handleSendAgreementEmail(id: string, email: string) {
+    setSubmitting(id, "email");
     try {
-      // TODO: call your email API here
+      console.log("id", id);
+      const res = await fetch(
+        `/api/admin/dealership-agreements/${id}/sendSignedMail`,
+        { method: "POST" },
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to send email.");
+      }
       toast({
         title: "Email sent",
         description: `Signed agreement emailed to ${email}.`,
+        variant: "success",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message ?? "Failed to send email.",
+        variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(id, null);
+    }
+  }
+
+  // ── Delete ─────────────────────────────────────────────────────────────────
+  async function handleDelete(id: string) {
+    const ok = window.confirm(
+      "Are you sure you want to delete this agreement? This action cannot be undone.",
+    );
+    if (!ok) return;
+    setSubmitting(id, "delete");
+    try {
+      await deleteAgreement(id);
+      toast({ title: "Deleted", description: "Agreement removed." });
+    } catch {
+      toast({
+        title: "Error",
+        description: error ?? "Failed to delete agreement.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(id, null);
     }
   }
 
@@ -225,7 +259,7 @@ export default function DealershipAgreementManagerUI() {
     }
   }
 
-  // ── Download PDF ─────────────────────────────────────────────────────────
+  // ── Download PDF ───────────────────────────────────────────────────────────
   async function downloadAgreement(id: string, dealershipName: string) {
     setDownloadingId(id);
     try {
@@ -248,34 +282,12 @@ export default function DealershipAgreementManagerUI() {
     }
   }
 
-  // ── Delete ─────────────────────────────────────────────────────────────────
-  async function handleDelete(id: string) {
-    const ok = window.confirm(
-      "Are you sure you want to delete this agreement? This action cannot be undone.",
-    );
-    if (!ok) return;
-
-    setIsSubmitting(true);
-    try {
-      await deleteAgreement(id);
-      toast({ title: "Deleted", description: "Agreement removed." });
-    } catch {
-      toast({
-        title: "Error",
-        description: error ?? "Failed to delete agreement.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
   // ── Loading (initial fetch only) ───────────────────────────────────────────
   if (isLoading && agreements.length === 0) {
     return (
-     <div className="flex items-center justify-center py-16">
-                    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-                  </div>
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+      </div>
     );
   }
 
@@ -421,14 +433,17 @@ export default function DealershipAgreementManagerUI() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => { setShowCreateModal(false); resetForm(); }}
-                  disabled={isSubmitting}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    resetForm();
+                  }}
+                  disabled={isCreating}
                 >
                   Cancel
                 </Button>
 
-                <Button type="submit" disabled={!canCreate || isSubmitting}>
-                  {isSubmitting ? (
+                <Button type="submit" disabled={!canCreate || isCreating}>
+                  {isCreating ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating...
@@ -446,12 +461,12 @@ export default function DealershipAgreementManagerUI() {
         </Dialog>
       </div>
 
-      {/* Empty state */}
+      {/* List / empty state */}
       {isLoading ? (
-  <div className="flex items-center justify-center py-16">
-    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-  </div>
-) : agreements.length === 0 ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
+      ) : agreements.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <FileText className="w-12 h-12 mx-auto text-slate-300 mb-3" />
@@ -468,6 +483,10 @@ export default function DealershipAgreementManagerUI() {
               a.status === "signed"
                 ? `/ViewDealershipAgreement/${a.id}`
                 : `/SignAgreement/${a.id}`;
+
+            const isSending  = submittingIds[a.id] === "send";
+            const isEmailing = submittingIds[a.id] === "email";
+            const isDeleting = submittingIds[a.id] === "delete";
 
             return (
               <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
@@ -502,7 +521,6 @@ export default function DealershipAgreementManagerUI() {
 
                     <div>
                       <span className="text-slate-500">Created:</span>
-                      {/* ✅ Fixed: store uses createdAt not created_date */}
                       <p className="text-slate-700">
                         {format(new Date(a.createdAt), "MMM d, yyyy")}
                       </p>
@@ -520,14 +538,15 @@ export default function DealershipAgreementManagerUI() {
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2">
+                    {/* Send to Dealership — draft / pending_signature only */}
                     {(a.status === "draft" || a.status === "pending_signature") ? (
                       <Button
                         size="sm"
-                        onClick={() => handleSendSigningEmail(a.id, a.email, a.status)}
                         className="bg-blue-500 hover:bg-blue-600"
-                        disabled={isSubmitting}
+                        onClick={() => handleSendSigningEmail(a.id, a.email, a.status)}
+                        disabled={isSending}
                       >
-                        {isSubmitting ? (
+                        {isSending ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         ) : (
                           <Send className="w-4 h-4 mr-2" />
@@ -536,34 +555,33 @@ export default function DealershipAgreementManagerUI() {
                       </Button>
                     ) : null}
 
-                    {/* {a.agreement_url ? ( */}
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyAgreementLink(a.id)}
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copy Link
-                        </Button>
+                    {/* Copy link */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyAgreementLink(a.id)}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy Link
+                    </Button>
 
-                        <Link href={viewHref}>
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Agreement
-                          </Button>
-                        </Link>
-                      </>
-                    {/* ) : null} */}
+                    {/* View agreement */}
+                    <Link href={viewHref}>
+                      <Button size="sm" variant="outline">
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Agreement
+                      </Button>
+                    </Link>
 
+                    {/* Send Email (Signed) — signed only */}
                     {a.status === "signed" ? (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleSendAgreementEmail(a.email)}
-                        disabled={isSubmitting}
+                        onClick={() => handleSendAgreementEmail(a.id, a.email)}
+                        disabled={isEmailing}
                       >
-                        {isSubmitting ? (
+                        {isEmailing ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         ) : (
                           <Send className="w-4 h-4 mr-2" />
@@ -572,6 +590,7 @@ export default function DealershipAgreementManagerUI() {
                       </Button>
                     ) : null}
 
+                    {/* Download PDF */}
                     <Button
                       size="sm"
                       variant="outline"
@@ -579,19 +598,30 @@ export default function DealershipAgreementManagerUI() {
                       disabled={downloadingId === a.id}
                     >
                       {downloadingId === a.id ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Downloading...</>
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Downloading...
+                        </>
                       ) : (
-                        <><FileText className="w-4 h-4 mr-2" />Download PDF</>
+                        <>
+                          <FileText className="w-4 h-4 mr-2" />
+                          Download PDF
+                        </>
                       )}
                     </Button>
 
+                    {/* Delete */}
                     <Button
                       size="sm"
                       variant="destructive"
                       onClick={() => handleDelete(a.id)}
-                      disabled={isSubmitting}
+                      disabled={isDeleting}
                     >
-                      <XCircle className="w-4 h-4 mr-2" />
+                      {isDeleting ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <XCircle className="w-4 h-4 mr-2" />
+                      )}
                       Delete
                     </Button>
                   </div>
