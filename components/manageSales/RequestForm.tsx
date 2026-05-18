@@ -170,6 +170,7 @@ type FormData = {
 export type ManagedSaleRequestEditTarget = {
   id: string;
   submitted_by_user_id?: string;
+  status?: string;
   requester_contact_info?: Partial<ContactInfo>;
   vehicle_details?: Partial<VehicleDetails>;
   access_arrangements?: Partial<AccessArrangements>;
@@ -585,7 +586,7 @@ export default function RequestFormUI(props: Props) {
         access_arrangements: formData.access_arrangements,
         terms_agreed: Boolean(formData.terms_agreed),
         submitted_by_user_id: props.requestToEdit.submitted_by_user_id,
-        status: "pending_review",
+        status: props.requestToEdit.status === "pending_initial_review" ? "pending_review" : (props.requestToEdit.status || "pending_review"),
         final_sale_price_for_buyer: buyerPrice,
         service_fee_amount: fee,
         owner_receives_amount: asking,
@@ -594,8 +595,13 @@ export default function RequestFormUI(props: Props) {
       setIsSubmitting(true);
       try {
         await props.onSave(payload);
-        toast({ title: "Saved", description: "Saved to local state (UI-only)." });
-        setShowSuccessModal(true);
+        const isAdminEdit = Boolean(props.requestToEdit?.id);
+        if (isAdminEdit) {
+          toast({ title: "Details Saved", description: "Status updated to pending_review" });
+          props.onClose();
+        } else {
+          setShowSuccessModal(true);
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -2379,6 +2385,7 @@ export default function RequestFormUI(props: Props) {
               </Button>
             </div>
 
+            
             <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
                 <motion.div
@@ -2402,7 +2409,8 @@ export default function RequestFormUI(props: Props) {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => { e.preventDefault(); }}>
+              <input type="submit" style={{ display: 'none' }} disabled />
               <div className="p-6 flex-grow max-h-[60vh] overflow-y-auto">
                 <AnimatePresence mode="wait">{renderStepContent()}</AnimatePresence>
               </div>
@@ -2420,7 +2428,8 @@ export default function RequestFormUI(props: Props) {
                   </Button>
                 ) : (
                   <Button
-                    type="submit"
+                    type="button"
+                    onClick={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
                     disabled={isSubmitting || Object.keys(validationErrors).length > 0}
                     className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
                   >

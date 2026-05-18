@@ -966,7 +966,7 @@ const handleGetStarted = () => {
                       <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
                         <CheckCircle className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-sm text-slate-700">Starting at  ¥40,000/month</span>
+                      <span className="text-sm text-slate-700">Starting at  ¥39,999/month</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">

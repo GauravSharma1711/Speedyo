@@ -261,6 +261,7 @@ model Vehicle {
   condition               VehicleCondition?
   description             String?
   location                String?
+  isDirectListing         Boolean?
   fuel_type               FuelType?
   transmission            Transmission?
   primary_image           String?
@@ -552,7 +553,8 @@ model ManagedSaleRequest {
   service_fee_amount         Decimal?                     @db.Decimal(12, 2)
   owner_receives_amount      Decimal?                     @db.Decimal(12, 2)
   final_sale_price_for_buyer Decimal?                     @db.Decimal(12, 2)
-  status                     ManagedSaleStatus            @default(pending_review)
+  status                     ManagedSaleStatus            @default(pending_initial_review)
+  listing_type               ListingType                 @default(managed_sales)
   admin_notes                String?
   user_facing_notes          String?
   terms_agreed               Boolean                      @default(false)
@@ -1044,9 +1046,15 @@ enum LiaisonApplicationStatus {
   declined
 }
 
+enum ListingType {
+  managed_sales  // Speedyo handles entire sale process
+  direct         // Seller manages themselves, just needs approval
+}
+
 enum ManagedSaleStatus {
   pending_initial_review
   pending_review
+  pending_approval  // Direct listing - needs admin approval
   approved
   declined
   listed
@@ -1054,7 +1062,7 @@ enum ManagedSaleStatus {
   cancelled
   cancellation_requested
   edit_requested
-  pending_approval
+  
 }
 
 enum MessageType {

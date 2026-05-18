@@ -72,6 +72,7 @@ import type { CreateChecklistBody } from "@/services/admin/inspectionChecklistSe
 type ManagedSaleStatus =
   | "pending_initial_review"
   | "pending_review"
+  | "pending_approval"  // Direct listing - needs admin approval
   | "approved"
   | "declined"
   | "listed"
@@ -114,6 +115,7 @@ type ManagedSaleRequestRow = {
   id: string;
   created_date: string; // ISO
   status: ManagedSaleStatus;
+  listing_type?: 'managed_sales' | 'direct';
 
   submitted_by_user_id: string;
 
@@ -188,6 +190,7 @@ function getStatusBadge(status: ManagedSaleStatus) {
   > = {
     pending_initial_review: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
     pending_review: { color: "bg-amber-100 text-amber-800", icon: Clock },
+    pending_approval: { color: "bg-cyan-100 text-cyan-800", icon: Clock },
     approved: { color: "bg-emerald-100 text-emerald-800", icon: CheckCircle },
     declined: { color: "bg-red-100 text-red-800", icon: XCircle },
     listed: { color: "bg-blue-100 text-blue-800", icon: CheckCircle },
@@ -247,6 +250,7 @@ export default function ManagedSalesAdminUI() {
 
   const [activeTab, setActiveTab] = useState<"requests" | "checklists">("requests");
   const [filter, setFilter] = useState<string>("all"); // UI-only (supports "approved_and_listed")
+  const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState(search);
   const [showStats, setShowStats] = useState(false);
 
@@ -496,6 +500,10 @@ export default function ManagedSalesAdminUI() {
   const filteredRequests = useMemo(() => {
     let list = [...requests];
 
+    if (listingTypeFilter !== "all") {
+      list = list.filter((r) => r.listing_type === listingTypeFilter);
+    }
+
     if (filter !== "all") {
       if (filter === "approved_and_listed") {
         list = list.filter((r) => r.status === "approved" || r.status === "listed");
@@ -518,7 +526,7 @@ export default function ManagedSalesAdminUI() {
     }
 
     return list;
-  }, [requests, filter, searchTerm, getUserName]);
+  }, [requests, filter, listingTypeFilter, searchTerm, getUserName]);
 
   const stats = useMemo(() => {
     const counts = requests.reduce<Record<string, number>>((acc, r) => {
@@ -595,6 +603,7 @@ export default function ManagedSalesAdminUI() {
         id: String(cur.id),
         created_date: String(cur.createdAt ?? new Date().toISOString()),
         status: (cur.status ?? "pending_review") as ManagedSaleStatus,
+        listing_type: cur.listing_type ?? 'managed_sales',
         submitted_by_user_id: String(cur.submitted_by_user_id ?? cur.submittedByUser?.id ?? ""),
         created_vehicle_id: cur.created_vehicle_id ?? cur.createdVehicle?.id ?? null,
         vehicle_details: {
@@ -633,6 +642,7 @@ export default function ManagedSalesAdminUI() {
       setAdminEditTarget({
         id: String(cur.id),
         submitted_by_user_id: String(cur.submitted_by_user_id ?? cur.submittedByUser?.id ?? ""),
+        status: String(cur.status ?? ""),
         requester_contact_info: {
           full_name: String(cur.contact_full_name ?? ""),
           email: String(cur.contact_email ?? ""),
@@ -833,6 +843,20 @@ export default function ManagedSalesAdminUI() {
                 All Requests
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <Select
+                    value={listingTypeFilter}
+                    onValueChange={setListingTypeFilter}
+                  >
+                    <SelectTrigger className="w-full sm:w-[140px]">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="managed_sales">Managed Sales</SelectItem>
+                      <SelectItem value="direct">Direct Listings</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                   <Input
                     placeholder="Search by title, make, model, owner..."
                     value={searchTerm}
@@ -859,6 +883,7 @@ export default function ManagedSalesAdminUI() {
                       <SelectItem value="all">All Requests</SelectItem>
                       <SelectItem value="pending_initial_review">Needs Details</SelectItem>
                       <SelectItem value="pending_review">Pending Review</SelectItem>
+                      <SelectItem value="pending_approval">Pending Approval (Direct)</SelectItem>
                       <SelectItem value="edit_requested">Pending Edit Review</SelectItem>
                       <SelectItem value="cancellation_requested">Pending Cancellation</SelectItem>
                       <SelectItem value="approved_and_listed">Approved & Listed</SelectItem>
@@ -877,6 +902,7 @@ export default function ManagedSalesAdminUI() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-20">Image</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Vehicle</TableHead>
                       <TableHead>Owner</TableHead>
                       <TableHead>Submission Date</TableHead>
@@ -889,13 +915,13 @@ export default function ManagedSalesAdminUI() {
                   <TableBody>
                     {isLoading && filteredRequests.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
+                        <TableCell colSpan={8} className="text-center py-8">
                           <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-500" />
                         </TableCell>
                       </TableRow>
                     ) : filteredRequests.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                        <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                           No requests found matching your criteria.
                         </TableCell>
                       </TableRow>
@@ -919,6 +945,16 @@ export default function ManagedSalesAdminUI() {
                                   <ImageIcon className="w-6 h-6 text-slate-400" />
                                 )}
                               </div>
+                            </TableCell>
+
+                            <TableCell>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                request.listing_type === 'direct'
+                                  ? 'bg-cyan-100 text-cyan-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {request.listing_type === 'direct' ? 'Direct' : 'Managed'}
+                              </span>
                             </TableCell>
 
                             <TableCell className="font-medium text-slate-900">
@@ -1004,6 +1040,14 @@ export default function ManagedSalesAdminUI() {
                                       Approve & List
                                     </DropdownMenuItem>
                                   ) : null}
+
+                                  {/* Direct Listing - Pending Approval Actions */}
+                                  {request.status === "pending_approval" && (
+                                    <DropdownMenuItem onClick={() => approveAndList(request.id)}>
+                                      <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                                      Approve & Publish
+                                    </DropdownMenuItem>
+                                  )}
 
                                   {request.status === "approved" || request.status === "listed" ? (
                                     <>
@@ -1443,7 +1487,7 @@ export default function ManagedSalesAdminUI() {
 
             fd.set("contact_full_name", payload.requester_contact_info.full_name);
             fd.set("contact_email", payload.requester_contact_info.email);
-            fd.set("contact_phone", payload.requester_contact_info.phone);
+            fd.set("contact_phone", String(payload.requester_contact_info.phone || ""));
 
             fd.set("vehicle_title", payload.vehicle_details.title);
             fd.set("vehicle_make", payload.vehicle_details.make);
@@ -1471,9 +1515,11 @@ export default function ManagedSalesAdminUI() {
             fd.set("vehicle_images", JSON.stringify(urls));
 
             fd.set("access_arrangements", JSON.stringify(payload.access_arrangements));
-            fd.set("terms_agreed", JSON.stringify(payload.terms_agreed));
+            fd.set("terms_agreed", String(payload.terms_agreed));
 
-            if (payload.status) fd.set("status", payload.status);
+            const currentStatus = (useManagedSaleRequestsStore.getState().current as any)?.status;
+            const newStatus = currentStatus === "pending_initial_review" ? "pending_review" : (payload.status || currentStatus);
+            if (newStatus) fd.set("status", newStatus);
 
             fd.set("final_sale_price_for_buyer", String(payload.final_sale_price_for_buyer));
             fd.set("service_fee_amount", String(payload.service_fee_amount));

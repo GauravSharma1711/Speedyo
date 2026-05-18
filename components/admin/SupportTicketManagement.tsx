@@ -165,6 +165,9 @@ export default function SupportTicketManagementUI() {
                       </SelectContent>
                     </Select>
                   </div>
+                    {isUpdating === ticket.id && (
+      <Loader2 className="w-4 h-4 animate-spin text-slate-400 flex-shrink-0" />
+    )}
                 </TableCell>
               </TableRow>
             ))}

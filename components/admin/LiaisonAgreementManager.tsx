@@ -57,7 +57,22 @@ export default function LiaisonAgreementManagerUI() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Local UI state ─────────────────────────────────────────────────────────
+  // const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittingIds, setSubmittingIds] = useState<Record<string, string>>({});
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+function setSubmitting(id: string, action: string | null) {
+  setSubmittingIds((prev) => {
+    if (action === null) {
+      const { [id]: _, ...rest } = prev;
+      return rest;
+    }
+    return { ...prev, [id]: action };
+  });
+}
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selected, setSelected] = useState<{
     agreement: liaisonAgreement;
@@ -106,6 +121,7 @@ export default function LiaisonAgreementManagerUI() {
     });
   }
 
+
   // ── Create ─────────────────────────────────────────────────────────────────
   async function handleCreateAgreement(e: React.FormEvent) {
     e.preventDefault();
@@ -150,7 +166,7 @@ export default function LiaisonAgreementManagerUI() {
 
   // ── Send email ─────────────────────────────────────────────────────────────
   async function handleSendApplicationEmail(a: liaisonAgreement) {
-    setIsSubmitting(true);
+    setSubmitting(a.id, "email");
     try {
       // TODO: wire real send API
       const res = await lisisonAgreementService.sendMail(a.id);
@@ -159,13 +175,13 @@ export default function LiaisonAgreementManagerUI() {
     } catch {
       alert("Failed to send mail!");
     } finally {
-      setIsSubmitting(false);
+       setSubmitting(a.id, null);
     }
   }
 
   // ── Download PDF ───────────────────────────────────────────────────────────
   async function handleDownloadPDF(a: liaisonAgreement) {
-    setIsSubmitting(true);
+   setSubmitting(a.id, "download");
     try {
       const application = a.application;
 
@@ -238,7 +254,7 @@ export default function LiaisonAgreementManagerUI() {
 
       toast({ title: "Downloaded", description: `Liaison_Agreement_${a.id}.html saved.` });
     } finally {
-      setIsSubmitting(false);
+     setSubmitting(a.id, null);
     }
   }
 
@@ -247,7 +263,7 @@ export default function LiaisonAgreementManagerUI() {
     const ok = window.confirm("Are you sure you want to delete this agreement? This action cannot be undone.");
     if (!ok) return;
 
-    setIsSubmitting(true);
+    setSubmitting(id, "delete");
     try {
       await deleteAgreement(id);
       await getAll();
@@ -259,7 +275,7 @@ export default function LiaisonAgreementManagerUI() {
         variant: "destructive",
       });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(id, null);
     }
   }
 
@@ -360,7 +376,17 @@ export default function LiaisonAgreementManagerUI() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {agreements?.map((a) => (
+          {agreements?.map((a) => {
+
+
+  const isSending     = submittingIds[a.id] === "email";
+  const isDownloading = submittingIds[a.id] === "download";
+  const isDeleting    = submittingIds[a.id] === "delete";
+
+
+
+return (
+
             <Card key={a.id} className="hover:shadow-lg transition-all duration-200">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
@@ -427,18 +453,21 @@ export default function LiaisonAgreementManagerUI() {
 
 
                   {a.status === "signed" ? (
-                    <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(a)} disabled={isSubmitting}>
-                      <Download className="w-4 h-4 mr-2" />Download PDF
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(a)} disabled={isDownloading}>
+                      {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+  {isDownloading ? "Downloading..." : "Download PDF"}
                     </Button>
                   ) : null}
 
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)} disabled={isSubmitting}>
-                    <XCircle className="w-4 h-4 mr-2" />Delete
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(a.id)} disabled={isDeleting}>
+                     {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
+  {isDeleting ? "Deleting..." : "Delete"}
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
+         );
+      })}
         </div>
       )}
 

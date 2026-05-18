@@ -159,9 +159,8 @@ export default function FeedbackManagementUI() {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`w-4 h-4 ${
-              star <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300"
-            }`}
+            className={`w-4 h-4 ${star <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300"
+              }`}
           />
         ))}
         <span className="ml-2 text-sm text-slate-600">({rating}/5)</span>
@@ -453,7 +452,7 @@ export default function FeedbackManagementUI() {
           ) : null}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDetailsModal(false)}>
+            <Button variant="outline" onClick={() => setShowDetailsModal(false)} disabled={isSaving}>
               Cancel
             </Button>
             <Button onClick={() => void handleUpdateFeedback()} disabled={isSaving}>

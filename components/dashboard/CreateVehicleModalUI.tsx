@@ -59,6 +59,7 @@ export type CreateVehiclePatch = {
 
 type Props = {
   isOpen: boolean;
+     isDirectListing?: boolean; 
   onClose: () => void;
   vehicleToEdit?: Vehicle | null;
   onSave: (patch: CreateVehiclePatch) => void | Promise<void>;
@@ -74,12 +75,20 @@ export default function CreateVehicleModalUI({
   onClose,
   vehicleToEdit,
   onSave,
-  isSubmitting,
+  isSubmitting: parentSubmitting,
+  isDirectListing = false,
 }: Props) {
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
+
+    const [localSubmitting, setLocalSubmitting] = useState(false);
+  const [uploadLabel, setUploadLabel] = useState<string>("");
+ 
+  
+  const isBusy = localSubmitting || Boolean(parentSubmitting);
+ 
 
   const [formData, setFormData] = useState<{
     make: string;
@@ -113,7 +122,7 @@ export default function CreateVehicleModalUI({
     imageFiles: [],
   });
 
-  const localLoading = Boolean(isSubmitting);
+  // const localLoading = Boolean(isSubmitting);
 
   const steps = useMemo(
     () => [
@@ -296,31 +305,37 @@ export default function CreateVehicleModalUI({
   };
 
   const handleSubmit = async () => {
-    const year = Number(formData.year || 0);
-    const price = Number(formData.price || 0);
-    const mileage = Number(formData.mileage || 0);
+       setLocalSubmitting(true);
+    setUploadLabel("");
 
-    const title = `${year || ""} ${formData.make} ${formData.model}`.trim();
-
-    // Upload new images (blob URLs) to server
-    let finalImages: string[] = [];
-    let finalPrimary: string | null = null;
-
-    if (formData.imageFiles.length > 0) {
-      toast({ title: "Uploading images...", description: "Please wait" });
-
-      const uploadPromises = formData.imageFiles.map(async (file) => {
-        const formDataUpload = new FormData();
-        formDataUpload.append("file", file);
-
-        const res = await fetch("/api/upload/uploadImage", {
-          method: "POST",
-          body: formDataUpload,
-        });
-
-        if (!res.ok) throw new Error("Image upload failed");
-        const data = await res.json();
-        return data.url; // large image URL
+   try {
+     
+     const year = Number(formData.year || 0);
+     const price = Number(formData.price || 0);
+     const mileage = Number(formData.mileage || 0);
+ 
+     const title = `${year || ""} ${formData.make} ${formData.model}`.trim();
+ 
+     // Upload new images (blob URLs) to server
+     let finalImages: string[] = [];
+     let finalPrimary: string | null = null;
+ 
+     if (formData.imageFiles.length > 0) {
+       toast({ title: "Uploading images...", description: "Please wait" });
+ 
+       const uploadPromises = formData.imageFiles.map(async (file) => {
+         const formDataUpload = new FormData();
+         formDataUpload.append("file", file);
+ 
+         const res = await fetch("/api/upload/uploadImage", {
+           method: "POST",
+           body: formDataUpload,
+         });
+ 
+         if (!res.ok) throw new Error("Image upload failed");
+         const data = await res.json();
+         return data.url; // large image URL
+  
       });
 
       try {
@@ -365,6 +380,16 @@ export default function CreateVehicleModalUI({
       description: "Saved successfully.",
     });
     onClose();
+  }catch (err: any) {
+      toast({
+        title: "Error",
+        description: err?.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLocalSubmitting(false);
+      setUploadLabel("");
+    }
   };
 
   const renderStepContent = () => {
@@ -652,7 +677,7 @@ export default function CreateVehicleModalUI({
                               size="icon"
                               className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => removeImage(index)}
-                              disabled={localLoading}
+                              disabled={isBusy}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -713,6 +738,8 @@ export default function CreateVehicleModalUI({
         <DialogTitle className="sr-only">
           {vehicleToEdit ? "Edit Vehicle Listing" : "Create New Vehicle Listing"}
         </DialogTitle>
+ 
+        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white p-6 rounded-t-lg">
           <div className="flex items-center gap-3">
             <div>
@@ -725,7 +752,8 @@ export default function CreateVehicleModalUI({
             </div>
           </div>
         </div>
-
+ 
+        {/* Step indicators */}
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center justify-between">
             {steps.map((step, index) => (
@@ -743,43 +771,53 @@ export default function CreateVehicleModalUI({
                     )}
                   </div>
                   <div className="ml-3 hidden sm:block">
-                    <p className={`text-sm font-medium ${currentStep >= step.number ? "text-slate-900" : "text-slate-500"}`}>
+                    <p
+                      className={`text-sm font-medium ${
+                        currentStep >= step.number ? "text-slate-900" : "text-slate-500"
+                      }`}
+                    >
                       {step.title}
                     </p>
                     <p className="text-xs text-slate-500">{step.description}</p>
                   </div>
                 </div>
                 {index < steps.length - 1 ? (
-                  <div className={`w-8 sm:w-16 h-0.5 mx-4 ${currentStep > step.number ? "bg-blue-600" : "bg-slate-200"}`} />
+                  <div
+                    className={`w-8 sm:w-16 h-0.5 mx-4 ${
+                      currentStep > step.number ? "bg-blue-600" : "bg-slate-200"
+                    }`}
+                  />
                 ) : null}
               </div>
             ))}
           </div>
         </div>
-
+ 
+        {/* Step content */}
         <div className="flex-1 overflow-y-auto p-6">{renderStepContent()}</div>
-
+ 
+        {/* Footer */}
         <div className="p-6 border-t bg-slate-50 flex justify-between items-center">
           <div>
             {currentStep > 1 ? (
-              <Button type="button" variant="outline" onClick={handlePrevious} disabled={localLoading || isUploading}>
+              <Button type="button" variant="outline" onClick={handlePrevious} disabled={isBusy}>
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Previous
               </Button>
             ) : null}
           </div>
-
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={onClose} disabled={localLoading || isUploading}>
+ 
+          <div className="flex items-center gap-3">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isBusy}>
               Cancel
             </Button>
-
+ 
             {currentStep < totalSteps ? (
               <Button
                 type="button"
                 onClick={handleNext}
                 className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
-                disabled={!validateStep(currentStep) || localLoading || isUploading}
+                disabled={!validateStep(currentStep) || isBusy}
               >
                 Next
                 <ChevronRight className="w-4 h-4 ml-2" />
@@ -788,11 +826,19 @@ export default function CreateVehicleModalUI({
               <Button
                 type="button"
                 onClick={handleSubmit}
-                disabled={localLoading || isUploading}
-                className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600"
+                disabled={isBusy}
+                className="bg-gradient-to-r from-blue-500 to-emerald-500 hover:from-blue-600 hover:to-emerald-600 min-w-[140px]"
               >
-                {localLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {vehicleToEdit ? "Update Listing" : "Create Listing"}
+                {isBusy ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    {uploadLabel || "Saving…"}
+                  </>
+                ) : vehicleToEdit ? (
+                  "Update Listing"
+                ) : (
+                  "Create Listing"
+                )}
               </Button>
             )}
           </div>

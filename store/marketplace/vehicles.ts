@@ -8,6 +8,7 @@ import type {
 
 export type MarketplaceVehicle = {
   id: string;
+  isDirectListing?:boolean,
   title?: string;
   make?: string;
   model?: string;
@@ -68,6 +69,7 @@ function toNumberOrUndefined(v: unknown): number | undefined {
 function normalizeVehicle(v: VehicleListItemApi): MarketplaceVehicle {
   return {
     id: v.id,
+    isDirectListing:v.isDirectListing,
     title: v.title ?? undefined,
     make: v.make ?? undefined,
     model: v.model ?? undefined,
