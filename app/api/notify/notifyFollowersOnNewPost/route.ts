@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (followersWantingEmail.length > 0) {
-      const followerEmails = followersWantingEmail.map((f) => f.email);
+      const followerEmails = followersWantingEmail.map((f) => ({ email: f.email, userId: f.id }));
       const postContent = post.content
         ? post.content.substring(0, 200) + (post.content.length > 200 ? "..." : "")
         : undefined;

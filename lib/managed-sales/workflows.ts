@@ -434,6 +434,8 @@ export async function workflowMarkSold(requestId: string, adminId: string) {
 export async function workflowApproveCancellation(requestId: string, adminId: string) {
   const msr = await prisma.managedSaleRequest.findUnique({ where: { id: requestId } });
   if (!msr) throw new Error("NOT_FOUND");
+  if (msr.status !== "cancellation_requested") throw new Error("INVALID_STATUS");
+
   const submitter = msr.submitted_by_user_id;
   const vTitle = msr.vehicle_title ?? "your listing";
 

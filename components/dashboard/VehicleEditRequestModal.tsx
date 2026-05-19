@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/TextArea";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { vehicleEditRequestService } from "@/services/vehicleEditRequestService";
 import { notificationService, userService } from "@/services/dashboard";
-import { Edit, X, AlertCircle, Send, Clock } from "lucide-react";
+import { Edit, X, AlertCircle, Send, Clock, Image as ImageIcon, Upload, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 type VehicleEditRequestModalProps = {
@@ -33,6 +33,30 @@ export default function VehicleEditRequestModal({ vehicle, isOpen, onClose, onSu
   });
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const url = URL.createObjectURL(file);
+      setEditData(prev => ({ ...prev, primary_image: url }));
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
+  const handleRemoveImage = useCallback(() => {
+    setEditData(prev => ({ ...prev, primary_image: '' }));
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,19 +86,25 @@ export default function VehicleEditRequestModal({ vehicle, isOpen, onClose, onSu
         requested_changes: changes,
       });
 
-      const adminUsers = await userService.getAdmins();
-      const notificationPromises = adminUsers.map((admin: any) =>
-        notificationService.create({
-          recipientId: admin.id,
-          senderId: currentUser.id,
-          type: "vehicle_edit_request",
-          content: `${currentUser.full_name} requested edits for "${vehicle.title}". Changes: ${Object.keys(changes).join(', ')}.`,
-          related_entity_id: vehicle.id,
-          url: "/Admin-Panel?tab=edit_requests",
-          icon: "Edit"
-        })
-      );
-      await Promise.all(notificationPromises);
+      try {
+        const adminUsers = await userService.getAdmins();
+        if (adminUsers && adminUsers.length > 0) {
+          const notificationPromises = adminUsers.map((admin: any) =>
+            notificationService.create({
+              recipientId: admin.id,
+              senderId: currentUser.id,
+              type: "vehicle_edit_request",
+              content: `${currentUser.full_name} requested edits for "${vehicle.title}". Changes: ${Object.keys(changes).join(', ')}.`,
+              related_entity_id: vehicle.id,
+              url: "/Admin-Panel?tab=edit_requests",
+              icon: "Edit"
+            })
+          );
+          await Promise.all(notificationPromises);
+        }
+      } catch (notifError) {
+        console.warn("Failed to notify admins:", notifError);
+      }
 
       onSuccess();
     } catch (error) {
@@ -88,7 +118,7 @@ export default function VehicleEditRequestModal({ vehicle, isOpen, onClose, onSu
   if (!isOpen || !vehicle) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -211,6 +241,52 @@ export default function VehicleEditRequestModal({ vehicle, isOpen, onClose, onSu
                       onChange={(e) => setEditData({...editData, location: e.target.value})}
                       placeholder="Vehicle location"
                     />
+                  </div>
+
+                  {/* Primary Image */}
+                  <div>
+                    <Label>Primary Image</Label>
+                    <input
+                      type="file"
+                      ref={imageInputRef}
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    {editData.primary_image ? (
+                      <div className="relative mt-2 border rounded-lg overflow-hidden">
+                        <img
+                          src={editData.primary_image}
+                          alt="Vehicle"
+                          className="w-full h-40 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => imageInputRef.current?.click()}
+                        className="mt-2 border-2 border-dashed border-slate-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                      >
+                        {isUploading ? (
+                          <div className="flex items-center justify-center gap-2 text-slate-500">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Uploading...</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                            <span className="text-sm text-slate-600">Click to upload new image</span>
+                            <span className="text-xs text-slate-400">JPG, PNG up to 5MB</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

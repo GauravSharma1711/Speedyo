@@ -68,6 +68,7 @@ import { useManagedSaleRequestsStore } from "@/store/admin/managedSaleRequests";
 import type { AvailabilitySlot } from "./AdminAvailabilityManager";
 import { useInspectionChecklistStore } from "@/store/admin/inspectionChecklist";
 import type { CreateChecklistBody } from "@/services/admin/inspectionChecklistService";
+import DirectListingApprovalModal from "@/components/admin/DirectListingApprovalModal";
 
 type ManagedSaleStatus =
   | "pending_initial_review"
@@ -265,6 +266,7 @@ export default function ManagedSalesAdminUI() {
   const [selectedRequest, setSelectedRequest] = useState<ManagedSaleRequestRow | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingAction, setProcessingAction] = useState<string | null>(null);
 
   const [adminEditOpen, setAdminEditOpen] = useState(false);
   const [adminEditTarget, setAdminEditTarget] = useState<ManagedSaleRequestEditTarget | null>(null);
@@ -338,6 +340,7 @@ export default function ManagedSalesAdminUI() {
         id: String(anyR.id),
         created_date: String(anyR.createdAt ?? new Date().toISOString()),
         status: (anyR.status ?? "pending_review") as ManagedSaleStatus,
+        listing_type: anyR.listing_type ?? 'managed_sales',
         submitted_by_user_id: String(anyR.submitted_by_user_id ?? anyR.submittedByUser?.id ?? ""),
         created_vehicle_id: anyR.created_vehicle_id ?? anyR.createdVehicle?.id ?? null,
         vehicle_details: {
@@ -560,21 +563,29 @@ export default function ManagedSalesAdminUI() {
 
   const approveAndList = (id: string) => {
     setIsProcessing(true);
+    setProcessingAction(`approve-${id}`);
     Promise.resolve()
       .then(() => approveAndListMsr(id, { adminNotes: adminNotes.trim() || null }))
       .then(() => toast({ title: "Listed", description: "Vehicle listing created." }))
       .catch(() => toast({ title: "Failed", description: "Could not approve & list.", variant: "destructive" }))
-      .finally(() => setIsProcessing(false));
+      .finally(() => {
+        setIsProcessing(false);
+        setProcessingAction(null);
+      });
   };
 
   const deleteRequest = (id: string) => {
     if (!window.confirm("Delete this managed sale request?")) return;
     setIsProcessing(true);
+    setProcessingAction(`delete-${id}`);
     Promise.resolve()
       .then(() => deleteMsr(id))
       .then(() => toast({ title: "Deleted", description: "" }))
       .catch(() => toast({ title: "Failed", description: "Delete failed.", variant: "destructive" }))
-      .finally(() => setIsProcessing(false));
+      .finally(() => {
+        setIsProcessing(false);
+        setProcessingAction(null);
+      });
   };
 
   const markSold = (request: ManagedSaleRequestRow) => {
@@ -585,11 +596,15 @@ export default function ManagedSalesAdminUI() {
     if (!ok) return;
 
     setIsProcessing(true);
+    setProcessingAction(`sold-${request.id}`);
     Promise.resolve()
       .then(() => markSoldMsr(request.id))
       .then(() => toast({ title: "Marked Sold", description: "" }))
       .catch(() => toast({ title: "Failed", description: "Mark sold failed.", variant: "destructive" }))
-      .finally(() => setIsProcessing(false));
+      .finally(() => {
+        setIsProcessing(false);
+        setProcessingAction(null);
+      });
   };
 
   const viewDetails = async (id: string) => {
@@ -725,6 +740,13 @@ export default function ManagedSalesAdminUI() {
 
   return (
     <div className="space-y-6">
+      {isProcessing && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+          <span className="text-sm text-blue-700 font-medium">Processing request...</span>
+        </div>
+      )}
+
       <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -863,6 +885,22 @@ export default function ManagedSalesAdminUI() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full sm:max-w-xs"
                   />
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => refresh()}
+                    disabled={isLoading}
+                    title="Refresh"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    )}
+                  </Button>
 
                   <Select
                     value={filter}
@@ -1035,24 +1073,45 @@ export default function ManagedSalesAdminUI() {
                                   )}
 
                                   {request.status === "pending_review" && !request.created_vehicle_id ? (
-                                    <DropdownMenuItem onClick={() => approveAndList(request.id)}>
-                                      <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                                    <DropdownMenuItem 
+                                      onClick={() => approveAndList(request.id)}
+                                      disabled={processingAction === `approve-${request.id}`}
+                                    >
+                                      {processingAction === `approve-${request.id}` ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin text-green-500" />
+                                      ) : (
+                                        <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                                      )}
                                       Approve & List
                                     </DropdownMenuItem>
                                   ) : null}
 
                                   {/* Direct Listing - Pending Approval Actions */}
                                   {request.status === "pending_approval" && (
-                                    <DropdownMenuItem onClick={() => approveAndList(request.id)}>
-                                      <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                                    <DropdownMenuItem 
+                                      onClick={() => approveAndList(request.id)}
+                                      disabled={processingAction === `approve-${request.id}`}
+                                    >
+                                      {processingAction === `approve-${request.id}` ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin text-green-500" />
+                                      ) : (
+                                        <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                                      )}
                                       Approve & Publish
                                     </DropdownMenuItem>
                                   )}
 
                                   {request.status === "approved" || request.status === "listed" ? (
                                     <>
-                                      <DropdownMenuItem onClick={() => markSold(request)}>
-                                        <JapaneseYenIcon className="w-4 h-4 mr-2 text-emerald-500" />
+                                      <DropdownMenuItem 
+                                        onClick={() => markSold(request)}
+                                        disabled={processingAction === `sold-${request.id}`}
+                                      >
+                                        {processingAction === `sold-${request.id}` ? (
+                                          <Loader2 className="w-4 h-4 mr-2 animate-spin text-emerald-500" />
+                                        ) : (
+                                          <JapaneseYenIcon className="w-4 h-4 mr-2 text-emerald-500" />
+                                        )}
                                         Mark as Sold
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => setAvailability(request.id)}>
@@ -1092,8 +1151,13 @@ export default function ManagedSalesAdminUI() {
                                   <DropdownMenuItem
                                     className="text-red-500"
                                     onClick={() => deleteRequest(request.id)}
+                                    disabled={processingAction === `delete-${request.id}`}
                                   >
-                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    {processingAction === `delete-${request.id}` ? (
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                    )}
                                     Delete Request
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -1397,12 +1461,19 @@ export default function ManagedSalesAdminUI() {
         }}
         onCancel={(req: any) => {
           if (!req?.id) return;
-          const reason = window.prompt("Cancellation reason (required)?") ?? "";
-          if (!reason.trim()) return;
+          const ok = window.confirm(
+            "Are you sure you want to cancel this managed sale request? This will set the request status to 'cancelled'."
+          );
+          if (!ok) return;
           setIsProcessing(true);
           Promise.resolve()
-            .then(() => declineCancellation(String(req.id), reason.trim()))
-            .then(() => toast({ title: "Cancellation declined", description: "" }))
+            .then(() => patchStatus(String(req.id), { status: "cancelled", adminNotes: adminNotes?.trim() || null }))
+            .then(() => {
+              toast({ title: "Request cancelled", description: "" });
+              setSelectedRequest(null);
+              setDetailsOpen(false);
+              refresh();
+            })
             .catch(() => toast({ title: "Failed", description: "Action failed.", variant: "destructive" }))
             .finally(() => setIsProcessing(false));
         }}
@@ -1472,6 +1543,54 @@ export default function ManagedSalesAdminUI() {
             .catch(() => toast({ title: "Failed", description: "Action failed.", variant: "destructive" }))
             .finally(() => setIsProcessing(false));
         }}
+      />
+
+      {/* Direct listing approval modal - only for direct listing requests awaiting admin approval */}
+      <DirectListingApprovalModal
+        isOpen={
+          selectedRequest !== null &&
+          selectedRequest.listing_type === "direct" &&
+          selectedRequest.status === "pending_approval"
+        }
+        request={selectedRequest ?? null}
+        onClose={() => setSelectedRequest(null)}
+        onApprove={async (id: string, notes: string) => {
+          setIsProcessing(true);
+          try {
+            // approveAndListMsr publishes the listing and updates request status
+            await approveAndListMsr(id, { adminNotes: notes?.trim() || null });
+            await refresh();
+          } catch (e) {
+            console.error("Direct listing approve failed", e);
+            throw e;
+          } finally {
+            setIsProcessing(false);
+            setSelectedRequest(null);
+          }
+        }}
+        onDecline={async (id: string, reason: string) => {
+          setIsProcessing(true);
+          try {
+            // patchStatus expects a single object payload in this store; call with minimal fields
+            await patchStatus(id, { status: "declined" });
+            await refresh();
+          } catch (e) {
+            console.error("Direct listing decline failed", e);
+            throw e;
+          } finally {
+            setIsProcessing(false);
+            setSelectedRequest(null);
+          }
+        }}
+        submitterInfo={
+          selectedRequest
+            ? {
+                full_name: getUserName(selectedRequest.submitted_by_user_id),
+                email: undefined,
+                profile_image: undefined,
+              }
+            : undefined
+        }
       />
 
       {adminEditTarget ? (

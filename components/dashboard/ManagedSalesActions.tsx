@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from "react";
@@ -232,16 +231,29 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
       {/* Edit Request Modal */}
       {showEditModal && (
         <VehicleEditRequestModal
-          vehicle={request}
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          onSuccess={() => {
-            setShowEditModal(false);
-            onUpdate();
-          }}
-          currentUser={currentUser}
-        />
-      )}
+          vehicle={
+            request.created_vehicle_id
+              ? {
+                  id: request.created_vehicle_id,
+                  title: request.vehicle_details?.title ?? undefined,
+                  price: request.vehicle_details?.seller_asking_price ?? request.vehicle_details?.price ?? undefined,
+                  description: request.vehicle_details?.description ?? undefined,
+                  mileage: request.vehicle_details?.mileage ?? undefined,
+                  condition: request.vehicle_details?.condition ?? undefined,
+                  location: request.vehicle_details?.location ?? undefined,
+                  primary_image: request.vehicle_details?.primary_image ?? undefined,
+                }
+              : null
+          }
+           isOpen={showEditModal}
+           onClose={() => setShowEditModal(false)}
+           onSuccess={() => {
+             setShowEditModal(false);
+             onUpdate();
+           }}
+           currentUser={currentUser}
+         />
+       )}
     </div>
   );
 }

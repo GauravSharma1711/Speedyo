@@ -31,13 +31,7 @@ export default function Messages() {
   const router = useRouter();;
   const { toast } = useToast();
 
-  const { data: session, status, update } = useSession();
-
-  useEffect(() => {
-  if (status === "authenticated") {
-    update(); 
-  }
-}, [status]);
+  const { data: session, status } = useSession();
 
 
   const {

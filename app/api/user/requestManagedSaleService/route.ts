@@ -3,7 +3,7 @@ import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 import { uploadFile } from "@/lib/storage/uploadFile";
-
+import { sendManagedSaleRequestSubmittedMail } from "@/helpers/sendManagedSaleRequestSubmittedMail";
 
 
 
@@ -172,10 +172,18 @@ export async function POST(req: NextRequest) {
         // Misc
         access_arrangements,
         terms_agreed:        true,
-        status:              g("status") || "pending_review",
+        status:              (g("status") as any) || "pending_review",
         submitted_by_user_id: session?.user?.id ?? null,
       },
     });
+
+    try {
+      if (contact_email && contact_full_name) {
+        await sendManagedSaleRequestSubmittedMail(contact_email.trim().toLowerCase(), contact_full_name.trim(), String(managedSaleRequest.id));
+      }
+    } catch (e) {
+      console.error("Failed to send managed sale confirmation email", e);
+    }
 
     return NextResponse.json(
       { success: true, managedSaleRequest, message: "Managed sale request submitted successfully" },

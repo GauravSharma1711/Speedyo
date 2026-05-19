@@ -95,18 +95,20 @@ export default function VehicleEditRequestManagementUI() {
       admin_notes: r.admin_notes,
       processed_by_admin: r.processed_by_admin,
       processed_at: r.processed_at,
-      requestedByUser: {
-        id: r.requestedByUser.id,
-        full_name: r.requestedByUser.full_name,
-        email: r.requestedByUser.email,
-      },
+      requestedByUser: r.requestedByUser
+        ? {
+            id: r.requestedByUser.id,
+            full_name: r.requestedByUser.full_name,
+            email: r.requestedByUser.email,
+          }
+        : { id: "", full_name: "Unknown User", email: "" },
       vehicle: r.vehicle
         ? {
-          ...r.vehicle,
-          id: r.vehicle.id,
-          title: r.vehicle.title,
-          price: r.vehicle.price,
-        }
+            ...r.vehicle,
+            id: r.vehicle.id,
+            title: r.vehicle.title,
+            price: r.vehicle.price,
+          }
         : null,
     }));
   }, [items]);
@@ -244,9 +246,27 @@ export default function VehicleEditRequestManagementUI() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Car className="w-6 h-6 text-blue-600" />
-                      </div>
+                      {request.requested_changes?.primary_image ? (
+                        <div className="w-16 h-12 rounded-lg overflow-hidden bg-slate-100">
+                          <img
+                            src={String(request.requested_changes.primary_image)}
+                            alt="Requested image"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : vehicle?.primary_image ? (
+                        <div className="w-16 h-12 rounded-lg overflow-hidden bg-slate-100">
+                          <img
+                            src={String(vehicle.primary_image)}
+                            alt={vehicle.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Car className="w-6 h-6 text-blue-600" />
+                        </div>
+                      )}
 
                       <div>
                         <CardTitle className="text-lg">
@@ -278,6 +298,38 @@ export default function VehicleEditRequestManagementUI() {
                         const showMoney = field === "price" && typeof newValue === "number";
                         const formatMoney = (v: unknown) =>
                           typeof v === "number" ? `$${v.toLocaleString()}` : renderValue(v);
+                        
+                        const showImage = field === "primary_image" && typeof newValue === "string";
+
+                        if (showImage) {
+                          return (
+                            <div key={field} className="border border-slate-200 rounded-lg p-3">
+                              <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">
+                                {field.replaceAll("_", " ")}
+                              </div>
+
+                              <div className="space-y-2">
+                                <div>
+                                  <span className="text-xs text-red-600 font-medium">Current:</span>
+                                  {currentValue ? (
+                                    <div className="mt-1 w-24 h-16 rounded overflow-hidden bg-slate-100">
+                                      <img src={String(currentValue)} alt="Current" className="w-full h-full object-cover" />
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-slate-400">No image</p>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <span className="text-xs text-green-600 font-medium">Requested:</span>
+                                  <div className="mt-1 w-24 h-16 rounded overflow-hidden bg-slate-100">
+                                    <img src={String(newValue)} alt="Requested" className="w-full h-full object-cover" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
 
                         return (
                           <div key={field} className="border border-slate-200 rounded-lg p-3">
