@@ -419,7 +419,7 @@ export default function SetupAccountDialog({ user, userDisplay, onClose, onUpdat
                 <span className="font-semibold text-emerald-800">All Set!</span>
               </div>
               <p className="text-sm text-emerald-700 mb-3">
-                Your profile is ready! You can now enjoy the full Speedio experience.
+                Your profile is ready! You can now enjoy the full Speedyo experience.
               </p>
               <Button onClick={handleCompleteSetup} className="w-full bg-emerald-500 hover:bg-emerald-600" disabled={isSaving}>
                 {isSaving ? (

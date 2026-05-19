@@ -77,7 +77,7 @@ export default function DealershipSubscriptionConfirmationEmail({
                 <tr>
                   <td style="background-color:#eff6ff; border-left:4px solid #2563eb; border-radius:4px; padding:20px 24px;">
                     <p style="margin:0; font-size:15px; color:#1e3a8a; line-height:1.7;">
-                      Your account has been upgraded to a dealership account. You can now start listing vehicles and managing your dealership on Speedio!
+                      Your account has been upgraded to a dealership account. You can now start listing vehicles and managing your dealership on Speedyo!
                     </p>
                   </td>
                 </tr>
@@ -97,7 +97,7 @@ export default function DealershipSubscriptionConfirmationEmail({
               <!-- Sign off -->
               <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.8;">
                 Best regards,<br/>
-                <strong>The Speedio Team</strong>
+                <strong>The Speedyo Team</strong>
               </p>
 
             </td>
@@ -107,7 +107,7 @@ export default function DealershipSubscriptionConfirmationEmail({
           <tr>
             <td style="padding:20px 40px; text-align:center;">
               <p style="margin:0; font-size:12px; color:#9ca3af;">
-                © ${new Date().getFullYear()} Speedio. All rights reserved.
+                © ${new Date().getFullYear()} Speedyo. All rights reserved.
               </p>
             </td>
           </tr>

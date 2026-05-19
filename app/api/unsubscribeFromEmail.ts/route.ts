@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/db/prisma";
 
-const appUrl = process.env.APP_URL || "https://speedio.app";
+const appUrl = process.env.APP_URL || "https://speedyo.app";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -136,7 +136,7 @@ function successHtml(message: string, appUrl: string): string {
           <h1>Successfully Unsubscribed</h1>
           <p>${message}</p>
           <p>You can update your email preferences anytime in your account settings.</p>
-          <a href="${appUrl}/Feed" class="button">Return to Speedio</a>
+          <a href="${appUrl}/Feed" class="button">Return to Speedyo</a>
         </div>
       </body>
     </html>

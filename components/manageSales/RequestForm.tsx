@@ -544,6 +544,16 @@ export default function RequestFormUI(props: Props) {
     [],
   );
 
+  const checkOkinawaLocation = useCallback((locationString: string) => {
+    if (!locationString) return false;
+    const lowerLocation = locationString.toLowerCase();
+    return (
+      lowerLocation.includes("okinawa") ||
+      (lowerLocation.includes("japan") && lowerLocation.includes("okinawa")) ||
+      lowerLocation.includes("沖縄")
+    );
+  }, []);
+
   const handleNext = useCallback(() => {
     if (!validateCurrentStep()) {
       toast({
@@ -553,9 +563,17 @@ export default function RequestFormUI(props: Props) {
       });
       return;
     }
-    if (currentStep === 2 && !showLocationVerification) setShowLocationVerification(true);
-    else setCurrentStep((p) => Math.min(p + 1, steps.length));
-  }, [currentStep, showLocationVerification, steps.length, toast, validateCurrentStep]);
+    if (currentStep === 2 && !showLocationVerification) {
+      const location = formData.vehicle_details.location;
+      if (location && checkOkinawaLocation(location)) {
+        setCurrentStep((p) => Math.min(p + 1, steps.length));
+        return;
+      }
+      setShowLocationVerification(true);
+      return;
+    }
+    setCurrentStep((p) => Math.min(p + 1, steps.length));
+  }, [currentStep, showLocationVerification, steps.length, toast, validateCurrentStep, formData.vehicle_details.location, checkOkinawaLocation]);
 
   const handlePrevious = useCallback(() => {
     setCurrentStep((p) => Math.max(p - 1, 1));
@@ -2049,7 +2067,7 @@ export default function RequestFormUI(props: Props) {
                   <SelectValue placeholder="Select key access method" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="direct_handover">Direct handover to Speedio Staff</SelectItem>
+                  <SelectItem value="direct_handover">Direct handover to Speedyo Staff</SelectItem>
                   <SelectItem value="lockbox">Lockbox at vehicle location</SelectItem>
                   <SelectItem value="key_dropoff">Key drop-off at specified location</SelectItem>
                   <SelectItem value="emergency_contact">Through emergency contact</SelectItem>
@@ -2134,9 +2152,19 @@ export default function RequestFormUI(props: Props) {
               </Label>
               <Input
                 id="emergency_contact_phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                pattern="\+?[0-9 ()-]{7,20}"
                 value={formData.access_arrangements.emergency_contact_phone}
                 onChange={(e) => handleInputChange("access_arrangements", "emergency_contact_phone", e.target.value)}
-                placeholder="Phone number"
+                onBlur={(e) => {
+                  // best-effort sanitization: remove extra whitespace and any characters except +, digits, space, parentheses and hyphen
+                  const raw = e.target.value || "";
+                  const sanitized = raw.replace(/\s+/g, ' ').trim().replace(/[^+0-9 ()-]/g, '');
+                  if (sanitized !== raw) handleInputChange("access_arrangements", "emergency_contact_phone", sanitized as any);
+                }}
+                placeholder={"Mobile number (e.g., +81 90 1234 5678)"}
                 className="mt-1"
               />
               {validationErrors.emergency_contact_phone ? (
@@ -2166,7 +2194,7 @@ export default function RequestFormUI(props: Props) {
             <CardContent className="p-4 pt-0">
               <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
                 <p className="text-sm text-blue-800">
-                  Providing a Power of Attorney allows Speedio to handle paperwork on your behalf.
+                  Providing a Power of Attorney allows Speedyo to handle paperwork on your behalf.
                 </p>
               </div>
 
@@ -2208,7 +2236,7 @@ export default function RequestFormUI(props: Props) {
             </CardHeader>
             <CardContent className="space-y-4 p-4 pt-0">
               <div>
-                <Label htmlFor="special_instructions">Special Instructions or Notes for Speedio</Label>
+                <Label htmlFor="special_instructions">Special Instructions or Notes for Speedyo</Label>
                 <Textarea
                   id="special_instructions"
                   value={formData.access_arrangements.special_instructions}
@@ -2317,7 +2345,7 @@ export default function RequestFormUI(props: Props) {
             />
             <div>
               <Label htmlFor="terms_agreed" className="text-sm text-blue-800 cursor-pointer">
-                I agree to Speedio's managed sale terms and service fee. <span className="text-red-500">*</span>
+                I agree to Speedyo's managed sale terms and service fee. <span className="text-red-500">*</span>
               </Label>
               {validationErrors.terms_agreed ? (
                 <p className="text-sm text-red-500 mt-1">{validationErrors.terms_agreed}</p>
@@ -2364,12 +2392,31 @@ export default function RequestFormUI(props: Props) {
   return (
     <>
       <AnimatePresence>
+        {showLocationVerification && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4"
+            onClick={() => setShowLocationVerification(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <LocationVerification
+                user={{ location: formData.vehicle_details.location }}
+                onVerificationComplete={handleLocationVerified}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 overflow-y-auto p-4"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] overflow-y-auto p-4"
         >
           <motion.div
-            initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
             className="bg-white rounded-xl shadow-2xl w-full max-w-4xl my-8 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
@@ -2450,16 +2497,6 @@ export default function RequestFormUI(props: Props) {
             </form>
           </motion.div>
         </motion.div>
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showLocationVerification ? (
-          <LocationVerification
-            location={formData.vehicle_details.location}
-            onConfirm={handleLocationVerified}
-            onCancel={() => setShowLocationVerification(false)}
-          />
-        ) : null}
       </AnimatePresence>
 
       <AnimatePresence>

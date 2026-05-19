@@ -114,7 +114,7 @@ export async function workflowApproveAndList(
 
      const messageContent = 
       `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\n` +
-      `Your vehicle is now live on Speedio with the following details:\n` +
+      `Your vehicle is now live on Speedyo with the following details:\n` +
       `• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
       `• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
       `• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
@@ -177,7 +177,7 @@ export async function workflowApproveAndList(
     //   data: {
     //     senderId: adminId,
     //     recipientId: submitter,
-    //     content: `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\nYour vehicle is now live on Speedio with the following details:\n• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
+    //     content: `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\nYour vehicle is now live on Speedyo with the following details:\n• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
     //     message_type: "system",
     //     managedSaleRequestId: requestId,
     //     vehicleId: vehicle.id,
@@ -274,7 +274,7 @@ export async function workflowPatchStatus(
         data: {
           senderId: adminId,
           recipientId: submitter,
-          content: `🎉 Great news! Your managed sale request for "${vTitle}" has been approved by our team.\n\nYour vehicle is now live on Speedio with the following details:\n• Listed Price: $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
+          content: `🎉 Great news! Your managed sale request for "${vTitle}" has been approved by our team.\n\nYour vehicle is now live on Speedyo with the following details:\n• Listed Price: $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
           message_type: "system",
           managedSaleRequestId: requestId,
           vehicleId: vehicleId!,
@@ -434,6 +434,8 @@ export async function workflowMarkSold(requestId: string, adminId: string) {
 export async function workflowApproveCancellation(requestId: string, adminId: string) {
   const msr = await prisma.managedSaleRequest.findUnique({ where: { id: requestId } });
   if (!msr) throw new Error("NOT_FOUND");
+  if (msr.status !== "cancellation_requested") throw new Error("INVALID_STATUS");
+
   const submitter = msr.submitted_by_user_id;
   const vTitle = msr.vehicle_title ?? "your listing";
 

@@ -187,7 +187,7 @@ const ManagedSaleDetailsModal = ({
         {request.user_facing_notes && (
           <div className="mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-400 mb-4">
             <p className="text-xs text-blue-800">
-              <strong>Notes from Speedio:</strong> {request.user_facing_notes}
+              <strong>Notes from Speedyo:</strong> {request.user_facing_notes}
             </p>
           </div>
         )}
@@ -1468,7 +1468,7 @@ export default function SellerDashboard() {
           badgeClass: "bg-red-100 text-red-800",
           text: "Declined",
           description:
-            "Unfortunately, we couldn't approve this request. Please check the notes from Speedio for details.",
+            "Unfortunately, we couldn't approve this request. Please check the notes from Speedyo for details.",
         };
       case "sold":
         return {
@@ -2189,7 +2189,7 @@ export default function SellerDashboard() {
                                   >
                                     {" "}
                                     {/* FIX: Changed badge color */}
-                                    Managed by Speedio
+                                    Managed by Speedyo
                                   </Badge>
                                 )}
                               </div>
@@ -2693,10 +2693,10 @@ export default function SellerDashboard() {
                             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                               <h4 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
                                 <Handshake className="w-5 h-5" />
-                                Speedio-Managed Vehicles
+                                Speedyo-Managed Vehicles
                               </h4>
                               <p className="text-sm text-emerald-700">
-                                These vehicles are managed by Speedio. We handle
+                                These vehicles are managed by Speedyo. We handle
                                 all car viewing requests, scheduling, and
                                 coordination based on the access arrangements
                                 you provided.
@@ -2732,7 +2732,7 @@ export default function SellerDashboard() {
                                         </p>
                                         <Badge className="bg-emerald-500 text-white text-xs mt-1">
                                           <Shield className="w-3 h-3 mr-1" />
-                                          Managed by Speedio
+                                          Managed by Speedyo
                                         </Badge>
                                       </div>
                                     </div>
@@ -2769,7 +2769,7 @@ export default function SellerDashboard() {
                                         }
                                       >
                                         <MessageCircle className="w-4 h-4 mr-2" />
-                                        Message Speedio
+                                        Message Speedyo
                                       </Button>
                                     </div>
                                   </div>

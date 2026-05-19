@@ -14,6 +14,7 @@ export type ManagedSaleRequestStatus =
 export type ManagedSaleRequestListItemApi = {
   id: string;
   status?: ManagedSaleRequestStatus;
+  listing_type?: 'managed_sales' | 'direct';
   createdAt?: string;
   updatedAt?: string;
 

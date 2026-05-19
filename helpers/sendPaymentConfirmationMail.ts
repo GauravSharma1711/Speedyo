@@ -2,7 +2,7 @@ import { resend } from '../lib/resend'
 import PaymentConfirmationEmail from '@/mailsTemplates/PaymentConfirmationEmail'
 
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-const appUrl = process.env.APP_URL || 'https://speedio.app'
+const appUrl = process.env.APP_URL || 'https://speedyo.app'
 
 export async function sendPaymentConfirmationMail(
   full_name: string,
@@ -16,7 +16,7 @@ export async function sendPaymentConfirmationMail(
     await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: 'Payment Confirmed - Speedio Vehicle Slots',
+      subject: 'Payment Confirmed - Speedyo Vehicle Slots',
       html: PaymentConfirmationEmail({
         full_name,
         email,

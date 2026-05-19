@@ -13,12 +13,12 @@ import Footer from "@/components/layout/Footer";
 const faqs = {
   General: [
     {
-      question: "What is Speedio?",
+      question: "What is Speedyo?",
       answer:
-        "Speedio is a comprehensive automotive marketplace and social community platform. We connect car buyers, sellers, and enthusiasts, providing powerful tools for transactions and a vibrant space for sharing automotive passion.",
+        "Speedyo is a comprehensive automotive marketplace and social community platform. We connect car buyers, sellers, and enthusiasts, providing powerful tools for transactions and a vibrant space for sharing automotive passion.",
     },
     {
-      question: "Is it free to join Speedio?",
+      question: "Is it free to join Speedyo?",
       answer:
         "Yes, creating an account, browsing listings, and participating in the community feed is completely free. We offer paid services for sellers, such as one-time listing fees for private sellers and subscription plans for dealerships.",
     },
@@ -61,7 +61,7 @@ export default function FAQPage() {
               </h1>
               <p className="text-xl text-slate-600">
                 Find answers to common questions about buying, selling, and
-                connecting on Speedio.
+                connecting on Speedyo.
               </p>
             </div>
 

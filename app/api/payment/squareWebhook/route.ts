@@ -8,7 +8,7 @@ import { sendDealershipVerificationPaymentMail } from "@/helpers/sendDealershipV
 import { sendDealershipSubscriptionConfirmationMail } from "@/helpers/sendDealershipSubscriptionConfirmationMail";
 import crypto from "crypto";
 
-const APP_URL = process.env.APP_URL || "https://speedio.app";
+const APP_URL = process.env.APP_URL || "https://speedyo.app";
 
 export async function POST(request: NextRequest) {
   let body: string;
@@ -277,18 +277,18 @@ export async function POST(request: NextRequest) {
             await resend.emails.send({
               from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
               to: sellerSub.user.email,
-              subject: "Subscription Cancelled - Speedio",
+              subject: "Subscription Cancelled - Speedyo",
               html: `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
                   <h1 style="color: #dc2626;">Subscription Deactivated</h1>
                   <p>Hi ${sellerSub.user.full_name},</p>
-                  <p>Your Speedio dealership subscription has been deactivated. If this was unexpected, please contact support or renew your subscription.</p>
+                  <p>Your Speedyo dealership subscription has been deactivated. If this was unexpected, please contact support or renew your subscription.</p>
                   <div style="text-align: center; margin: 20px 0;">
                     <a href="${APP_URL}/Subscription" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                       Renew Subscription
                     </a>
                   </div>
-                  <p>The Speedio Team</p>
+                  <p>The Speedyo Team</p>
                 </div>
               `,
             });
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
             await resend.emails.send({
               from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
               to: sellerSub.user.email,
-              subject: "Payment Failed - Speedio Subscription",
+              subject: "Payment Failed - Speedyo Subscription",
               html: `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto;">
                   <h1 style="color: #dc2626;">Payment Failed</h1>
@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
                       Update Payment Method
                     </a>
                   </div>
-                  <p>The Speedio Team</p>
+                  <p>The Speedyo Team</p>
                 </div>
               `,
             });

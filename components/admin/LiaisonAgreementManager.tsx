@@ -82,7 +82,7 @@ function setSubmitting(id: string, action: string | null) {
   const today = new Date().toISOString().split("T")[0];
 
   const [formData, setFormData] = useState<FormState>({
-    agreement_title: "Speedio Dealership Partnership Liaison Agreement",
+    agreement_title: "Speedyo Dealership Partnership Liaison Agreement",
     position_title: "Liaison Agent",
     fixed_fee_percentage: "10",
     residual_pay_percentage: "3",
@@ -110,7 +110,7 @@ function setSubmitting(id: string, action: string | null) {
 
   function resetForm() {
     setFormData({
-      agreement_title: "Speedio Dealership Partnership Liaison Agreement",
+      agreement_title: "Speedyo Dealership Partnership Liaison Agreement",
       position_title: "Liaison Agent",
       fixed_fee_percentage: "10",
       residual_pay_percentage: "3",
@@ -213,10 +213,10 @@ function setSubmitting(id: string, action: string | null) {
         </style>
       </head>
       <body>
-        <h1>${a.agreement_title || "Speedio Dealership Partnership Liaison Agreement"}</h1>
+        <h1>${a.agreement_title || "Speedyo Dealership Partnership Liaison Agreement"}</h1>
 
         <h2>Position Title</h2>
-        <p>${a.position_title || "Bilingual Dealership Liaison — Speedio Dealership Outreach Program"}</p>
+        <p>${a.position_title || "Bilingual Dealership Liaison — Speedyo Dealership Outreach Program"}</p>
 
         <h2>Compensation</h2>
         <p>Fixed Fee: ${a.fixed_fee_percentage ?? "10"}% of service fee per assisted sale</p>

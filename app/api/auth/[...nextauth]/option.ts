@@ -42,18 +42,41 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger, session }) {
       // Set on initial login
       if (user) {
-        (token as any).id = (user as any).id?.toString();
-        (token as any).isVerified = (user as any).isVerified;
-        (token as any).full_name = (user as any).full_name;
-        (token as any).role = (user as any).role;
-        (token as any).email = (user as any).email;
-        (token as any).location = (user as any).location ?? null;
-        (token as any).setup_completed = (user as any).setup_completed ?? false;
-        (token as any).user_type = (user as any).user_type ?? "guest";
-        (token as any).image = (user as any).profile_image ?? (user as any).image ?? undefined;
-        (token as any).dealership_selected_tier = (user as any).dealership_selected_tier ?? null;
-        (token as any).verification_fee_paid = (user as any).verification_fee_paid ?? false;
-        (token as any).dealership_verification_status = (user as any).dealership_verification_status ?? "not_submitted";
+        let dbUser: any = user;
+
+        // For OAuth (Facebook), find or create user in DB by email
+        if (user.email) {
+          dbUser = await prisma.user.upsert({
+            where: { email: user.email },
+            update: {
+              full_name: (user as any).name ?? undefined,
+              profile_image: (user as any).image ?? undefined,
+            },
+            create: {
+              email: user.email,
+              full_name: (user as any).name ?? null,
+              profile_image: (user as any).image ?? null,
+              password: (await import("crypto")).randomBytes(32).toString("hex"),
+              verificationCode: "",
+              verificationCodeExpiry: new Date(0),
+              isVerified: true,
+              user_type: "guest",
+            },
+          });
+        }
+
+        (token as any).id = dbUser.id?.toString();
+        (token as any).isVerified = dbUser.isVerified;
+        (token as any).full_name = dbUser.full_name;
+        (token as any).role = dbUser.role;
+        (token as any).email = dbUser.email;
+        (token as any).location = dbUser.location ?? null;
+        (token as any).setup_completed = dbUser.setup_completed ?? false;
+        (token as any).user_type = dbUser.user_type ?? "guest";
+        (token as any).image = dbUser.profile_image ?? (user as any).image ?? undefined;
+        (token as any).dealership_selected_tier = dbUser.dealership_selected_tier ?? null;
+        (token as any).verification_fee_paid = dbUser.verification_fee_paid ?? false;
+        (token as any).dealership_verification_status = dbUser.dealership_verification_status ?? "not_submitted";
       }
 
       // Always refresh from DB

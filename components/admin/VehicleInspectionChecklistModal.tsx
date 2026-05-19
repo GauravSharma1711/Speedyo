@@ -804,13 +804,13 @@ export default function VehicleInspectionChecklistModalUI(props: {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <Label>Verified by Speedio Representative</Label>
+                          <Label>Verified by Speedyo Representative</Label>
                           <Input
                             value={formData.verified_by_speedio}
                             onChange={(e) =>
                               setFormData({ ...formData, verified_by_speedio: e.target.value })
                             }
-                            placeholder="Enter Speedio representative name"
+                            placeholder="Enter Speedyo representative name"
                           />
                         </div>
 

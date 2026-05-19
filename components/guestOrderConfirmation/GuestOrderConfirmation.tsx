@@ -98,7 +98,7 @@ export default function GuestOrderConfirmation() {
                   <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">2</div>
                   <div>
                     <p className="font-semibold text-slate-800">Create Your Account</p>
-                    <p className="text-sm">Use the same email address to register on Speedio and your vehicle slots will be <strong>automatically activated</strong>!</p>
+                    <p className="text-sm">Use the same email address to register on Speedyo and your vehicle slots will be <strong>automatically activated</strong>!</p>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -128,7 +128,7 @@ export default function GuestOrderConfirmation() {
             </div>
 
             <div className="text-center text-sm text-slate-500 pt-4 border-t">
-              <p>Need help? Contact us at <a href="mailto:support@speedio.app" className="text-blue-600 hover:underline">support@speedio.app</a></p>
+              <p>Need help? Contact us at <a href="mailto:support@speedyo.app" className="text-blue-600 hover:underline">support@speedyo.app</a></p>
             </div>
           </CardContent>
         </Card>

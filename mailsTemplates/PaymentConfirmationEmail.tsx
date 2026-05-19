@@ -27,7 +27,7 @@ const formattedAmount = parseFloat(total_amount).toFixed(2);
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Payment Confirmed - Speedio Vehicle Slots</title>
+  <title>Payment Confirmed - Speedyo Vehicle Slots</title>
 </head>
 <body style="margin:0; padding:40px 0; background-color:#f0f0f0; font-family:'Inter', Helvetica, Arial, sans-serif;">
 
@@ -86,7 +86,7 @@ const formattedAmount = parseFloat(total_amount).toFixed(2);
                     <p style="margin:0 0 12px; font-size:18px; font-weight:700; color:#1e40af;">Next Steps</p>
                     <ol style="margin:0; padding-left:20px; color:#1e3a8a; font-size:15px; line-height:1.8;">
                       <li style="margin-bottom:8px;">
-                        Create your Speedio account using this email: <strong>${email}</strong>
+                        Create your Speedyo account using this email: <strong>${email}</strong>
                       </li>
                       <li style="margin-bottom:8px;">
                         Your ${quantity} vehicle ${slotLabel} will be automatically activated
@@ -116,7 +116,7 @@ const formattedAmount = parseFloat(total_amount).toFixed(2);
               </p>
               <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.8;">
                 Best regards,<br/>
-                <strong>The Speedio Team</strong>
+                <strong>The Speedyo Team</strong>
               </p>
 
             </td>
@@ -126,7 +126,7 @@ const formattedAmount = parseFloat(total_amount).toFixed(2);
           <tr>
             <td style="padding:20px 40px; text-align:center;">
               <p style="margin:0; font-size:12px; color:#9ca3af;">
-                © ${currentYear} Speedio. All rights reserved.
+                © ${currentYear} Speedyo. All rights reserved.
               </p>
             </td>
           </tr>

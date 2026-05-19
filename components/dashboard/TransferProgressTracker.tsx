@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 
 const SPEEDIO_MANAGED_STEPS = [
   { number: 1, title: 'Documents Prepared', description: 'All required documents gathered' },
-  { number: 2, title: 'LTO Inspection Completed', description: 'Government of Japan inspection by Speedio' },
+  { number: 2, title: 'LTO Inspection Completed', description: 'Government of Japan inspection by Speedyo' },
   { number: 3, title: 'PDI Insurance Purchased', description: 'Liability insurance obtained by buyer' },
   { number: 4, title: 'JSVRO Paperwork Submitted', description: 'SOFA registration paperwork filed' },
   { number: 5, title: 'Y-Plates Purchased & Installed', description: 'Military plates obtained and mounted' },
@@ -50,7 +50,7 @@ export default function TransferProgressTracker({ transfer, vehicle, compact = f
               {transfer.status === 'in_progress' ? 'In Progress' : transfer.status === 'on_hold' ? 'On Hold' : 'Completed'}
             </Badge>
             <Badge variant="outline" className="capitalize">
-              {transfer.transfer_type === 'speedio_managed' ? 'Speedio-Managed' : 'Self-Service'}
+              {transfer.transfer_type === 'speedio_managed' ? 'Speedyo-Managed' : 'Self-Service'}
             </Badge>
           </div>
           <span className="text-sm font-semibold text-slate-600">
@@ -95,7 +95,7 @@ export default function TransferProgressTracker({ transfer, vehicle, compact = f
             </Badge>
           </CardTitle>
           <Badge variant="outline" className="capitalize">
-            {transfer.transfer_type === 'speedio_managed' ? 'Speedio-Managed' : 'Self-Service'}
+            {transfer.transfer_type === 'speedio_managed' ? 'Speedyo-Managed' : 'Self-Service'}
           </Badge>
         </div>
       </CardHeader>

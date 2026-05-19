@@ -44,7 +44,7 @@ export const landingTestimonials: LandingTestimonial[] = [
     name: "Mike Rodriguez",
     role: "Pro Seller",
     content:
-      "Sold 12 vehicles this year through Speedio. The analytics and seller tools are game-changing!",
+      "Sold 12 vehicles this year through Speedyo. The analytics and seller tools are game-changing!",
     rating: 5,
   },
   {

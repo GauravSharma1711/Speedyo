@@ -108,7 +108,7 @@ export default function VehicleTransferGuide() {
                       <p className="text-blue-800 text-sm">
                         This guide covers the complete process of transferring a vehicle from
                         Japanese registration (Kanji plates) to SOFA Y-plate registration in
-                        Okinawa. Choose the appropriate guide based on whether Speedio is handling
+                        Okinawa. Choose the appropriate guide based on whether Speedyo is handling
                         the LTO inspection or if you&apos;re doing the full process yourself.
                       </p>
                     </div>
@@ -121,7 +121,7 @@ export default function VehicleTransferGuide() {
               <TabsList className="grid w-full grid-cols-2 mb-8">
                 <TabsTrigger value="speedio-managed" className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
-                  Speedio-Managed Process
+                  Speedyo-Managed Process
                 </TabsTrigger>
                 <TabsTrigger value="self-service">Self-Service Transfer</TabsTrigger>
               </TabsList>
@@ -130,10 +130,10 @@ export default function VehicleTransferGuide() {
                 <Card className="bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200">
                   <CardContent className="p-6">
                     <h3 className="text-xl font-bold text-emerald-900 mb-2">
-                      Speedio-Managed LTO Inspection Process
+                      Speedyo-Managed LTO Inspection Process
                     </h3>
                     <p className="text-emerald-800">
-                      <strong>LTO First → JSVRO Second</strong> — Speedio handles the Government of
+                      <strong>LTO First → JSVRO Second</strong> — Speedyo handles the Government of
                       Japan inspection, then you complete SOFA registration at JSVRO.
                     </p>
                   </CardContent>
@@ -185,7 +185,7 @@ export default function VehicleTransferGuide() {
                                 ],
                                 [
                                   "Road Tax Receipt (納税証明書)",
-                                  "Speedio provides if needed.",
+                                  "Speedyo provides if needed.",
                                 ],
                                 [
                                   "If Buyer Not Present: POA or permission letter",
@@ -204,17 +204,17 @@ export default function VehicleTransferGuide() {
 
                       <div>
                         <h4 className="font-semibold text-slate-800 mb-3 text-lg">
-                          B. Documents Speedio Provides
+                          B. Documents Speedyo Provides
                         </h4>
                         <p className="text-slate-600 mb-4 text-sm">
-                          Speedio will prepare all Japanese-side documents before inspection:
+                          Speedyo will prepare all Japanese-side documents before inspection:
                         </p>
                         <div className="overflow-x-auto">
                           <table className="w-full border-collapse">
                             <thead>
                               <tr className="bg-emerald-100 border-b-2 border-emerald-300">
                                 <th className="text-left py-3 px-4 font-semibold text-slate-800">
-                                  Provided by Speedio
+                                  Provided by Speedyo
                                 </th>
                                 <th className="text-left py-3 px-4 font-semibold text-slate-800">
                                   Description
@@ -223,7 +223,7 @@ export default function VehicleTransferGuide() {
                             </thead>
                             <tbody className="divide-y divide-slate-200">
                               {[
-                                ["Japanese Title (車検証)", "In Speedio's name before sale."],
+                                ["Japanese Title (車検証)", "In Speedyo's name before sale."],
                                 [
                                   "Recycled Vehicle Certificate (リサイクル券)",
                                   "Required for inspection.",
@@ -242,7 +242,7 @@ export default function VehicleTransferGuide() {
                                 ],
                                 [
                                   "Power of Attorney (委任状)",
-                                  "Allows Speedio to complete the LTO inspection.",
+                                  "Allows Speedyo to complete the LTO inspection.",
                                 ],
                               ].map(([doc, desc]) => (
                                 <tr key={doc} className="hover:bg-emerald-50/30">
@@ -269,11 +269,11 @@ export default function VehicleTransferGuide() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-3">
                         <Badge className="bg-emerald-600 text-white text-lg px-4 py-2">STEP 2</Badge>
-                        <span>LTO Inspection (Completed by Speedio)</span>
+                        <span>LTO Inspection (Completed by Speedyo)</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <p className="text-slate-600">Speedio takes the vehicle to:</p>
+                      <p className="text-slate-600">Speedyo takes the vehicle to:</p>
                       <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
                         <div className="flex items-start gap-2">
                           <MapPin className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
@@ -289,7 +289,7 @@ export default function VehicleTransferGuide() {
                       </div>
 
                       <div className="mt-4">
-                        <h5 className="font-semibold text-slate-800 mb-3">What Speedio does:</h5>
+                        <h5 className="font-semibold text-slate-800 mb-3">What Speedyo does:</h5>
                         <ul className="space-y-2">
                           {[
                             "Submits required documents",
@@ -314,14 +314,14 @@ export default function VehicleTransferGuide() {
                           </li>
                           <li className="flex items-center gap-2 text-emerald-800">
                             <CheckCircle className="w-4 h-4" />
-                            Updated Japanese Title in Speedio&apos;s name if required
+                            Updated Japanese Title in Speedyo&apos;s name if required
                           </li>
                         </ul>
                       </div>
 
                       <div className="mt-6">
                         <h5 className="font-semibold text-slate-800 mb-3">
-                          Kei Car Cost Breakdown (Paid by Speedio)
+                          Kei Car Cost Breakdown (Paid by Speedyo)
                         </h5>
                         <div className="overflow-x-auto">
                           <table className="w-full border-collapse">
@@ -434,12 +434,12 @@ export default function VehicleTransferGuide() {
                         <h5 className="font-semibold text-slate-800 mb-3">The Buyer brings:</h5>
                         <ul className="space-y-2">
                           {[
-                            "New GOJ inspection (Speedio)",
-                            "New Shaken (Speedio)",
-                            "Bill of Sale (Speedio)",
-                            "JCI (Speedio)",
+                            "New GOJ inspection (Speedyo)",
+                            "New Shaken (Speedyo)",
+                            "Bill of Sale (Speedyo)",
+                            "JCI (Speedyo)",
                             "PDI Insurance (Buyer)",
-                            "Road Tax Receipt (Speedio)",
+                            "Road Tax Receipt (Speedyo)",
                             "Military ID & Orders (Buyer)",
                           ].map((item) => (
                             <li key={item} className="flex items-start gap-3">
@@ -530,7 +530,7 @@ export default function VehicleTransferGuide() {
                       <ul className="space-y-2 mb-4">
                         {[
                           "Y-plates installed",
-                          "All documents from Speedio",
+                          "All documents from Speedyo",
                           "Road Tax Conversion Slip",
                           "SOFA PDI policy",
                         ].map((item) => (
@@ -630,20 +630,20 @@ export default function VehicleTransferGuide() {
                         </div>
                       </div>
 
-                      {/* Section B: Documents Provided by Speedio */}
+                      {/* Section B: Documents Provided by Speedyo */}
                       <div>
                         <h4 className="font-semibold text-slate-800 mb-3 text-lg">
-                          B. Documents Provided by Speedio
+                          B. Documents Provided by Speedyo
                         </h4>
                         <p className="text-slate-600 mb-4 text-sm">
-                          Speedio will prepare the following before you visit JSVRO:
+                          Speedyo will prepare the following before you visit JSVRO:
                         </p>
                         <div className="overflow-x-auto">
                           <table className="w-full border-collapse">
                             <thead>
                               <tr className="bg-emerald-100 border-b-2 border-emerald-300">
                                 <th className="text-left py-3 px-4 font-semibold text-slate-800">
-                                  Provided by Speedio
+                                  Provided by Speedyo
                                 </th>
                                 <th className="text-left py-3 px-4 font-semibold text-slate-800">
                                   Description
@@ -654,7 +654,7 @@ export default function VehicleTransferGuide() {
                               {[
                                 [
                                   "1. Japanese Title (車検証)",
-                                  "Updated into Speedio's name before transfer.",
+                                  "Updated into Speedyo's name before transfer.",
                                 ],
                                 [
                                   "2. JCI Insurance (自賠責)",
@@ -674,7 +674,7 @@ export default function VehicleTransferGuide() {
                                 ],
                                 [
                                   "6. Letter of Attorney (委任状)",
-                                  "Allowing Speedio to complete required steps.",
+                                  "Allowing Speedyo to complete required steps.",
                                 ],
                               ].map(([item, desc]) => (
                                 <tr key={item} className="hover:bg-emerald-50/30">
@@ -689,7 +689,7 @@ export default function VehicleTransferGuide() {
                         <div className="mt-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
                           <p className="text-sm text-emerald-800 font-medium">
                             <CheckCircle className="w-4 h-4 inline mr-2 text-emerald-600" />
-                            Speedio hands all these documents to the buyer before the LTO visit.
+                            Speedyo hands all these documents to the buyer before the LTO visit.
                           </p>
                         </div>
                       </div>

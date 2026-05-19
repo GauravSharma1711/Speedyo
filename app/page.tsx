@@ -424,7 +424,7 @@ const handleGetStarted = () => {
               </Card>
             </motion.div>
 
-            {/* The Speedio Solution */}
+            {/* The Speedyo Solution */}
             <motion.div
               initial="hidden"
               whileInView="visible"
@@ -437,7 +437,7 @@ const handleGetStarted = () => {
                       <Zap className="w-8 h-8 text-emerald-300" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-white mb-2">The Speedio Solution</h3>
+                      <h3 className="text-2xl font-bold text-white mb-2">The Speedyo Solution</h3>
                       <p className="text-emerald-200 font-medium">Your On-Island Sales Team</p>
                     </div>
                   </div>
@@ -492,7 +492,7 @@ const handleGetStarted = () => {
                 Ready to sell without the stress?
               </h3>
               <p className="text-blue-100 text-lg mb-8">
-                Join hundreds of service members who've successfully sold their vehicles through Speedio's Managed Sales.
+                Join hundreds of service members who've successfully sold their vehicles through Speedyo's Managed Sales.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -534,7 +534,7 @@ const handleGetStarted = () => {
         </div>
       </section>
 
-      {/* Sell Your Car with Speedio Section */}
+      {/* Sell Your Car with Speedyo Section */}
       <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -810,7 +810,7 @@ const handleGetStarted = () => {
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">How Speedyo Works</h2>
             <p className="text-xl md:text-2xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              Three simple ways to use Speedio - choose what works best for you
+              Three simple ways to use Speedyo - choose what works best for you
             </p>
           </motion.div>
 
@@ -1008,7 +1008,7 @@ const handleGetStarted = () => {
               <CardContent className="p-8">
                 <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-4">Ready to Get Started?</h3>
                 <p className="text-slate-600 mb-6 text-lg">
-                  Join thousands who trust Speedio for buying, selling, and connecting in the automotive world.
+                  Join thousands who trust Speedyo for buying, selling, and connecting in the automotive world.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
@@ -1111,7 +1111,7 @@ const handleGetStarted = () => {
             className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto"
             variants={slideInRight}>
 
-            Join Speedio today and discover why we're the preferred choice for automotive enthusiasts worldwide.
+            Join Speedyo today and discover why we're the preferred choice for automotive enthusiasts worldwide.
           </motion.p>
 
           <motion.div

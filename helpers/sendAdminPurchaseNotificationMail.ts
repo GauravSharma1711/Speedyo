@@ -15,7 +15,7 @@ export async function sendAdminPurchaseNotificationMail(
   try {
     await resend.emails.send({
       from: fromEmail,
-      to: 'admin@speedio.app',
+      to: 'admin@speedyo.app',
       subject: '🛒 New Guest Purchase Created - Private Seller Promo',
       react: AdminPurchaseNotificationEmail({
         full_name,

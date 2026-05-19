@@ -1,7 +1,7 @@
 import { resend } from '../lib/resend'
 import AdminFeedbackNotificationEmail from '@/mailsTemplates/AdminFeedbackNotificationEmail'
 
-const fromEmail = process.env.RESEND_FROM_EMAIL || 'feedback@speedio.app'
+const fromEmail = process.env.RESEND_FROM_EMAIL || 'feedback@speedyo.app'
 const adminPanelUrl = process.env.ADMIN_PANEL_URL || 'http://localhost:3000/AdminPanel'
 
 export async function sendAdminFeedbackNotificationMail(
@@ -14,7 +14,7 @@ export async function sendAdminFeedbackNotificationMail(
   try {
     await resend.emails.send({
       from: fromEmail,
-      to: 'kevin@speedio.app',
+      to: 'kevin@speedyo.app',
       subject: `New Feedback Received - ${rating}/5 Stars`,
       react: AdminFeedbackNotificationEmail({
         user_name,

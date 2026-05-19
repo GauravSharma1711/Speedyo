@@ -40,7 +40,7 @@ export default function OISTSellCar({ onBack }: OISTSellCarProps) {
               <Handshake className="w-8 h-8 text-white" />
             </div>
             <CardTitle className="text-2xl text-center">Managed Sales</CardTitle>
-            <p className="text-center text-slate-600">Let Speedio handle everything</p>
+            <p className="text-center text-slate-600">Let Speedyo handle everything</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
@@ -125,7 +125,7 @@ export default function OISTSellCar({ onBack }: OISTSellCarProps) {
               </div>
               <div>
                 <h4 className="font-semibold text-slate-800">Create Your Account</h4>
-                <p className="text-slate-600">Sign up for a Speedio account to access selling features</p>
+                <p className="text-slate-600">Sign up for a Speedyo account to access selling features</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -162,7 +162,7 @@ export default function OISTSellCar({ onBack }: OISTSellCarProps) {
             Have questions about selling your vehicle?
           </p>
           <Button asChild variant="outline">
-            <Link href="/contact">Contact Speedio Support</Link>
+            <Link href="/contact">Contact Speedyo Support</Link>
           </Button>
         </CardContent>
       </Card>

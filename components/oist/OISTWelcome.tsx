@@ -16,7 +16,7 @@ export default function OISTWelcome({ onSelectService }: OISTWelcomeProps) {
       <div className="text-center">
         <img
           src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png"
-          alt="Speedio Logo"
+          alt="Speedyo Logo"
           className="h-12 mx-auto mb-6"
         />
         <div className="relative mb-8">
@@ -41,14 +41,14 @@ export default function OISTWelcome({ onSelectService }: OISTWelcomeProps) {
         </div>
       </div>
 
-      {/* About Speedio */}
+      {/* About Speedyo */}
       <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0">
         <CardHeader>
-          <CardTitle className="text-2xl">Welcome to Speedio</CardTitle>
+          <CardTitle className="text-2xl">Welcome to Speedyo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-slate-700 leading-relaxed">
-            Whether you're new to Okinawa and looking for a reliable vehicle, or preparing to leave the island and need to sell your car, Speedio is here to help.
+            Whether you're new to Okinawa and looking for a reliable vehicle, or preparing to leave the island and need to sell your car, Speedyo is here to help.
           </p>
           <p className="text-slate-700 leading-relaxed">
             We provide comprehensive vehicle buying and selling services designed specifically for the OIST community, making your car journey in Okinawa smooth and hassle-free.
@@ -59,7 +59,7 @@ export default function OISTWelcome({ onSelectService }: OISTWelcomeProps) {
       {/* Service Selection */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-slate-800 text-center mb-6">
-          How can Speedio help you today?
+          How can Speedyo help you today?
         </h2>
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -87,7 +87,7 @@ export default function OISTWelcome({ onSelectService }: OISTWelcomeProps) {
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-3">Sell a Car</h3>
               <p className="text-slate-600 mb-4">
-                List your vehicle or let Speedio handle the entire selling process
+                List your vehicle or let Speedyo handle the entire selling process
               </p>
               <Button className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700">
                 Get Started

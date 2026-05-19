@@ -17,7 +17,7 @@ export async function sendAdminNewUserNotificationMail(
       resend.emails.send({
         from: fromEmail,
         to: adminEmail,
-        subject: '🎉 New User Registration on Speedio',
+        subject: '🎉 New User Registration on Speedyo',
         react: AdminNewUserNotificationEmail({
           full_name,
           email,

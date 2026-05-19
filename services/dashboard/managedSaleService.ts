@@ -51,6 +51,8 @@ function transformRequest(request: any): ManagedSaleRequest {
   for (const key of vehiclePrefixes) {
     if (request[`vehicle_${key}`] !== undefined) {
       vehicleDetails[key] = request[`vehicle_${key}`];
+    } else if (request[key] !== undefined) {
+      vehicleDetails[key] = request[key];
     }
   }
 

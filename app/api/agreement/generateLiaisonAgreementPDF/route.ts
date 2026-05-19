@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       "Maintain full confidentiality of all communications",
       "Assist with documentation and submission of dealership info",
       "Support communication and coordination with dealerships",
-      "Represent Speedio professionally",
+      "Represent Speedyo professionally",
     ];
 
     responsibilities.forEach((resp) => {

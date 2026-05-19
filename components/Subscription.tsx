@@ -488,7 +488,7 @@ useEffect(() => {
                   </div>
                   <div className="flex-1 text-center px-16 md:px-0">
                     <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
-                      Speedio Pricing Plans
+                      Speedyo Pricing Plans
                     </h1>
                     <p className="text-lg md:text-xl text-slate-600 mt-2">
                       Choose the plan that fits your needs

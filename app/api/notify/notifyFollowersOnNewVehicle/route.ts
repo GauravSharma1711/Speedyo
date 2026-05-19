@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (followersWantingEmail.length > 0) {
-      const followerEmails = followersWantingEmail.map((f) => f.email);
+      const followerEmails = followersWantingEmail.map((f) => ({ email: f.email, userId: f.id }));
 
    await sendNewVehicleListingMail(
   followerEmails,

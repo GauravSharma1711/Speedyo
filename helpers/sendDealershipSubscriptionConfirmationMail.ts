@@ -2,7 +2,7 @@ import { resend } from '../lib/resend'
 import DealershipSubscriptionConfirmationEmail from '@/mailsTemplates/DealershipSubscriptionConfirmationEmail'
 
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-const appUrl = process.env.APP_URL || 'https://speedio.app'
+const appUrl = process.env.APP_URL || 'https://speedyo.app'
 
 export async function sendDealershipSubscriptionConfirmationMail(
   user_email: string,

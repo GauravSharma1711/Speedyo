@@ -70,19 +70,24 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
     const { id } = await ctx.params;
 
-    const formData = await req.formData();
-    const body: Record<string, unknown> = {};
+    const contentType = req.headers.get("content-type") || "";
+    let body: Record<string, unknown> = {};
 
-    for (const [key, value] of formData.entries()) {
-      if (typeof value === "string") {
-        if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
-          try {
-            body[key] = JSON.parse(value);
-          } catch {
+    if (contentType.includes("application/json")) {
+      body = await req.json();
+    } else {
+      const formData = await req.formData();
+      for (const [key, value] of formData.entries()) {
+        if (typeof value === "string") {
+          if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+            try {
+              body[key] = JSON.parse(value);
+            } catch {
+              body[key] = value;
+            }
+          } else {
             body[key] = value;
           }
-        } else {
-          body[key] = value;
         }
       }
     }

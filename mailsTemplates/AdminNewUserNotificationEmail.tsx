@@ -23,7 +23,7 @@ export default function AdminNewUserNotificationEmail({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>New User Registration on Speedio</title>
+  <title>New User Registration on Speedyo</title>
 </head>
 <body style="margin:0; padding:40px 0; background-color:#f0f0f0; font-family:'Inter', Helvetica, Arial, sans-serif;">
 
@@ -47,7 +47,7 @@ export default function AdminNewUserNotificationEmail({
 
               <!-- Intro -->
               <p style="margin:0 0 20px; font-size:15px; color:#333333; line-height:1.6;">
-                A new user has just registered on Speedio!
+                A new user has just registered on Speedyo!
               </p>
 
               <!-- User Details Box -->

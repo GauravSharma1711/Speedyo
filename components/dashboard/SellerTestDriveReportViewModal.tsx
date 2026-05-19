@@ -94,7 +94,7 @@ export default function SellerTestDriveReportViewModal({ isOpen, onClose, activi
               </div>
               <div>
                 <Label>Completed By</Label>
-                <p className="font-mono text-xs">{details.completed_by_admin || 'Speedio Team'}</p>
+                <p className="font-mono text-xs">{details.completed_by_admin || 'Speedyo Team'}</p>
               </div>
             </CardContent>
           </Card>
@@ -122,10 +122,10 @@ export default function SellerTestDriveReportViewModal({ isOpen, onClose, activi
             </CardContent>
           </Card>
 
-          {/* Speedio Assessment */}
+          {/* Speedyo Assessment */}
           <Card className="bg-emerald-50/50 border-emerald-200">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2 text-emerald-800"><ClipboardList className="w-5 h-5"/> Speedio's Assessment</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2 text-emerald-800"><ClipboardList className="w-5 h-5"/> Speedyo's Assessment</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="p-3 bg-white rounded-md border text-sm text-slate-700 min-h-[80px]">

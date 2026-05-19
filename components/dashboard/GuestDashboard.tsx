@@ -259,12 +259,12 @@ const [isSubmitting, setIsSubmitting] = useState(false);
       return;
     }
 
-    if (window.confirm("Are you sure you want to cancel this request? This action cannot be undone.")) {
+    if (window.confirm("Are you sure you want to request cancellation? This action cannot be undone.")) {
       try {
-        // Update the ManagedSaleRequest status
+        // Update the ManagedSaleRequest status to cancellation_requested (admin will approve)
         await managedSaleService.update(requestToCancel.id, {
-          status: 'cancelled',
-          cancellation_reason: 'Cancelled by user'
+          status: 'cancellation_requested',
+          cancellation_reason: 'Cancellation requested by user'
         });
 
         // If the request was listed, also cancel the corresponding vehicle listing
@@ -406,7 +406,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
           badgeClass: "bg-amber-100 text-amber-800",
           text: "Pending Review",
           description: "Our team is reviewing your submission. We'll get back to you within 2 business days.",
-          tooltip: "Your request is waiting for review by the Speedio team. No action is needed from you right now."
+          tooltip: "Your request is waiting for review by the Speedyo team. No action is needed from you right now."
         };
       case 'approved':
         return {
@@ -430,7 +430,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
           badgeClass: "bg-red-100 text-red-800",
           text: "Declined",
           description: "Unfortunately, we couldn't approve this request. See notes for details.",
-          tooltip: "This request was declined. Please check the 'Update from Speedio' note for more information from our team."
+          tooltip: "This request was declined. Please check the 'Update from Speedyo' note for more information from our team."
         };
       case 'sold':
         return {
@@ -455,6 +455,30 @@ const [isSubmitting, setIsSubmitting] = useState(false);
           text: "Edit Requested",
           description: "Your requested changes are under review by our team. We'll update you soon.",
           tooltip: "We've received your edit request and our team is reviewing the changes."
+        };
+      case 'cancellation_requested':
+        return {
+          icon: <Clock className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-orange-100 text-orange-800",
+          text: "Cancellation Pending",
+          description: "Your cancellation request is under review by our team.",
+          tooltip: "Your cancellation request is being processed."
+        };
+      case 'pending_approval':
+        return {
+          icon: <Clock className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-yellow-100 text-yellow-800",
+          text: "Pending Approval",
+          description: "Your request is waiting for admin review.",
+          tooltip: "Your request is pending approval from our team."
+        };
+      case 'pending_initial_review':
+        return {
+          icon: <Clock className="w-3 h-3 mr-1" />,
+          badgeClass: "bg-yellow-100 text-yellow-800",
+          text: "Needs More Details",
+          description: "Please complete your request details to proceed.",
+          tooltip: "Please fill in the required vehicle information to complete your submission."
         };
       default:
         return {
@@ -894,7 +918,7 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                                             >
                                               {" "}
                                               {/* FIX: Changed badge color */}
-                                              Managed by Speedio
+                                              Managed by Speedyo
                                             </Badge>
                                           )}
                                         </div>
@@ -1279,7 +1303,7 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                         const performance = vehiclePerformance[request.id];
                         return (
                           <div key={request.id} className="space-y-4">
-                            <Card className="border border-slate-200 hover:shadow-md transition-shadow">
+                            <Card className={`border hover:shadow-md transition-shadow ${!request.vehicle_title && !request.vehicle_details?.title ? 'border-yellow-300 bg-yellow-50' : 'border-slate-200'}`}>
                               <CardContent className="p-4">
                                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                                   <div className="w-full md:w-32 h-32 md:h-24 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">
@@ -1295,7 +1319,7 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                                     {/* Title and Status */}
                                     <div className="flex items-center gap-3 mb-2">
                                       <h4 className="font-semibold text-slate-800">
-                                        {request.vehicle_details?.title || request.vehicle_title}
+                                        {(request.vehicle_details?.title || request.vehicle_title) || (request.status === 'pending_approval' || request.status === 'pending_initial_review' ? 'Incomplete Request - Please Complete Details' : 'Unknown Vehicle')}
                                       </h4>
                                       <div className="flex items-center">
                                         <Badge className={statusInfo.badgeClass}>
@@ -1319,9 +1343,11 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                                     <div className="text-sm text-slate-600 space-y-2">
                                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                                         <span>{request.vehicle_details?.year || request.vehicle_year} {request.vehicle_details?.make || request.vehicle_make} {request.vehicle_details?.model || request.vehicle_model}</span>
-                                        <span className="font-semibold text-emerald-600">
-                                          Your Price: ${request.vehicle_details?.seller_asking_price || request.seller_asking_price}
-                                        </span>
+                                        {(request.vehicle_details?.seller_asking_price || request.seller_asking_price) ? (
+                                          <span className="font-semibold text-emerald-600">
+                                            Your Price: ${Number(request.vehicle_details?.seller_asking_price || request.seller_asking_price).toLocaleString()}
+                                          </span>
+                                        ) : null}
                                       </div>
                                       <div className="flex items-center gap-2 text-xs text-slate-500">
                                         <Calendar className="w-3 h-3" />
@@ -1344,7 +1370,7 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                                     {request.user_facing_notes && (
                                       <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                                         <p className="text-sm text-blue-800">
-                                          <strong>Update from Speedio:</strong> {request.user_facing_notes}
+                                          <strong>Update from Speedyo:</strong> {request.user_facing_notes}
                                         </p>
                                       </div>
                                     )}
@@ -1356,6 +1382,21 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                                       <Eye className="w-4 h-4 mr-2" />
                                       View Details
                                     </Button>
+                                    {(request.status === 'pending_approval' || request.status === 'pending_initial_review') && !request.vehicle_title && (
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        className="w-full bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+                                        onClick={() => {
+                                          setEditingRequest(request);
+                                          setShowNewRequestModal(true);
+                                          setShowRequestDetailsModal(false);
+                                        }}
+                                      >
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Complete Details
+                                      </Button>
+                                    )}
                                     {request.status === 'listed' && request.created_vehicle_id && (
                                       <Link href={`/vehicle?id=${request.created_vehicle_id}`}>
                                         <Button size="sm" variant="outline" className="w-full">
