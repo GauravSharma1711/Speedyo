@@ -276,7 +276,7 @@ export default function SignAgreementPage() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <FileText className="w-16 h-16 mx-auto text-blue-600 mb-4" />
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">Speedio Managed Sales Service</h1>
+          <h1 className="text-4xl font-bold text-slate-800 mb-2">Speedyo Managed Sales Service</h1>
           <h2 className="text-2xl text-slate-600">Dealership Agreement</h2>
           <Badge className="mt-4 bg-amber-100 text-amber-800">Pending Signature</Badge>
         </div>
@@ -326,10 +326,10 @@ export default function SignAgreementPage() {
             <CardTitle>2. Listing Authorization</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-slate-700 mb-4">The dealership authorizes Speedio to:</p>
+            <p className="text-slate-700 mb-4">The dealership authorizes Speedyo to:</p>
             <ul className="space-y-2 text-slate-700">
               {[
-                "List this vehicle on the Speedio platform and associated marketing channels",
+                "List this vehicle on the Speedyo platform and associated marketing channels",
                 "Represent the vehicle accurately using provided information, photos, and inspection data",
                 "Communicate with potential buyers on behalf of the dealership",
                 "Schedule car viewing and handle buyer inquiries",
@@ -397,7 +397,7 @@ export default function SignAgreementPage() {
                     htmlFor="agree_terms"
                     className="text-sm text-slate-700 cursor-pointer leading-relaxed"
                   >
-                    I acknowledge that I have read and agree to the terms of this Speedio Managed Sales Service
+                    I acknowledge that I have read and agree to the terms of this Speedyo Managed Sales Service
                     Vehicle Listing Agreement. I confirm that I am authorized to sign on behalf of{" "}
                     {agreement.dealership_name} and that all information provided is accurate.
                   </label>

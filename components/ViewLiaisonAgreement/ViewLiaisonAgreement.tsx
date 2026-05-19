@@ -59,7 +59,7 @@ const MOCK_AGREEMENTS: LiaisonAgreementRow[] = [
   {
     id: "lia_001",
     status: "draft",
-    agreement_title: "Speedio Dealership Partnership Liaison Agreement",
+    agreement_title: "Speedyo Dealership Partnership Liaison Agreement",
     position_title: "Liaison Agent ",
     fixed_fee_percentage: 10,
     residual_pay_percentage: 3,
@@ -71,7 +71,7 @@ const MOCK_AGREEMENTS: LiaisonAgreementRow[] = [
   {
     id: "lia_002",
     status: "signed",
-    agreement_title: "Speedio Dealership Partnership Liaison Agreement",
+    agreement_title: "Speedyo Dealership Partnership Liaison Agreement",
     position_title: "Dealership Liaison Agent (Contract)",
     fixed_fee_percentage: 10,
     residual_pay_percentage: 2,
@@ -284,7 +284,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <FileText className="w-8 h-8" />
                 <div>
                   <CardTitle className="text-2xl">
-                    {agreement?.agreement_title || "Speedio Dealership Partnership Liaison Agreement"}
+                    {agreement?.agreement_title || "Speedyo Dealership Partnership Liaison Agreement"}
                   </CardTitle>
                   <p className="text-blue-100 mt-1">Review the agreement terms below</p>
                 </div>
@@ -297,7 +297,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <h3 className="text-lg font-semibold text-slate-800 mb-3">Purpose</h3>
                   <p className="text-slate-700">
                     This agreement defines the role, responsibilities, compensation, and expectations of the Liaison
-                    assisting Speedio with dealership communications, translation, and partnership development.
+                    assisting Speedyo with dealership communications, translation, and partnership development.
                   </p>
                 </section>
 
@@ -311,15 +311,15 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <p className="text-slate-700 mb-2">The Liaison agrees to:</p>
                   <ul className="list-disc pl-6 space-y-2 text-slate-700">
                     <li>
-                      Serve as an interpreter during meetings and communications between Speedio and Japanese dealerships.
+                      Serve as an interpreter during meetings and communications between Speedyo and Japanese dealerships.
                     </li>
                     <li>
                       Accurately translate between Japanese and English without omission, misrepresentation, or alteration of meaning.
                     </li>
-                    <li>Maintain full confidentiality of all Speedio and dealership communications.</li>
-                    <li>Assist with the documentation and submission of dealership vehicle information for listing on the Speedio platform.</li>
-                    <li>Support communication and coordination between Speedio and participating dealerships, ensuring smooth onboarding and continued engagement.</li>
-                    <li>Represent Speedio in a professional manner that upholds the company&apos;s values of integrity, trust, and transparency.</li>
+                    <li>Maintain full confidentiality of all Speedyo and dealership communications.</li>
+                    <li>Assist with the documentation and submission of dealership vehicle information for listing on the Speedyo platform.</li>
+                    <li>Support communication and coordination between Speedyo and participating dealerships, ensuring smooth onboarding and continued engagement.</li>
+                    <li>Represent Speedyo in a professional manner that upholds the company&apos;s values of integrity, trust, and transparency.</li>
                   </ul>
                 </section>
 
@@ -341,7 +341,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <p className="font-semibold mb-2">Definition of Assisted Sale:</p>
                       <p>
                         An assisted sale is defined as a dealership partnership secured through the Liaison&apos;s participation in meetings, communications,
-                        or negotiations that result in a dealership listing vehicles through Speedio&apos;s Managed Sales Service or related offerings.
+                        or negotiations that result in a dealership listing vehicles through Speedyo&apos;s Managed Sales Service or related offerings.
                       </p>
                     </div>
 
@@ -349,7 +349,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <p className="font-semibold mb-2">Eligibility Conditions:</p>
                       <p>To remain eligible for compensation and residual payments:</p>
                       <ul className="list-disc pl-6 mt-2 space-y-1">
-                        <li>The Liaison must be actively assisting Speedio within 30 calendar days prior to the sale.</li>
+                        <li>The Liaison must be actively assisting Speedyo within 30 calendar days prior to the sale.</li>
                         <li>
                           If the Liaison becomes inactive or no longer participates in dealership outreach during this period, residual payment eligibility
                           will transfer to the newly assigned Liaison responsible for the dealership.
@@ -363,10 +363,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <h3 className="text-lg font-semibold text-slate-800 mb-3">Confidentiality</h3>
                   <div className="space-y-2 text-slate-700">
                     <p>
-                      The Liaison shall not disclose or use any proprietary information regarding Speedio, its partners, dealerships, or customers for personal
+                      The Liaison shall not disclose or use any proprietary information regarding Speedyo, its partners, dealerships, or customers for personal
                       benefit or outside purposes.
                     </p>
-                    <p>All materials, data, and communications remain the exclusive property of Speedio.</p>
+                    <p>All materials, data, and communications remain the exclusive property of Speedyo.</p>
                   </div>
                 </section>
 
@@ -390,7 +390,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <strong>{agreement?.termination_notice_days || 30}</strong> days&apos; written notice.
                     </p>
                     <p>
-                      Speedio reserves the right to terminate this agreement immediately in cases of misconduct, breach of confidentiality, or misrepresentation.
+                      Speedyo reserves the right to terminate this agreement immediately in cases of misconduct, breach of confidentiality, or misrepresentation.
                     </p>
                   </div>
                 </section>
@@ -483,7 +483,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg">
                   <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(v) => setTermsAccepted(Boolean(v))} />
                   <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                    I have read and agree to the terms and conditions outlined in the Speedio Dealership Partnership Liaison Agreement above.
+                    I have read and agree to the terms and conditions outlined in the Speedyo Dealership Partnership Liaison Agreement above.
                   </Label>
                 </div>
 

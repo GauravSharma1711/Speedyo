@@ -2,7 +2,7 @@ import { resend } from '../lib/resend'
 import SlotsAddedConfirmationEmail from '@/mailsTemplates/SlotsAddedConfirmationEmail'
 
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-const appUrl = process.env.APP_URL || 'https://speedio.app'
+const appUrl = process.env.APP_URL || 'https://speedyo.app'
 
 export async function sendSlotsAddedConfirmationMail(
   email: string,
@@ -20,7 +20,7 @@ export async function sendSlotsAddedConfirmationMail(
     await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: 'Slots Added - Speedio Vehicle Slots',
+      subject: 'Slots Added - Speedyo Vehicle Slots',
       react: SlotsAddedConfirmationEmail({
         full_name,
         quantity,

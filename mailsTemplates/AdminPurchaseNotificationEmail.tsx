@@ -103,7 +103,7 @@ export default function AdminPurchaseNotificationEmail({
 
               <!-- Footer note -->
               <p style="margin:0; font-size:13px; color:#6b7280;">
-                This is an automated notification from Speedio's guest checkout system.
+                This is an automated notification from Speedyo's guest checkout system.
               </p>
 
             </td>

@@ -2067,7 +2067,7 @@ export default function RequestFormUI(props: Props) {
                   <SelectValue placeholder="Select key access method" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="direct_handover">Direct handover to Speedio Staff</SelectItem>
+                  <SelectItem value="direct_handover">Direct handover to Speedyo Staff</SelectItem>
                   <SelectItem value="lockbox">Lockbox at vehicle location</SelectItem>
                   <SelectItem value="key_dropoff">Key drop-off at specified location</SelectItem>
                   <SelectItem value="emergency_contact">Through emergency contact</SelectItem>
@@ -2194,7 +2194,7 @@ export default function RequestFormUI(props: Props) {
             <CardContent className="p-4 pt-0">
               <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
                 <p className="text-sm text-blue-800">
-                  Providing a Power of Attorney allows Speedio to handle paperwork on your behalf.
+                  Providing a Power of Attorney allows Speedyo to handle paperwork on your behalf.
                 </p>
               </div>
 
@@ -2236,7 +2236,7 @@ export default function RequestFormUI(props: Props) {
             </CardHeader>
             <CardContent className="space-y-4 p-4 pt-0">
               <div>
-                <Label htmlFor="special_instructions">Special Instructions or Notes for Speedio</Label>
+                <Label htmlFor="special_instructions">Special Instructions or Notes for Speedyo</Label>
                 <Textarea
                   id="special_instructions"
                   value={formData.access_arrangements.special_instructions}
@@ -2345,7 +2345,7 @@ export default function RequestFormUI(props: Props) {
             />
             <div>
               <Label htmlFor="terms_agreed" className="text-sm text-blue-800 cursor-pointer">
-                I agree to Speedio's managed sale terms and service fee. <span className="text-red-500">*</span>
+                I agree to Speedyo's managed sale terms and service fee. <span className="text-red-500">*</span>
               </Label>
               {validationErrors.terms_agreed ? (
                 <p className="text-sm text-red-500 mt-1">{validationErrors.terms_agreed}</p>

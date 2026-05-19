@@ -47,19 +47,19 @@ export default function LiaisonApplicationManager() {
       if (currentUser && currentUser.email) {
         const statusMessages = {
           under_review: {
-            subject: `Your application is under review - Speedio Liaison Position`,
+            subject: `Your application is under review - Speedyo Liaison Position`,
             title: "Application Under Review",
             message: "We're currently reviewing your application for the Liaison Agent position. We'll update you soon with our decision."
           },
           approved: {
-            subject: `Congratulations! Your application has been approved - Speedio Liaison Position`,
+            subject: `Congratulations! Your application has been approved - Speedyo Liaison Position`,
             title: "✅ Application Approved",
             message: "We're excited to inform you that your application has been approved! Our team will contact you shortly to discuss the next steps and onboarding process."
           },
           declined: {
-            subject: `Application Update - Speedio Liaison Position`,
+            subject: `Application Update - Speedyo Liaison Position`,
             title: "Application Status Update",
-            message: "Thank you for your interest in the Liaison Agent position. After careful consideration, we've decided to move forward with other candidates at this time. We appreciate your interest in Speedio and encourage you to apply for future opportunities."
+            message: "Thank you for your interest in the Liaison Agent position. After careful consideration, we've decided to move forward with other candidates at this time. We appreciate your interest in Speedyo and encourage you to apply for future opportunities."
           }
         };
 
@@ -68,15 +68,15 @@ export default function LiaisonApplicationManager() {
           await invokeFunction('sendEmail', {
             to: application.email,
             subject: statusInfo.subject,
-            fromName: 'Speedio Team',
-            fromAddress: 'hello@speedio.app',
+            fromName: 'Speedyo Team',
+            fromAddress: 'hello@speedyo.app',
             html: `<table width="100%" bgcolor="#f5f7fa" style="padding:20px;">
                     <tr>
                       <td align="center">
                         <table width="600" style="background:#ffffff;border-radius:12px;padding:20px;font-family:sans-serif;color:#333;">
                           <tr>
                             <td align="center" style="padding-bottom:20px;">
-                              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png" alt="Speedio" width="140">
+                              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png" alt="Speedyo" width="140">
                             </td>
                           </tr>
                           <tr>
@@ -95,7 +95,7 @@ export default function LiaisonApplicationManager() {
                           </tr>
                           <tr>
                             <td align="center" style="padding:20px;">
-                              <p style="color:#666;font-size:12px;">Questions? Contact us at kevin@speedio.app</p>
+                              <p style="color:#666;font-size:12px;">Questions? Contact us at kevin@speedyo.app</p>
                             </td>
                           </tr>
                         </table>

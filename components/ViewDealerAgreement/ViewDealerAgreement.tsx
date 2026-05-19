@@ -115,7 +115,7 @@ export default function ViewDealershipAgreementUI() {
                 <FileText className="w-8 h-8" />
                 <div>
                   <CardTitle className="text-2xl">
-                    Speedio Managed Sales Service Agreement
+                    Speedyo Managed Sales Service Agreement
                   </CardTitle>
                   <p className="text-blue-100 mt-1">Dealership Partnership Agreement</p>
                 </div>
@@ -208,9 +208,9 @@ export default function ViewDealershipAgreementUI() {
                 </CardHeader>
                 <CardContent className="prose prose-sm max-w-none">
                   <p className="text-slate-700">
-                    By signing this agreement, the dealership authorizes Speedio to list and manage
+                    By signing this agreement, the dealership authorizes Speedyo to list and manage
                     vehicle sales on their behalf. The dealership maintains ownership of all
-                    vehicles until sold, and Speedio acts as a sales agent facilitating the
+                    vehicles until sold, and Speedyo acts as a sales agent facilitating the
                     transaction.
                   </p>
                 </CardContent>

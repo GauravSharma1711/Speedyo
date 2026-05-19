@@ -1,7 +1,7 @@
 import { resend } from '../lib/resend'
 import LiaisonSendAgreementEmail from '@/mailsTemplates/LiaisonSigning'
 
-const fromEmail = process.env.RESEND_FROM_EMAIL || 'hello@speedio.app'
+const fromEmail = process.env.RESEND_FROM_EMAIL || 'hello@speedyo.app'
 
 export async function sendLiaisonSendAgreementMail(
   email: string,
@@ -16,7 +16,7 @@ export async function sendLiaisonSendAgreementMail(
     await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: 'Speedio Liaison Agreement - Review & Complete Your Application',
+      subject: 'Speedyo Liaison Agreement - Review & Complete Your Application',
       html: LiaisonSendAgreementEmail({
         full_name,
         position_title,

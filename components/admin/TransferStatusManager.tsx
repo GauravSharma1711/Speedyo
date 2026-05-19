@@ -319,7 +319,7 @@ setCreating(true);
                         </Badge>
                         <Badge variant="outline" className="capitalize">
                           {t.transfer_type === "speedio_managed"
-                            ? "Speedio-Managed"
+                            ? "Speedyo-Managed"
                             : "Self-Service"}
                         </Badge>
                         <span className="text-sm text-slate-600">
@@ -496,7 +496,7 @@ useEffect(() => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="speedio_managed">Speedio-Managed</SelectItem>
+                <SelectItem value="speedio_managed">Speedyo-Managed</SelectItem>
                 <SelectItem value="self_service">Self-Service</SelectItem>
               </SelectContent>
             </Select>

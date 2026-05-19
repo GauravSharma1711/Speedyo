@@ -163,7 +163,7 @@ export default function DealershipManagedSales() {
     () => [
       {
         number: 1,
-        title: "Dealership Contacts Speedio",
+        title: "Dealership Contacts Speedyo",
         description: "Reach out to us via the form below or email us directly.",
         icon: Phone,
       },
@@ -177,7 +177,7 @@ export default function DealershipManagedSales() {
         number: 3,
         title: "Listings Go Live",
         description:
-          "Professional listings are created on your Speedio dealership page.",
+          "Professional listings are created on your Speedyo dealership page.",
         icon: Sparkles,
       },
       {
@@ -261,7 +261,7 @@ export default function DealershipManagedSales() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-emerald-50/20">
       {/* Hero */}
       <section className="relative px-6 py-20 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://nxlgznimtbcesgofxlkv.supabase.co/storage/v1/object/public/Speedio/image_Dealership%20ManagedSalesService_hero.png')] bg-cover bg-center opacity-10" />
+        <div className="absolute inset-0 bg-[url('https://nxlgznimtbcesgofxlkv.supabase.co/storage/v1/object/public/Speedyo/image_Dealership%20ManagedSalesService_hero.png')] bg-cover bg-center opacity-10" />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-emerald-900/20" />
 
         <div className="relative mx-auto max-w-5xl text-center">
@@ -277,7 +277,7 @@ export default function DealershipManagedSales() {
               className="text-5xl lg:text-7xl font-bold text-slate-800 mb-6 leading-tight"
               variants={fadeUpVariants}
             >
-              Reach U.S. Buyers with Speedio&apos;s
+              Reach U.S. Buyers with Speedyo&apos;s
               <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
                 {" "}
                 Managed Sales Service
@@ -403,7 +403,7 @@ export default function DealershipManagedSales() {
               The Managed Sales Service for Dealerships
             </h2>
             <p className="text-xl text-slate-600 max-w-4xl mx-auto leading-relaxed">
-              Speedio bridges the gap between Japanese dealerships and American buyers. We handle
+              Speedyo bridges the gap between Japanese dealerships and American buyers. We handle
               your car listings, English translations, promotions, buyer inquiries, and even test
               drive scheduling.
             </p>
@@ -506,7 +506,7 @@ export default function DealershipManagedSales() {
             variants={fadeUpVariants}
           >
             <h2 className="text-4xl md:text-5xl font-bold text-slate-800 mb-6">
-              Why Dealerships Choose Speedio
+              Why Dealerships Choose Speedyo
             </h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">
               Join forward-thinking dealerships already reaching American buyers through our
@@ -556,7 +556,7 @@ export default function DealershipManagedSales() {
                   ))}
                 </div>
                 <p className="text-white text-xl lg:text-2xl italic mb-6 leading-relaxed">
-                  &quot;Since joining Speedio&apos;s Managed Sales Service, we&apos;ve sold 3 cars
+                  &quot;Since joining Speedyo&apos;s Managed Sales Service, we&apos;ve sold 3 cars
                   to American customers in one month! The bilingual support and promotions made
                   all the difference.&quot;
                 </p>
@@ -589,7 +589,7 @@ export default function DealershipManagedSales() {
               Ready to Connect With U.S. Buyers?
             </h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              Join Speedio&apos;s Managed Sales Service for Dealerships and reach thousands of
+              Join Speedyo&apos;s Managed Sales Service for Dealerships and reach thousands of
               buyers in Okinawa&apos;s American community. No upfront setup — just results.
             </p>
           </motion.div>
@@ -604,7 +604,7 @@ export default function DealershipManagedSales() {
               <CardHeader className="text-center border-b pb-6">
                 <CardTitle className="text-2xl flex items-center justify-center gap-2">
                   <Mail className="w-6 h-6 text-blue-500" />
-                  Contact Speedio
+                  Contact Speedyo
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-8">

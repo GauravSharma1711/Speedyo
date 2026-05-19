@@ -70,12 +70,12 @@ export async function POST(request: NextRequest) {
     doc.setFont("helvetica", "normal");
 
     const responsibilities = [
-      "Photograph vehicles listed on the Speedio platform",
+      "Photograph vehicles listed on the Speedyo platform",
       "Deliver high-quality, edited images within agreed timeframes",
       "Maintain professional conduct during all shoots",
-      "Follow Speedio photography guidelines and standards",
+      "Follow Speedyo photography guidelines and standards",
       "Maintain confidentiality of seller and buyer information",
-      "Represent Speedio professionally at all times",
+      "Represent Speedyo professionally at all times",
     ];
 
     responsibilities.forEach((resp) => {

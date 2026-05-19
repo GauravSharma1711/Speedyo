@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         currency: "JPY",
       },
       buyerEmailAddress: email,
-      note: `Speedio Guest - ${quantity} vehicle slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,
+      note: `Speedyo Guest - ${quantity} vehicle slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,
       referenceId: `guest_${Date.now()}`,
     });
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
       // Notify admin
       await sendAdminGuestPurchaseNotificationMail(
-        process.env.ADMIN_EMAIL ?? "admin@speedio.app",
+        process.env.ADMIN_EMAIL ?? "admin@speedyo.app",
         fullName,
         email,
         quantity,

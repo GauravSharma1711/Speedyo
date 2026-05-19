@@ -23,7 +23,7 @@ export default function NewPostNotificationEmail({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>${author_name} shared a new post on Speedio</title>
+  <title>${author_name} shared a new post on Speedyo</title>
 </head>
 <body style="margin:0; padding:40px 0; background-color:#f0f0f0; font-family:'Inter', Helvetica, Arial, sans-serif;">
 
@@ -47,7 +47,7 @@ export default function NewPostNotificationEmail({
 
               <!-- Intro -->
               <p style="margin:0 0 20px; font-size:15px; color:#475569; line-height:1.6;">
-                ${author_name}, someone you follow on Speedio, just shared a new post!
+                ${author_name}, someone you follow on Speedyo, just shared a new post!
               </p>
 
               <!-- Post Preview Box -->
@@ -66,7 +66,7 @@ export default function NewPostNotificationEmail({
                 <tr>
                   <td>
                     <a href="${post_url}" style="display:inline-block; background:linear-gradient(to right, #3b82f6, #10b981); color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; font-size:15px; font-weight:600;">
-                      View Post on Speedio
+                      View Post on Speedyo
                     </a>
                   </td>
                 </tr>
@@ -81,7 +81,7 @@ export default function NewPostNotificationEmail({
 
               <!-- Footer -->
               <p style="margin:0 0 8px; font-size:12px; color:#94a3b8;">
-                You're receiving this email because you follow ${author_name} on Speedio.
+                You're receiving this email because you follow ${author_name} on Speedyo.
               </p>
               <p style="margin:0; font-size:12px; color:#94a3b8;">
                 <a href="${unsubscribe_url}" style="color:#64748b; text-decoration:underline;">Unsubscribe from post notifications</a>

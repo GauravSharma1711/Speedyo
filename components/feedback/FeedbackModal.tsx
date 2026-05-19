@@ -78,7 +78,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             </div>
             <h3 className="text-2xl font-bold text-slate-800 mb-3">Thank You!</h3>
             <p className="text-slate-600 mb-6">
-              Your feedback helps us improve Speedio for everyone.
+              Your feedback helps us improve Speedyo for everyone.
             </p>
             <p className="text-sm text-slate-500">This window will close automatically...</p>
           </motion.div>
@@ -96,7 +96,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             Share Your Feedback
           </DialogTitle>
           <DialogDescription className="text-slate-600">
-            Help us improve Speedio by sharing your experience and suggestions.
+            Help us improve Speedyo by sharing your experience and suggestions.
           </DialogDescription>
         </DialogHeader>
 
@@ -104,7 +104,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           {/* Satisfaction Rating */}
           <div>
             <label className="text-sm font-semibold text-slate-700 mb-3 block">
-              How satisfied are you with Speedio?
+              How satisfied are you with Speedyo?
             </label>
             <div className="flex items-center justify-center gap-3 py-4">
               {[1, 2, 3, 4, 5].map((star) => (

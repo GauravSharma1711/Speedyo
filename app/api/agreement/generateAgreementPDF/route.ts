@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // ── Header ────────────────────────────────────────────────────
     doc.setFontSize(20);
-    doc.text("Speedio Managed Sales Service", 20, y);
+    doc.text("Speedyo Managed Sales Service", 20, y);
     nextLine(10);
     doc.setFontSize(16);
     doc.text("Vehicle Listing Agreement", 20, y);

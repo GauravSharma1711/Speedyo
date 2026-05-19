@@ -66,7 +66,7 @@ const MOCK_APPLICATIONS: PhotographerApplicationRow[] = [
     equipment: "Sony A7 series, 24-70mm, gimbal, LED panels",
     availability: "Weekends + weekday evenings",
     location_preferences: "Naha / Chatan / Ginowan",
-    motivation: "Love cars and building a portfolio with Speedio.",
+    motivation: "Love cars and building a portfolio with Speedyo.",
     sample_work_urls: [],
   },
 ];
@@ -186,7 +186,7 @@ const [sampleFiles, setSampleFiles] = useState<File[]>([]);
                   Application Submitted Successfully!
                 </h1>
                 <p className="text-slate-600 mb-6">
-                  Thank you for your interest in becoming a Speedio photographer.
+                  Thank you for your interest in becoming a Speedyo photographer.
                   Your application has been received and is under review.
                 </p>
                 <div className="bg-blue-50 p-4 rounded-lg">
@@ -286,7 +286,7 @@ sampleFiles.forEach((file) => formData.append("sample_work", file));
                 <FileText className="w-8 h-8" />
                 <div>
                   <CardTitle className="text-2xl">
-                    {agreement.agreement_title || "Speedio Photographer Partnership Agreement"}
+                    {agreement.agreement_title || "Speedyo Photographer Partnership Agreement"}
                   </CardTitle>
                   <p className="text-blue-100 mt-1">Review the agreement terms below</p>
                 </div>
@@ -299,7 +299,7 @@ sampleFiles.forEach((file) => formData.append("sample_work", file));
                   <h3 className="text-lg font-semibold text-slate-800 mb-3">Purpose</h3>
                   <p className="text-slate-700">
                     This agreement defines the role, responsibilities, compensation, and expectations of the Photographer
-                    providing automotive photography services for Speedio&apos;s managed sales vehicles.
+                    providing automotive photography services for Speedyo&apos;s managed sales vehicles.
                   </p>
                 </section>
 
@@ -312,12 +312,12 @@ sampleFiles.forEach((file) => formData.append("sample_work", file));
                   <h3 className="text-lg font-semibold text-slate-800 mb-3">Responsibilities</h3>
                   <p className="text-slate-700 mb-2">The Photographer agrees to:</p>
                   <ul className="list-disc pl-6 space-y-2 text-slate-700">
-                    <li>Provide professional automotive photography services for vehicles listed through Speedio.</li>
+                    <li>Provide professional automotive photography services for vehicles listed through Speedyo.</li>
                     <li>Deliver high-quality images that accurately represent vehicle condition and features.</li>
                     <li>Complete photo shoots within agreed timeframes and at specified locations.</li>
                     <li>Provide a comprehensive photo package including exterior, interior, engine bay, and detail shots.</li>
                     <li>Maintain professional equipment and ensure technical quality of all deliverables.</li>
-                    <li>Communicate schedule availability and coordinate with Speedio team for bookings.</li>
+                    <li>Communicate schedule availability and coordinate with Speedyo team for bookings.</li>
                   </ul>
                 </section>
 
@@ -325,11 +325,11 @@ sampleFiles.forEach((file) => formData.append("sample_work", file));
                   <h3 className="text-lg font-semibold text-slate-800 mb-3">Compensation</h3>
                   <div className="space-y-3 text-slate-700">
                     <p>
-                      <strong>Fixed Percentage:</strong> {agreement.fixed_percentage ?? 10}% of the Speedio service fee.
+                      <strong>Fixed Percentage:</strong> {agreement.fixed_percentage ?? 10}% of the Speedyo service fee.
                     </p>
                     <p><strong>Payment Timing:</strong> Paid upon successful sale of the vehicle.</p>
                     <p>
-                      <strong>Example:</strong> If Speedio charges a ¥500 service fee, you receive{" "}
+                      <strong>Example:</strong> If Speedyo charges a ¥500 service fee, you receive{" "}
                       {(((agreement.fixed_percentage ?? 10) * 5) as number).toFixed(0)}.
                     </p>
                   </div>
@@ -479,7 +479,7 @@ sampleFiles.forEach((file) => formData.append("sample_work", file));
                 <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg">
                   <Checkbox id="terms" checked={termsAccepted} onCheckedChange={(v) => setTermsAccepted(Boolean(v))} />
                   <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                    I have read and agree to the terms and conditions outlined in the Speedio Photographer Partnership Agreement above.
+                    I have read and agree to the terms and conditions outlined in the Speedyo Photographer Partnership Agreement above.
                   </Label>
                 </div>
 

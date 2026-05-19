@@ -2,7 +2,7 @@ import { resend } from '../lib/resend'
 import GuestPaymentConfirmationEmail from '@/mailsTemplates/GuestPaymentConfirmationEmail'
 
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-const appUrl = process.env.APP_URL || 'https://speedio.app'
+const appUrl = process.env.APP_URL || 'https://speedyo.app'
 
 export async function sendGuestPaymentConfirmationMail(
   guest_email: string,
@@ -15,7 +15,7 @@ export async function sendGuestPaymentConfirmationMail(
     await resend.emails.send({
       from: fromEmail,
       to: guest_email,
-      subject: '✅ Payment Confirmed - Welcome to Speedio!',
+      subject: '✅ Payment Confirmed - Welcome to Speedyo!',
       html: GuestPaymentConfirmationEmail({
         guest_name,
         guest_email,

@@ -15,7 +15,7 @@ export default function LiaisonSendAgreementEmail({
   agreement_url,
   agreement_id,
 }: LiaisonSendAgreementEmailProps): string {
-  const appUrl = process.env.APP_URL || 'https://speedio.app';
+  const appUrl = process.env.APP_URL || 'https://speedyo.app';
   const signingUrl = `${appUrl}${agreement_url}`;
 
   return `
@@ -24,7 +24,7 @@ export default function LiaisonSendAgreementEmail({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Speedio Liaison Agreement</title>
+  <title>Speedyo Liaison Agreement</title>
 </head>
 <body style="margin:0; padding:40px 0; background-color:#f0f0f0; font-family:'Inter', Helvetica, Arial, sans-serif;">
 
@@ -37,7 +37,7 @@ export default function LiaisonSendAgreementEmail({
           <tr>
             <td style="background:linear-gradient(135deg, #3b82f6 0%, #10b981 100%); border-radius:10px 10px 0 0; padding:30px 40px; text-align:center;">
               <h1 style="margin:0; font-size:28px; font-weight:700; color:#ffffff;">
-                Become a Speedio Liaison Agent 🤝
+                Become a Speedyo Liaison Agent 🤝
               </h1>
             </td>
           </tr>
@@ -51,7 +51,7 @@ export default function LiaisonSendAgreementEmail({
               </p>
 
               <p style="margin:0 0 24px; font-size:15px; color:#374151; line-height:1.7;">
-                Thank you for your interest in joining Speedio as a Liaison Agent. Please review your agreement details below and complete your application.
+                Thank you for your interest in joining Speedyo as a Liaison Agent. Please review your agreement details below and complete your application.
               </p>
 
               <!-- Agreement Details -->
@@ -93,7 +93,7 @@ export default function LiaisonSendAgreementEmail({
 
               <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.8;">
                 Best regards,<br/>
-                <strong>The Speedio Team</strong>
+                <strong>The Speedyo Team</strong>
               </p>
 
             </td>
@@ -103,7 +103,7 @@ export default function LiaisonSendAgreementEmail({
           <tr>
             <td style="padding:20px 40px; text-align:center;">
               <p style="margin:0; font-size:12px; color:#9ca3af;">
-                © ${new Date().getFullYear()} Speedio. All rights reserved.
+                © ${new Date().getFullYear()} Speedyo. All rights reserved.
               </p>
             </td>
           </tr>

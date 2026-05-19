@@ -30,10 +30,10 @@ export default function OISTBuyCar({ onBack }: OISTBuyCarProps) {
         </p>
       </div>
 
-      {/* How Speedio Helps */}
+      {/* How Speedyo Helps */}
       <Card className="bg-white/80 backdrop-blur-sm shadow-xl border-0">
         <CardHeader>
-          <CardTitle className="text-2xl">How Speedio Can Help You</CardTitle>
+          <CardTitle className="text-2xl">How Speedyo Can Help You</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
@@ -70,14 +70,14 @@ export default function OISTBuyCar({ onBack }: OISTBuyCarProps) {
 
       {/* Where to Find Vehicles */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Speedio Marketplace */}
+        {/* Speedyo Marketplace */}
         <Card className="bg-gradient-to-br from-blue-50 to-white shadow-xl border-0 flex flex-col">
           <CardContent className="p-6 flex flex-col flex-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                 <ShoppingCart className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800">Speedio Marketplace</h3>
+              <h3 className="text-xl font-bold text-slate-800">Speedyo Marketplace</h3>
             </div>
             <p className="text-slate-600 mb-6 flex-1">
               Browse our curated collection of vehicles with detailed specifications, photos, and seller information.
@@ -134,7 +134,7 @@ export default function OISTBuyCar({ onBack }: OISTBuyCarProps) {
             Need assistance with the buying process or have questions?
           </p>
           <Button asChild variant="outline">
-            <Link href="/contact">Contact Speedio Support</Link>
+            <Link href="/contact">Contact Speedyo Support</Link>
           </Button>
         </CardContent>
       </Card>

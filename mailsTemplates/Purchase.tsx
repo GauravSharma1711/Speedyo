@@ -24,7 +24,7 @@ export default function PurchaseEmail({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Your Speedio Purchase is Almost Complete!</title>
+  <title>Your Speedyo Purchase is Almost Complete!</title>
 </head>
 <body style="margin:0; padding:40px 0; background-color:#f0f0f0; font-family:'Inter', Helvetica, Arial, sans-serif;">
 
@@ -53,7 +53,7 @@ export default function PurchaseEmail({
 
               <!-- Intro -->
               <p style="margin:0 0 24px; font-size:15px; color:#333333; line-height:1.6;">
-                You're just one step away from joining Speedio as a Private Seller!
+                You're just one step away from joining Speedyo as a Private Seller!
               </p>
 
               <!-- Order Summary Box -->
@@ -101,7 +101,7 @@ export default function PurchaseEmail({
                     <ol style="margin:0; padding-left:20px; color:#333333; font-size:15px; line-height:1.8;">
                       <li style="margin-bottom:8px;">Complete your payment through Stripe's secure checkout</li>
                       <li style="margin-bottom:8px;">Receive your payment confirmation email</li>
-                      <li style="margin-bottom:8px;">Register on Speedio using this email (<strong>${email}</strong>)</li>
+                      <li style="margin-bottom:8px;">Register on Speedyo using this email (<strong>${email}</strong>)</li>
                       <li>Your slots will be automatically activated!</li>
                     </ol>
                   </td>
@@ -112,8 +112,8 @@ export default function PurchaseEmail({
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
                 <tr>
                   <td align="center">
-                    <a href="https://speedio.app" style="display:inline-block; background:linear-gradient(135deg, #2563eb 0%, #10b981 100%); color:#ffffff; padding:15px 40px; text-decoration:none; border-radius:8px; font-weight:700; font-size:16px;">
-                      Visit Speedio
+                    <a href="https://speedyo.app" style="display:inline-block; background:linear-gradient(135deg, #2563eb 0%, #10b981 100%); color:#ffffff; padding:15px 40px; text-decoration:none; border-radius:8px; font-weight:700; font-size:16px;">
+                      Visit Speedyo
                     </a>
                   </td>
                 </tr>
@@ -128,12 +128,12 @@ export default function PurchaseEmail({
 
               <!-- Support -->
               <p style="margin:0 0 10px; font-size:14px; color:#6b7280; text-align:center;">
-                Questions? Contact us at <a href="mailto:support@speedio.app" style="color:#2563eb; text-decoration:none;">support@speedio.app</a>
+                Questions? Contact us at <a href="mailto:support@speedyo.app" style="color:#2563eb; text-decoration:none;">support@speedyo.app</a>
               </p>
 
               <!-- Footer note -->
               <p style="margin:0; font-size:12px; color:#9ca3af; text-align:center;">
-                This email was sent to ${email}. You're receiving this because you started a purchase on Speedio.
+                This email was sent to ${email}. You're receiving this because you started a purchase on Speedyo.
               </p>
 
             </td>

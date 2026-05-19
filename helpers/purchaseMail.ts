@@ -15,7 +15,7 @@ export async function sendPurchaseMail(
     await resend.emails.send({
       from: fromEmail,
       to: email,
-      subject: '🚀 Your Speedio Purchase is Almost Complete!',
+      subject: '🚀 Your Speedyo Purchase is Almost Complete!',
       react: PurchaseEmail({ full_name, email, quantity, total_amount, has_promo, promo_code })
     })
 

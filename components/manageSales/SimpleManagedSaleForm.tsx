@@ -139,7 +139,7 @@ export default function SimpleManagedSaleForm({ onSuccess, onClose }: SimpleMana
           <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-slate-800 mb-2">Request Submitted!</h2>
           <p className="text-slate-600 mb-6">
-            Thank you for choosing Speedio&apos;s managed sales service. Our team will review your submission
+            Thank you for choosing Speedyo&apos;s managed sales service. Our team will review your submission
             and contact you within 24 hours to gather additional details and finalize your listing.
           </p>
           <Button onClick={() => window.location.href = "/Dashboard"} className="bg-gradient-to-r from-blue-500 to-emerald-500">

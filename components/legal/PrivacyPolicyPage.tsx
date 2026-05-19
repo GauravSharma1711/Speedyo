@@ -27,7 +27,7 @@ export default function PrivacyPolicyPage() {
             <Button asChild variant="outline" className="mb-4 md:mb-0">
               <Link href="/">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Speedio
+                Back to Speedyo
               </Link>
             </Button>
             <div className="text-sm text-slate-600">Last updated: January 15, 2025</div>
@@ -74,7 +74,7 @@ export default function PrivacyPolicyPage() {
                   <section id="introduction" className="scroll-mt-0">
                     <h2 className="text-2xl font-bold mb-4 border-b pb-2">1. Introduction</h2>
                     <p>
-                      Speedio (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to
+                      Speedyo (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to
                       protecting your privacy. This Privacy Policy explains how we collect, use,
                       disclose, and safeguard your information when you use our Service. By using
                       the Service, you consent to the data practices described in this policy. This
@@ -178,10 +178,10 @@ export default function PrivacyPolicyPage() {
                       </li>
                       <li>
                         <strong>To Protect Rights:</strong> We may disclose your information to
-                        protect the rights, property, or safety of Speedio, our users, or others.
+                        protect the rights, property, or safety of Speedyo, our users, or others.
                       </li>
                       <li>
-                        <strong>In Business Transfers:</strong> If Speedio is involved in a merger,
+                        <strong>In Business Transfers:</strong> If Speedyo is involved in a merger,
                         acquisition, or asset sale, your information may be transferred. We will
                         provide notice before your information is transferred and becomes subject
                         to a different Privacy Policy.

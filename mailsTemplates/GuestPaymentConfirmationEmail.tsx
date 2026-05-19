@@ -24,7 +24,7 @@ export default function GuestPaymentConfirmationEmail({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Payment Confirmed - Welcome to Speedio!</title>
+  <title>Payment Confirmed - Welcome to Speedyo!</title>
 </head>
 <body style="margin:0; padding:40px 0; background-color:#f0f0f0; font-family:'Inter', Helvetica, Arial, sans-serif;">
 
@@ -83,7 +83,7 @@ export default function GuestPaymentConfirmationEmail({
                     <ol style="margin:0; padding-left:20px; color:#333333; font-size:15px; line-height:2;">
                       <li>
                         <strong>Create Your Account:</strong> Visit
-                        <a href="${login_url}" style="color:#2563eb; text-decoration:none; font-weight:600;">speedio.app</a>
+                        <a href="${login_url}" style="color:#2563eb; text-decoration:none; font-weight:600;">speedyo.app</a>
                         and register using this email address (${guest_email})
                       </li>
                       <li>
@@ -111,13 +111,13 @@ export default function GuestPaymentConfirmationEmail({
               <!-- Support -->
               <p style="margin:0 0 16px; font-size:14px; color:#6b7280; line-height:1.6;">
                 If you have any questions, feel free to reach out to our support team at
-                <a href="mailto:support@speedio.app" style="color:#2563eb; text-decoration:none;">support@speedio.app</a>
+                <a href="mailto:support@speedyo.app" style="color:#2563eb; text-decoration:none;">support@speedyo.app</a>
               </p>
 
               <!-- Sign off -->
               <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.8;">
                 Best regards,<br/>
-                <strong>The Speedio Team</strong>
+                <strong>The Speedyo Team</strong>
               </p>
 
             </td>
@@ -127,7 +127,7 @@ export default function GuestPaymentConfirmationEmail({
           <tr>
             <td style="padding:20px 40px; text-align:center;">
               <p style="margin:0; font-size:12px; color:#9ca3af;">
-                © ${new Date().getFullYear()} Speedio. All rights reserved.
+                © ${new Date().getFullYear()} Speedyo. All rights reserved.
               </p>
             </td>
           </tr>

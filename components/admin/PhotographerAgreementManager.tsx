@@ -120,8 +120,8 @@ export default function PhotographerAgreementManagerUI() {
   const today = new Date().toISOString().split("T")[0];
 
   const [formData, setFormData] = useState<FormState>({
-    agreement_title: "Speedio Photographer Partnership Agreement",
-    position_title: "Automotive Photographer - Speedio Platform",
+    agreement_title: "Speedyo Photographer Partnership Agreement",
+    position_title: "Automotive Photographer - Speedyo Platform",
     fixed_percentage: "10",
     agreement_start_date: today,
     agreement_end_date: "",
@@ -151,8 +151,8 @@ export default function PhotographerAgreementManagerUI() {
 
   function resetForm() {
     setFormData({
-      agreement_title: "Speedio Photographer Partnership Agreement",
-      position_title: "Automotive Photographer - Speedio Platform",
+      agreement_title: "Speedyo Photographer Partnership Agreement",
+      position_title: "Automotive Photographer - Speedyo Platform",
       fixed_percentage: "10",
       agreement_start_date: today,
       agreement_end_date: "",
@@ -300,10 +300,10 @@ export default function PhotographerAgreementManagerUI() {
         </style>
       </head>
       <body>
-        <h1>${a.agreement_title || "Speedio Photographer Partnership Agreement"}</h1>
+        <h1>${a.agreement_title || "Speedyo Photographer Partnership Agreement"}</h1>
 
         <h2>Position Title</h2>
-        <p>${a.position_title || "Automotive Photographer - Speedio Platform"}</p>
+        <p>${a.position_title || "Automotive Photographer - Speedyo Platform"}</p>
 
         <h2>Compensation</h2>
         <p>Fixed Percentage: ${a.fixed_percentage ?? "10"}% of service fee</p>

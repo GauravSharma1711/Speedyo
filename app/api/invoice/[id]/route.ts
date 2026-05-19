@@ -41,7 +41,7 @@ export async function GET(
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("Speedio", 20, 18);
+    doc.text("Speedyo", 20, 18);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.text("Vehicle Marketplace", 20, 26);
@@ -157,7 +157,7 @@ export async function GET(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(148, 163, 184);
-    doc.text("Thank you for using Speedio.", 20, y);
+    doc.text("Thank you for using Speedyo.", 20, y);
     doc.text(`Transaction: ${invoice.transaction?.square_payment_id ?? invoice.transactionId}`, 190, y, { align: "right" });
 
     const pdfBuffer = Buffer.from(doc.output("arraybuffer"));

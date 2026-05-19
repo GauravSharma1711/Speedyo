@@ -3,7 +3,7 @@ import NewPostNotificationEmail from '@/mailsTemplates/newPostNotificationEmail'
 import prisma from '@/db/prisma'
 
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-const appUrl = process.env.APP_URL || 'https://speedio.app'
+const appUrl = process.env.APP_URL || 'https://speedyo.app'
 
 export async function sendNewPostNotificationMail(
   followerEmails: { email: string; userId: string }[],
@@ -38,7 +38,7 @@ export async function sendNewPostNotificationMail(
       return resend.emails.send({
         from: fromEmail,
         to: followerEmail,
-        subject: `${author_name} shared a new post on Speedio`,
+        subject: `${author_name} shared a new post on Speedyo`,
         react: NewPostNotificationEmail({
           author_name,
           post_content,

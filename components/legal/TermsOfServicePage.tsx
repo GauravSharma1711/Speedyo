@@ -32,7 +32,7 @@ export default function TermsOfServicePage() {
             <Button asChild variant="outline" className="mb-4 md:mb-0">
               <Link href="/">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Speedio
+                Back to Speedyo
               </Link>
             </Button>
             <div className="text-sm text-slate-600">Last updated: January 15, 2025</div>

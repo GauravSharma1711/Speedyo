@@ -747,7 +747,7 @@ export default function CreateVehicleModalUI({
                 {vehicleToEdit ? "Edit Vehicle Listing" : "Create New Vehicle Listing"}
               </h2>
               <p className="text-blue-100 text-sm mt-1">
-                {vehicleToEdit ? "Update your vehicle details" : "List your vehicle for sale on Speedio"}
+                {vehicleToEdit ? "Update your vehicle details" : "List your vehicle for sale on Speedyo"}
               </p>
             </div>
           </div>

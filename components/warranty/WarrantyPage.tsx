@@ -566,7 +566,7 @@ export default function WarrantyPage() {
           </CardContent>
         </Card>
 
-        {/* Why Choose Speedio Warranty */}
+        {/* Why Choose Speedyo Warranty */}
         <Card className="shadow-lg bg-white/80 backdrop-blur-sm mb-12">
           <CardHeader>
             <CardTitle className="text-2xl">Why Choose Speedyo Warranty?</CardTitle>

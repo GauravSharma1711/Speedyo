@@ -398,7 +398,7 @@ const [savingAssociation, setSavingAssociation] = useState(false);
                           variant="outline"
                           className="text-slate-700 border-slate-300"
                         >
-                          {vehicle.website_managed ? "Speedio Managed" : "Self Listed"}
+                          {vehicle.website_managed ? "Speedyo Managed" : "Self Listed"}
                         </Badge>
 
                         {vehicle.featured ? (

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         idempotencyKey: randomUUID(),
         amountMoney: { amount: BigInt(totalAmount), currency: CURRENCY },
         buyerEmailAddress: userEmail,
-        note: `Speedio Private Seller - ${quantity} slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,
+        note: `Speedyo Private Seller - ${quantity} slot${quantity > 1 ? "s" : ""}${hasPromo ? " (20% off)" : ""}`,
         referenceId: `private_seller_${Date.now()}`,
       });
 
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
     idempotencyKey: randomUUID(),
     amountMoney: { amount: BigInt(totalAmount), currency: CURRENCY },
     buyerEmailAddress: userEmail,
-    note: "Speedio Dealership Verification Fee",
+    note: "Speedyo Dealership Verification Fee",
     referenceId: `dealership_verification_${Date.now()}`,
   });
 

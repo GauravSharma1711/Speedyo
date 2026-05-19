@@ -132,7 +132,7 @@ export default function VehicleEditRequestModal({ vehicle, isOpen, onClose, onSu
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-800">Request Vehicle Edit</h2>
-              <p className="text-sm text-slate-600">Submit changes for Speedio team review</p>
+              <p className="text-sm text-slate-600">Submit changes for Speedyo team review</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
@@ -147,7 +147,7 @@ export default function VehicleEditRequestModal({ vehicle, isOpen, onClose, onSu
               <span className="font-medium">Managed Vehicle Edit Request</span>
             </div>
             <p className="text-sm text-amber-700">
-              This vehicle is managed by Speedio. Your edit request will be reviewed by our team and applied if approved. 
+              This vehicle is managed by Speedyo. Your edit request will be reviewed by our team and applied if approved. 
               You'll receive a notification with the decision.
             </p>
           </div>

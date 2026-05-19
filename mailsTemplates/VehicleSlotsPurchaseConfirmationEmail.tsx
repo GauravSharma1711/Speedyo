@@ -75,7 +75,7 @@ export default function VehicleSlotsPurchaseConfirmationEmail({
 
               <!-- Next Step -->
               <p style="margin:0 0 12px; font-size:15px; color:#333333; line-height:1.7;">
-                You can now list up to ${quantity} ${vehicleLabel} for sale on Speedio!
+                You can now list up to ${quantity} ${vehicleLabel} for sale on Speedyo!
               </p>
               <p style="margin:0 0 28px; font-size:15px; color:#333333; line-height:1.7;">
                 Visit your
@@ -97,7 +97,7 @@ export default function VehicleSlotsPurchaseConfirmationEmail({
               <!-- Sign off -->
               <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.8;">
                 Best regards,<br/>
-                <strong>The Speedio Team</strong>
+                <strong>The Speedyo Team</strong>
               </p>
 
             </td>
@@ -107,7 +107,7 @@ export default function VehicleSlotsPurchaseConfirmationEmail({
           <tr>
             <td style="padding:20px 40px; text-align:center;">
               <p style="margin:0; font-size:12px; color:#9ca3af;">
-                © ${new Date().getFullYear()} Speedio. All rights reserved.
+                © ${new Date().getFullYear()} Speedyo. All rights reserved.
               </p>
             </td>
           </tr>

@@ -147,7 +147,7 @@ export default function OISTTradeIn({ onBack }: OISTTradeInProps) {
               Request Submitted Successfully!
             </h2>
             <p className="text-lg text-slate-600 mb-8">
-              Thank you for your trade-in request. A Speedio representative will contact you within 24-48 hours to discuss your vehicle and provide a quote.
+              Thank you for your trade-in request. A Speedyo representative will contact you within 24-48 hours to discuss your vehicle and provide a quote.
             </p>
             <div className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4 mb-4">

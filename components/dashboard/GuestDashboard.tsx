@@ -406,7 +406,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
           badgeClass: "bg-amber-100 text-amber-800",
           text: "Pending Review",
           description: "Our team is reviewing your submission. We'll get back to you within 2 business days.",
-          tooltip: "Your request is waiting for review by the Speedio team. No action is needed from you right now."
+          tooltip: "Your request is waiting for review by the Speedyo team. No action is needed from you right now."
         };
       case 'approved':
         return {
@@ -430,7 +430,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
           badgeClass: "bg-red-100 text-red-800",
           text: "Declined",
           description: "Unfortunately, we couldn't approve this request. See notes for details.",
-          tooltip: "This request was declined. Please check the 'Update from Speedio' note for more information from our team."
+          tooltip: "This request was declined. Please check the 'Update from Speedyo' note for more information from our team."
         };
       case 'sold':
         return {
@@ -918,7 +918,7 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                                             >
                                               {" "}
                                               {/* FIX: Changed badge color */}
-                                              Managed by Speedio
+                                              Managed by Speedyo
                                             </Badge>
                                           )}
                                         </div>
@@ -1370,7 +1370,7 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                                     {request.user_facing_notes && (
                                       <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                                         <p className="text-sm text-blue-800">
-                                          <strong>Update from Speedio:</strong> {request.user_facing_notes}
+                                          <strong>Update from Speedyo:</strong> {request.user_facing_notes}
                                         </p>
                                       </div>
                                     )}

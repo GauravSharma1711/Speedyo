@@ -36,7 +36,7 @@ export async function GET(
     // ── Header ────────────────────────────────────────────────────
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("Speedio Managed Sales Service", 20, y);
+    doc.text("Speedyo Managed Sales Service", 20, y);
     nextLine(10);
     doc.setFontSize(16);
     doc.text("Dealership Vehicle Agreement", 20, y);

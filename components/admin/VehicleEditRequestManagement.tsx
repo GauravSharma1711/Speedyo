@@ -201,7 +201,7 @@ export default function VehicleEditRequestManagementUI() {
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Vehicle Edit Requests</h2>
           <p className="text-slate-600">
-            Review and manage edit requests for Speedio-managed vehicles
+            Review and manage edit requests for Speedyo-managed vehicles
           </p>
         </div>
 

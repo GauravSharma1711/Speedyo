@@ -3,7 +3,7 @@ import NewVehicleListingEmail from '@/mailsTemplates/NewVehicleListingEmail'
 import prisma from '@/db/prisma'
 
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-const appUrl = process.env.APP_URL || 'https://speedio.app'
+const appUrl = process.env.APP_URL || 'https://speedyo.app'
 
 export async function sendNewVehicleListingMail(
   followerEmails: { email: string; userId: string }[],
@@ -43,7 +43,7 @@ export async function sendNewVehicleListingMail(
       return resend.emails.send({
         from: fromEmail,
         to: followerEmail,
-        subject: `${author_name} listed a new vehicle on Speedio`,
+        subject: `${author_name} listed a new vehicle on Speedyo`,
         react: NewVehicleListingEmail({
           author_name,
           vehicle_title,

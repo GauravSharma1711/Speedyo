@@ -162,7 +162,7 @@ export default function PrivateSellerPromo() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            {/* Speedio Logo */}
+            {/* Speedyo Logo */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -172,7 +172,7 @@ export default function PrivateSellerPromo() {
               <Link href={createPageUrl("Landing")}>
                 <img
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png"
-                  alt="Speedio Logo"
+                  alt="Speedyo Logo"
                   className="h-12 md:h-16 mx-auto brightness-0 invert opacity-90"
                   style={{ filter: 'brightness(0) invert(1)' }}
                 />
@@ -196,12 +196,12 @@ export default function PrivateSellerPromo() {
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
               Sell Your Vehicle on
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-200">
-                Speedio
+                Speedyo
               </span>
             </h1>
 
             <p className="text-xl md:text-2xl text-white mb-8 max-w-3xl mx-auto drop-shadow-md">
-              Join other private sellers who trust Speedio to connect with serious buyers.
+              Join other private sellers who trust Speedyo to connect with serious buyers.
               <span className="font-semibold text-amber-200"> Get 20% off your first purchase!</span>
             </p>
 
@@ -289,7 +289,7 @@ export default function PrivateSellerPromo() {
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
               Why Sellers Choose
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600">
-                Speedio
+                Speedyo
               </span>
             </h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
@@ -527,7 +527,7 @@ export default function PrivateSellerPromo() {
             Ready to Start Selling?
           </h2>
           <p className="text-xl text-slate-300 mb-8">
-            Join Speedio today and connect with buyers in minutes
+            Join Speedyo today and connect with buyers in minutes
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href={createPageUrl("GuestCheckout") + `?promoCode=${promoCode}`}>

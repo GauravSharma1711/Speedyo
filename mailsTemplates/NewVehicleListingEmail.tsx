@@ -28,7 +28,7 @@ export default function NewVehicleListingEmail({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>${author_name} listed a new vehicle on Speedio</title>
+  <title>${author_name} listed a new vehicle on Speedyo</title>
 </head>
 <body style="margin:0; padding:40px 0; background-color:#f0f0f0; font-family:'Inter', Helvetica, Arial, sans-serif;">
 
@@ -52,7 +52,7 @@ export default function NewVehicleListingEmail({
 
               <!-- Intro -->
               <p style="margin:0 0 20px; font-size:15px; color:#475569; line-height:1.6;">
-                ${author_name}, someone you follow on Speedio, just listed a new vehicle!
+                ${author_name}, someone you follow on Speedyo, just listed a new vehicle!
               </p>
 
               <!-- Vehicle Details Box -->
@@ -87,7 +87,7 @@ export default function NewVehicleListingEmail({
                 <tr>
                   <td>
                     <a href="${vehicle_url}" style="display:inline-block; background:linear-gradient(to right, #3b82f6, #10b981); color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; font-size:15px; font-weight:600;">
-                      View Vehicle on Speedio
+                      View Vehicle on Speedyo
                     </a>
                   </td>
                 </tr>
@@ -102,7 +102,7 @@ export default function NewVehicleListingEmail({
 
               <!-- Footer -->
               <p style="margin:0 0 8px; font-size:12px; color:#94a3b8;">
-                You're receiving this email because you follow ${author_name} on Speedio.
+                You're receiving this email because you follow ${author_name} on Speedyo.
               </p>
               <p style="margin:0; font-size:12px; color:#94a3b8;">
                 <a href="${unsubscribe_url}" style="color:#64748b; text-decoration:underline;">Unsubscribe from vehicle notifications</a>
