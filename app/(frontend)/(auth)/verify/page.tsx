@@ -2,12 +2,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, useState, useEffect, KeyboardEvent, ClipboardEvent } from "react";
+import { useRef, useState, useEffect, KeyboardEvent, ClipboardEvent, Suspense } from "react";
 import { toast } from "sonner"; // or your toast lib
   import { useAuthStore } from "@/store/auth";
 
-export default function VerifyEmailPage() {
-  const router = useRouter();
+  function VerifyEmailContent(){
+const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
 
@@ -242,4 +242,13 @@ const handleResend = async () => {
       </div>
     </div>
   );
+
+  }
+
+export default function VerifyEmailPage() {
+     return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <VerifyEmailContent/>
+      </Suspense>
+    )
 }

@@ -1,12 +1,20 @@
+import React, { Suspense } from 'react'
 import OrderConfirmation from '@/components/checkout/OrderConfirmation'
-import React from 'react'
+
 
 const page = () => {
   return (
     <div>
+<Suspense fallback={<div>Loading...</div>}>
         <OrderConfirmation/>
+      </Suspense>
     </div>
   )
 }
 
 export default page
+
+
+
+
+       

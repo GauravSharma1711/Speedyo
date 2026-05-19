@@ -1,11 +1,12 @@
 import Checkout from '@/components/checkout/Checkout'
-import React from 'react'
-
+import React, { Suspense } from 'react'
 
 const page = () => {
   return (
     <div>
-      <Checkout />
+      <Suspense fallback={<div>Loading...</div>}>
+        <Checkout />
+      </Suspense>
     </div>
   )
 }
