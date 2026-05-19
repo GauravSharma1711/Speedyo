@@ -3,7 +3,7 @@ import prisma from "@/db/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/option";
 import { upsertVehicleConversation } from "@/lib/conversations/upsertVehicleConversation";
-// import { MessageType } from "@/lib/generated/prisma/enums";
+import { MessageType } from "@/lib/generated/prisma/enums";
 
 
 
@@ -83,7 +83,7 @@ export async function POST(
       recipientUnreadForUserId: admin.id,
       last_message: `Test drive request for ${vehicleTitle}`,
       last_message_at: new Date(),
-      last_message_type: "test_drive_request",
+      last_message_type: MessageType.test_drive_request,
     });
 
      await prisma.message.create({
