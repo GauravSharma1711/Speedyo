@@ -48,7 +48,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, agreement }, { status: 201 });
+   
+const signingUrl = `/SignAgreement/${agreement.id}`;
+
+const updatedAgreement = await prisma.dealershipVehicleAgreement.update({
+  where: { id: agreement.id },
+  data: { agreement_url: signingUrl },
+  include: {
+    createdByAdmin: { select: { id: true, full_name: true, email: true } },
+  },
+});
+
+return NextResponse.json({ success: true, agreement: updatedAgreement }, { status: 201 });
+
   } catch (error) {
     console.error("Failed to create dealership aggrement", error);
     return NextResponse.json(
