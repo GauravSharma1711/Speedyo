@@ -143,19 +143,19 @@ export async function POST(
 
 
 
-// get by id 
+
+
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { aggrementId: string } }
+  context: { params: Promise<{ aggrementId: string }> }  
 ) {
-  const { aggrementId } = params;
+  const { aggrementId } = await context.params;  
 
   try {
     const agreement = await prisma.liaisonAgreement.findUnique({
       where: { id: aggrementId },
-      include: {
-        application: true,
-      },
+      include: { application: true },
     });
 
     if (!agreement) {

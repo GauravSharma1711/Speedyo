@@ -39,6 +39,13 @@ getAll: async () => {
     return res.data;
   },
 
+  downloadPdf: async (agreementId: string) => {
+  const res = await api.get(
+    `/api/admin/liaison-agreements/${agreementId}/download-pdf`,
+    { responseType: "blob" }
+  );
+  return res.data;
+},
 
   
   create: async (data: CreateLiaisonAgreementData) => {
@@ -77,10 +84,13 @@ getAll: async () => {
       return res.data;
   },
   
-    getAgreementById: async(id:string)=>{
-       const res = await api.get(`/api/admin/liaison-agreements/${id}`);
-      return res.data;
-    }
+  
+
+    getAgreementById: async (id: string) => {
+  const res = await fetch(`/api/admin/liaison-agreements/${id}`);
+  if (!res.ok) throw new Error("Failed to fetch agreement");
+  return res.json();
+}
 
 
 }
