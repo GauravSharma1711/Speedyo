@@ -85,9 +85,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-
+  const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
     
-    const agreementUrl = `http://localhost:3000/PhotographerAgreement?id=${agreement.id}`;
+    const agreementUrl = `${baseUrl}/PhotographerAgreement?id=${agreement.id}`;
 
     // Update the record with the generated URL
     const updatedAgreement = await prisma.photographerAgreement.update({

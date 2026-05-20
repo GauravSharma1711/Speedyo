@@ -84,8 +84,11 @@ const agreement = await prisma.liaisonAgreement.create({
   },
 });
 
+  const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "http://localhost:3000";
 
-const agreement_url = `http://localhost:3000/LiaisonAgreement?id=${agreement.id}`;
+const agreement_url = `${baseUrl}/LiaisonAgreement?id=${agreement.id}`;
 
    const updatedAgreement =  await prisma.liaisonAgreement.update({
   where: { id: agreement.id },
