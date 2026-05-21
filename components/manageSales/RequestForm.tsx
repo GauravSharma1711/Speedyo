@@ -406,34 +406,58 @@ export default function RequestFormUI(props: Props) {
     [],
   );
 
-  const uploadFiles = useCallback(
-    async (files: FileList | File[]) => {
-      const list = Array.from(files || []);
-      if (list.length === 0) return;
-      if (isUploading) return;
+ const uploadFiles = useCallback(
+  async (files: FileList | File[]) => {
+    const list = Array.from(files || []);
+    if (list.length === 0 || isUploading) return;
 
-      setIsUploading(true);
-      setUploadCount(list.length);
-      try {
-        const urls = list.map((f) => URL.createObjectURL(f));
-        setFormData((prev) => ({
-          ...prev,
-          vehicle_details: {
-            ...prev.vehicle_details,
-            images: [...prev.vehicle_details.images, ...urls],
-            images_thumbnails: [...prev.vehicle_details.images_thumbnails, ...urls],
-            images_small: [...prev.vehicle_details.images_small, ...urls],
-            images_medium: [...prev.vehicle_details.images_medium, ...urls],
-          },
-        }));
-        toast({ title: "Photos added", description: "Local preview only." });
-      } finally {
-        setIsUploading(false);
-        setUploadCount(0);
-      }
-    },
-    [isUploading, toast],
-  );
+    setIsUploading(true);
+    setUploadCount(list.length);
+
+    try {
+      const formData = new FormData();
+      list.forEach((file) => formData.append("files", file));
+
+      const res = await fetch("/api/uploadMsrPhotos", {
+        method: "POST",
+        body: formData,
+        // no Content-Type header — browser sets it with boundary automatically
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      const uploadedUrls: string[] = data.urls;
+
+      setFormData((prev) => ({
+        ...prev,
+        vehicle_details: {
+          ...prev.vehicle_details,
+          images: [...prev.vehicle_details.images, ...uploadedUrls],
+          images_thumbnails: [...prev.vehicle_details.images_thumbnails, ...uploadedUrls],
+          images_small: [...prev.vehicle_details.images_small, ...uploadedUrls],
+          images_medium: [...prev.vehicle_details.images_medium, ...uploadedUrls],
+        },
+      }));
+
+      toast({
+        title: "Photos uploaded",
+        description: `${uploadedUrls.length} photo(s) saved successfully.`,
+      });
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast({
+        title: "Upload Failed",
+        description: "Could not upload images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadCount(0);
+    }
+  },
+  [isUploading, toast],
+);
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -603,14 +627,16 @@ export default function RequestFormUI(props: Props) {
         },
         access_arrangements: formData.access_arrangements,
         terms_agreed: Boolean(formData.terms_agreed),
-        submitted_by_user_id: props.requestToEdit.submitted_by_user_id,
-        status: props.requestToEdit.status === "pending_initial_review" ? "pending_review" : (props.requestToEdit.status || "pending_review"),
+  submitted_by_user_id: props.requestToEdit?.submitted_by_user_id,  
+  status: props.requestToEdit?.status === "pending_initial_review"
+    ? "pending_review"
+    : (props.requestToEdit?.status || "pending_review"),  
         final_sale_price_for_buyer: buyerPrice,
         service_fee_amount: fee,
         owner_receives_amount: asking,
       };
       
-
+     console.log("payload",payload);
       setIsSubmitting(true);
       try {
         await props.onSave(payload);

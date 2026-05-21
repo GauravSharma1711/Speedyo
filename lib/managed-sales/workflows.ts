@@ -270,18 +270,46 @@ export async function workflowPatchStatus(
       });
 
       let vTitle = updated.vehicle_title ?? "your vehicle";
-      await tx.message.create({
-        data: {
-          senderId: adminId,
-          recipientId: submitter,
-          content: `🎉 Great news! Your managed sale request for "${vTitle}" has been approved by our team.\n\nYour vehicle is now live on Speedyo with the following details:\n• Listed Price: $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
-          message_type: "system",
-          managedSaleRequestId: requestId,
-          vehicleId: vehicleId!,
-          conversation_id: `managed_sale_${requestId}`,
-          read: false,
-        },
-      });
+    const [user1Id, user2Id] = [adminId, submitter].sort();
+
+const conversation = await tx.conversation.upsert({
+  where: {
+    user1Id_user2Id_vehicleId: {
+      user1Id,
+      user2Id,
+      vehicleId: vehicleId!,
+    },
+  },
+  create: {
+    user1Id,
+    user2Id,
+    vehicleId: vehicleId!,
+    last_message: `Your managed sale for "${vTitle}" has been approved`,
+    last_message_at: new Date(),
+    last_message_type: "system",
+    user1_unread: user1Id === submitter ? 1 : 0,
+    user2_unread: user2Id === submitter ? 1 : 0,
+  },
+  update: {
+    last_message: `Your managed sale for "${vTitle}" has been approved`,
+    last_message_at: new Date(),
+    user1_unread: user1Id === submitter ? { increment: 1 } : undefined,
+    user2_unread: user2Id === submitter ? { increment: 1 } : undefined,
+  },
+});
+
+await tx.message.create({
+  data: {
+    senderId: adminId,
+    recipientId: submitter,
+    content: `🎉 Great news! Your managed sale request for "${vTitle}" has been approved...`,
+    message_type: "system",
+    managedSaleRequestId: requestId,
+    vehicleId: vehicleId!,
+    conversationId: conversation.id,  
+    read: false,
+  },
+});
 
       await tx.notification.create({
         data: {
@@ -323,7 +351,7 @@ export async function workflowPatchStatus(
           content: `Regarding your managed sale request for "${vTitle}", it has been declined. Reason: ${notes} Please check your dashboard for more details.`,
           message_type: "system",
           managedSaleRequestId: requestId,
-          conversation_id: `managed_sale_${requestId}`,
+           conversationId: null, 
           read: false,
         },
       });

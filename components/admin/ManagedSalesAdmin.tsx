@@ -647,52 +647,192 @@ export default function ManagedSalesAdminUI() {
     }
   };
 
-  const openAdminEdit = async (id: string) => {
-    setIsProcessing(true);
-    try {
-      await getById(id);
-      const cur: any = useManagedSaleRequestsStore.getState().current;
-      if (!cur?.id) throw new Error("NOT_FOUND");
+  // const openAdminEdit = async (id: string) => {
+  //   setIsProcessing(true);
+  //   try {
+  //     await getById(id);
+  //     const cur: any = useManagedSaleRequestsStore.getState().current;
+  //     if (!cur?.id) throw new Error("NOT_FOUND");
 
-      setAdminEditTarget({
-        id: String(cur.id),
-        submitted_by_user_id: String(cur.submitted_by_user_id ?? cur.submittedByUser?.id ?? ""),
-        status: String(cur.status ?? ""),
-        requester_contact_info: {
-          full_name: String(cur.contact_full_name ?? ""),
-          email: String(cur.contact_email ?? ""),
-          phone: String(cur.contact_phone ?? ""),
-        },
-        vehicle_details: {
-          title: String(cur.vehicle_title ?? ""),
-          make: String(cur.vehicle_make ?? ""),
-          model: String(cur.vehicle_model ?? ""),
-          year: Number(cur.vehicle_year ?? new Date().getFullYear()),
-          mileage: cur.vehicle_mileage ?? "",
-          condition: String(cur.vehicle_condition ?? "good"),
-          description: String(cur.vehicle_description ?? ""),
-          fuel_type: String(cur.vehicle_fuel_type ?? "gasoline"),
-          transmission: String(cur.vehicle_transmission ?? "automatic"),
-          location: String(cur.vehicle_location ?? ""),
-          seller_asking_price: cur.seller_asking_price ?? "",
-          financing_available: String(cur.financing_available ?? ""),
-          warranty_available: String(cur.warranty_available ?? ""),
-          warranty_link: String(cur.warranty_link ?? ""),
-          images: Array.isArray(cur.vehicle_images) ? cur.vehicle_images : [],
-          images_thumbnails: Array.isArray(cur.vehicle_images_thumbnails) ? cur.vehicle_images_thumbnails : [],
-          images_small: Array.isArray(cur.vehicle_images_small) ? cur.vehicle_images_small : [],
-          images_medium: Array.isArray(cur.vehicle_images_medium) ? cur.vehicle_images_medium : [],
-        } as any,
-        access_arrangements: (cur.access_arrangements ?? {}) as any,
-        terms_agreed: Boolean(cur.terms_agreed),
-      });
-      setAdminEditOpen(true);
-    } catch (_e) {
-      toast({ title: "Failed", description: "Could not load admin edit form.", variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  //     setAdminEditTarget({
+  //       id: String(cur.id),
+  //       submitted_by_user_id: String(cur.submitted_by_user_id ?? cur.submittedByUser?.id ?? ""),
+  //       status: String(cur.status ?? ""),
+  //       requester_contact_info: {
+  //         full_name: String(cur.contact_full_name ?? ""),
+  //         email: String(cur.contact_email ?? ""),
+  //         phone: String(cur.contact_phone ?? ""),
+  //       },
+  //       vehicle_details: {
+  //         title: String(cur.vehicle_title ?? ""),
+  //         make: String(cur.vehicle_make ?? ""),
+  //         model: String(cur.vehicle_model ?? ""),
+  //         year: Number(cur.vehicle_year ?? new Date().getFullYear()),
+  //         mileage: cur.vehicle_mileage ?? "",
+  //         condition: String(cur.vehicle_condition ?? "good"),
+  //         description: String(cur.vehicle_description ?? ""),
+  //         fuel_type: String(cur.vehicle_fuel_type ?? "gasoline"),
+  //         transmission: String(cur.vehicle_transmission ?? "automatic"),
+  //         location: String(cur.vehicle_location ?? ""),
+  //         seller_asking_price: cur.seller_asking_price ?? "",
+  //         financing_available: String(cur.financing_available ?? ""),
+  //         warranty_available: String(cur.warranty_available ?? ""),
+  //         warranty_link: String(cur.warranty_link ?? ""),
+  //         images: Array.isArray(cur.vehicle_images) ? cur.vehicle_images : [],
+  //         images_thumbnails: Array.isArray(cur.vehicle_images_thumbnails) ? cur.vehicle_images_thumbnails : [],
+  //         images_small: Array.isArray(cur.vehicle_images_small) ? cur.vehicle_images_small : [],
+  //         images_medium: Array.isArray(cur.vehicle_images_medium) ? cur.vehicle_images_medium : [],
+  //       } as any,
+  //       access_arrangements: (cur.access_arrangements ?? {}) as any,
+  //       terms_agreed: Boolean(cur.terms_agreed),
+  //     });
+  //     setAdminEditOpen(true);
+  //   } catch (_e) {
+  //     toast({ title: "Failed", description: "Could not load admin edit form.", variant: "destructive" });
+  //   } finally {
+  //     setIsProcessing(false);
+  //   }
+  // };
+
+
+
+const openAdminEdit = async (id: string) => {
+  setIsProcessing(true);
+  try {
+    await getById(id);
+    const cur: any = useManagedSaleRequestsStore.getState().current;
+    if (!cur?.id) throw new Error("NOT_FOUND");
+
+    setAdminEditTarget({
+      id: String(cur.id),
+      submitted_by_user_id: String(cur.submitted_by_user_id ?? cur.submittedByUser?.id ?? ""),
+      status: String(cur.status ?? ""),
+
+      requester_contact_info: {
+        full_name: String(cur.contact_full_name ?? ""),
+        email: String(cur.contact_email ?? ""),
+        phone: String(cur.contact_phone ?? ""),
+      },
+
+      vehicle_details: {
+        // ── Basic ──────────────────────────────────────────────
+        title:              String(cur.vehicle_title ?? ""),
+        make:               String(cur.vehicle_make ?? ""),
+        model:              String(cur.vehicle_model ?? ""),
+        year:               Number(cur.vehicle_year ?? new Date().getFullYear()),
+        mileage:            cur.vehicle_mileage ?? "",
+        condition:          String(cur.vehicle_condition ?? "good"),
+        description:        String(cur.vehicle_description ?? ""),
+        fuel_type:          String(cur.vehicle_fuel_type ?? "gasoline"),
+        transmission:       String(cur.vehicle_transmission ?? "automatic"),
+        location:           String(cur.vehicle_location ?? ""),
+        seller_asking_price: cur.seller_asking_price ?? "",
+        financing_available: String(cur.financing_available ?? ""),
+        warranty_available:  String(cur.warranty_available ?? ""),
+        warranty_link:       String(cur.warranty_link ?? ""),
+
+        // ── Images ─────────────────────────────────────────────
+        images:            Array.isArray(cur.vehicle_images)            ? cur.vehicle_images            : [],
+        images_thumbnails: Array.isArray(cur.vehicle_images_thumbnails) ? cur.vehicle_images_thumbnails : [],
+        images_small:      Array.isArray(cur.vehicle_images_small)      ? cur.vehicle_images_small      : [],
+        images_medium:     Array.isArray(cur.vehicle_images_medium)     ? cur.vehicle_images_medium     : [],
+
+        // ── Specs ──────────────────────────────────────────────
+        drive_type:        String(cur.drive_type    ?? "2wd"),
+        engine_size:       String(cur.engine_size   ?? ""),
+        body_type:         String(cur.body_type     ?? "sedan"),
+        exterior_color:    String(cur.exterior_color ?? ""),
+        interior_color:    String(cur.interior_color ?? ""),
+        doors:             Number(cur.doors          ?? 4),
+        seating_capacity:  Number(cur.seating_capacity ?? 5),
+        steering_wheel:    String(cur.steering_wheel ?? "right_hand_drive"),
+
+        // ── Registration ───────────────────────────────────────
+        current_plate_type:       String(cur.current_plate_type       ?? "kanji"),
+        shaken_valid_until:       String(cur.shaken_valid_until       ?? ""),
+        road_tax_paid:            String(cur.road_tax_paid            ?? "yes"),
+        jci_insurance_valid_until: String(cur.jci_insurance_valid_until ?? ""),
+        title_type:               String(cur.title_type               ?? "Active"),
+        registration_location:    String(cur.registration_location    ?? "okinawa"),
+
+        // ── Performance ────────────────────────────────────────
+        engine_type:          String(cur.engine_type          ?? ""),
+        power_output:         String(cur.power_output         ?? ""),
+        fuel_efficiency:      String(cur.fuel_efficiency      ?? ""),
+        drivetrain:           String(cur.drivetrain           ?? "fwd"),
+        suspension_type:      String(cur.suspension_type      ?? ""),
+        brakes:               String(cur.brakes               ?? ""),
+        tire_condition:       String(cur.tire_condition       ?? "good"),
+        battery_condition:    String(cur.battery_condition    ?? "original"),
+        hybrid_system_status: String(cur.hybrid_system_status ?? "not_applicable"),
+        maintenance_history:  String(cur.maintenance_history  ?? "unknown"),
+
+        // ── Exterior features ──────────────────────────────────
+        power_sliding_doors: String(cur.power_sliding_doors ?? "none"),
+        headlights:          String(cur.headlights          ?? "halogen"),
+        fog_lights:          String(cur.fog_lights          ?? "none"),
+        alloy_wheels:        Boolean(cur.alloy_wheels),
+        spoiler:             Boolean(cur.spoiler),
+        tinted_windows:      Boolean(cur.tinted_windows),
+        roof_type:           String(cur.roof_type    ?? "solid"),
+        side_mirrors:        String(cur.side_mirrors ?? "manual"),
+        keyless_entry:       Boolean(cur.keyless_entry),
+        remote_door_locking: Boolean(cur.remote_door_locking),
+        body_condition:      String(cur.body_condition ?? "no_damage"),
+
+        // ── Interior ───────────────────────────────────────────
+        air_conditioning:  String(cur.air_conditioning  ?? "manual"),
+        upholstery:        String(cur.upholstery        ?? "fabric"),
+        seat_type:         String(cur.seat_type         ?? "standard"),
+        seat_adjustments:  String(cur.seat_adjustments  ?? "manual"),
+        navigation_system: String(cur.navigation_system ?? "none"),
+        rear_camera:       Boolean(cur.rear_camera),
+        parking_sensors:   String(cur.parking_sensors   ?? "none"),
+        power_windows:     String(cur.power_windows     ?? "none"),
+        interior_lighting: String(cur.interior_lighting ?? "standard"),
+        cup_holders_storage: Boolean(cur.cup_holders_storage),
+        child_lock_isofix:   Boolean(cur.child_lock_isofix),
+
+        // ── Arrays ─────────────────────────────────────────────
+        infotainment_system:    Array.isArray(cur.infotainment_system)    ? cur.infotainment_system    : [],
+        steering_wheel_controls: Array.isArray(cur.steering_wheel_controls) ? cur.steering_wheel_controls : [],
+        airbags:                Array.isArray(cur.airbags)                ? cur.airbags                : [],
+
+        // ── Safety ─────────────────────────────────────────────
+        abs:                  Boolean(cur.abs),
+        esc_stability_control: Boolean(cur.esc_stability_control),
+        lane_departure_warning: Boolean(cur.lane_departure_warning),
+        collision_mitigation:  Boolean(cur.collision_mitigation),
+        cruise_control:        String(cur.cruise_control ?? "none"),
+        traction_control:      Boolean(cur.traction_control),
+        hill_start_assist:     Boolean(cur.hill_start_assist),
+        immobilizer_alarm:     Boolean(cur.immobilizer_alarm),
+        seat_belt_sensors:     Boolean(cur.seat_belt_sensors),
+
+        // ── Tech ───────────────────────────────────────────────
+        bluetooth:               Boolean(cur.bluetooth),
+        usb_ports:               Boolean(cur.usb_ports),
+        twelve_v_outlet:         Boolean(cur.twelve_v_outlet),
+        smart_key_push_start:    Boolean(cur.smart_key_push_start),
+        display_screen_size:     String(cur.display_screen_size ?? ""),
+        rear_entertainment_system: Boolean(cur.rear_entertainment_system),
+        voice_command_hands_free:  Boolean(cur.voice_command_hands_free),
+        digital_dashboard_display: Boolean(cur.digital_dashboard_display),
+      } as any,
+
+      access_arrangements: (cur.access_arrangements ?? {}) as any,
+      terms_agreed: Boolean(cur.terms_agreed),
+    });
+
+    setAdminEditOpen(true);
+  } catch (_e) {
+    toast({ title: "Failed", description: "Could not load admin edit form.", variant: "destructive" });
+  } finally {
+    setIsProcessing(false);
+  }
+};
+
+
 
   const setAvailability = (id: string) => {
     const req = requests.find((r) => r.id === id);
@@ -1481,7 +1621,13 @@ export default function ManagedSalesAdminUI() {
           setIsProcessing(true);
           Promise.resolve()
             .then(() => patchStatus(requestId, { status: String(newStatus), adminNotes: adminNotes || null }))
-            .then(() => toast({ title: "Status updated", description: "" }))
+              .then(() => {
+      toast({ title: "Status updated", description: "" });
+      setDetailsOpen(false);      
+      setSelectedRequest(null);   
+      setAdminNotes("");
+      refresh();
+    })
             .catch(() => toast({ title: "Failed", description: "Status update failed.", variant: "destructive" }))
             .finally(() => setIsProcessing(false));
         }}

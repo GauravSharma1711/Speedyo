@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
-import { Calendar, Clock, MapPin, Plus, Trash2, Save, X } from "lucide-react";
+import { Calendar, Clock, MapPin, Plus, Trash2, Save, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function TestDriveAvailabilityManager({ vehicle, onClose, onSave }) {
+   const [isSaving, setIsSaving] = useState(false);
+
   const [availability, setAvailability] = useState(vehicle.recurring_availability || []);
   const [newSlot, setNewSlot] = useState({
     day_of_week: "",
@@ -45,8 +47,13 @@ export default function TestDriveAvailabilityManager({ vehicle, onClose, onSave 
     setAvailability(availability.filter((slot) => slot.id !== id));
   };
 
-  const handleSave = () => {
-    onSave(vehicle.id, { recurring_availability: availability });
+ const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(vehicle.id, { recurring_availability: availability });
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   const handleInputChange = (field, value) => {
@@ -200,8 +207,17 @@ export default function TestDriveAvailabilityManager({ vehicle, onClose, onSave 
           </div>
            <CardFooter className="bg-slate-50 border-t p-4 flex justify-end">
             <Button onClick={handleSave} size="lg">
-              <Save className="w-4 h-4 mr-2" />
-              Save Availability
+                {isSaving ? (
+        <>
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          Saving...
+        </>
+      ) : (
+        <>
+          <Save className="w-4 h-4 mr-2" />
+          Save Availability
+        </>
+      )}
             </Button>
           </CardFooter>
         </Card>

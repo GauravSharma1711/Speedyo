@@ -62,10 +62,16 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
     setIsProcessing(true);
     try {
       // Update the managed sale request
-      await managedSaleService.update(request.id, {
-        status: 'cancellation_requested',
-        cancellation_reason: cancelReason
-      });
+        const res = await fetch(`/api/admin/managed-sale-requests/${request.id}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cancellation_reason: cancelReason }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error ?? "Failed to cancel");
+    }
 
       // Send notification to admins
       try {
@@ -74,7 +80,7 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
         const notificationPromises = adminUsers.map((admin: any) =>
           notificationService.create({
             recipientId: admin.id,
-            type: "managed_sale_status_update",
+            type: "managed_sale_cancellation",
             content: `User ${currentUser.full_name} has requested to cancel their managed sale for "${request.vehicle_details?.title}". Reason: ${cancelReason}`,
             related_entity_type: "ManagedSaleRequest",
             related_entity_id: request.id,
@@ -83,6 +89,8 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
           })
         );
 
+
+    
         await Promise.all(notificationPromises);
       } catch (error) {
         console.warn("Failed to notify admins:", error);
@@ -90,7 +98,7 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
 
       await notificationService.create({
         recipientId: currentUser.id,
-        type: "managed_sale_status_update",
+        type: "managed_sale_cancellation",
         content: `Your cancellation request for "${request.vehicle_details?.title}" has been submitted and is being reviewed by our team. We'll update you on the status soon.`,
         related_entity_type: "ManagedSaleRequest",
         related_entity_id: request.id,
@@ -163,7 +171,10 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
       <div className="flex flex-wrap gap-3">
         {canRequestEdit && (
           <Button
-            onClick={() => setShowEditModal(true)}
+           onClick={() => {
+      console.log("created_vehicle_id:", request); // ← check this
+      setShowEditModal(true);
+    }}
             variant="outline"
             className="border-blue-300 text-blue-700 hover:bg-blue-50"
           >
@@ -186,7 +197,8 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
                   <AlertTriangle className="w-5 h-5 text-amber-500" />
                   Confirm Cancellation Request
                 </AlertDialogTitle>
-                <AlertDialogDescription>
+                {/* <div className="text-sm text-muted-foreground"> */}
+                 <AlertDialogDescription>
                   Are you sure you want to request cancellation of your managed sale for "{request.vehicle_details?.title}"? 
                   This action will be reviewed by our team.
                   {hasActiveListing && (
@@ -195,7 +207,8 @@ export default function ManagedSalesActions({ request, currentUser, onUpdate }: 
                       Cancelling may affect ongoing interest and scheduled Car Viewing.
                     </div>
                   )}
-                </AlertDialogDescription>
+                  </AlertDialogDescription> 
+                {/* </div> */}
               </AlertDialogHeader>
               
               <div className="space-y-3">

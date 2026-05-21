@@ -44,6 +44,8 @@ export default function GuestDashboard({ user }: { user: any }) {
   listings,  loadSellerDashboard
 } = useSellerDashboardStore();
 
+console.log("manage sales",managedSales);
+
   const messagesWithContext = conversations?.flatMap((c: any) =>
     (c.messages || []).map((m: any) => {
       let testDriveDetails = m.test_drive_details;
@@ -593,6 +595,8 @@ const handleCreateVehicle = async (vehicleData: any) => {
       final_sale_price_for_buyer: vehicleData.price,
       terms_agreed: true,
     };
+
+
 
     await managedSaleService.create(payload);
 
@@ -1286,6 +1290,8 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                   </CardContent>
                 </Card>
               )}
+
+
 
               {managedSales.length > 0 && (
                 <Card className="bg-white/80 backdrop-blur-sm shadow-lg">
