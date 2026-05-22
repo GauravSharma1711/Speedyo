@@ -16,32 +16,39 @@ export default async function getCroppedImg(
 
   if (!ctx) throw new Error("Canvas context not available");
 
-  const maxSize = Math.max(image.width, image.height);
-  const safeArea = (maxSize * 2) / (Math.sqrt(2) + 1);
-
-  canvas.width = safeArea;
-  canvas.height = safeArea;
-
-  ctx.translate(safeArea / 2, safeArea / 2);
-  ctx.rotate((rotation * Math.PI) / 180);
-
-  // Draw rotated image
-  ctx.drawImage(
-    image,
-    -image.width / 2,
-    -image.height / 2
-  );
-
-  const data = ctx.getImageData(0, 0, safeArea, safeArea);
-
   canvas.width = pixelCrop.width;
   canvas.height = pixelCrop.height;
 
-  ctx.putImageData(
-    data,
-    Math.round(-pixelCrop.x - safeArea / 2 + image.width / 2),
-    Math.round(-pixelCrop.y - safeArea / 2 + image.height / 2)
-  );
+  if (rotation !== 0) {
+    const maxSize = Math.max(image.width, image.height);
+    const safeArea = Math.floor((maxSize * 2) / (Math.sqrt(2) + 1));
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = safeArea;
+    tempCanvas.height = safeArea;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) throw new Error("Canvas context not available");
+    tempCtx.translate(safeArea / 2, safeArea / 2);
+    tempCtx.rotate((rotation * Math.PI) / 180);
+    tempCtx.drawImage(image, -image.width / 2, -image.height / 2);
+    const data = tempCtx.getImageData(0, 0, safeArea, safeArea);
+    ctx.putImageData(
+      data,
+      Math.round(-pixelCrop.x - safeArea / 2 + image.width / 2),
+      Math.round(-pixelCrop.y - safeArea / 2 + image.height / 2)
+    );
+  } else {
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+  }
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
