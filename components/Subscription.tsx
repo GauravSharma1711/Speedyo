@@ -98,21 +98,21 @@ const dealershipTiers: DealershipTier[] = [
     popular: true,
     type: "dealership",
   },
-  {
-    name: "Enterprise",
-    price: "¥150000",
-    features: [
-      "Unlimited vehicle sales per year",
-      "Unlimited active listings",
-      "Top-tier marketplace visibility",
-      "Full analytics suite",
-      "Dedicated account manager",
-      "API access (coming soon)",
-    ],
-    cta: "Choose Enterprise",
-    tierId: "tier3",
-    type: "dealership",
-  },
+  // {
+  //   name: "Enterprise",
+  //   price: "¥150000",
+  //   features: [
+  //     "Unlimited vehicle sales per year",
+  //     "Unlimited active listings",
+  //     "Top-tier marketplace visibility",
+  //     "Full analytics suite",
+  //     "Dedicated account manager",
+  //     "API access (coming soon)",
+  //   ],
+  //   cta: "Choose Enterprise",
+  //   tierId: "tier3",
+  //   type: "dealership",
+  // },
 ];
 
 const privateSellerPlan: Plan = {

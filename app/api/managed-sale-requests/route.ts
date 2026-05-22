@@ -87,8 +87,7 @@ export async function POST(req: NextRequest) {
       (url: string) => url && !url.startsWith("blob:")
     );
 
-        console.log("engine_type:", body.vehicle_details.engine_type);
-    console.log("power_output:", body.vehicle_details.power_output);
+
     const msr = await prisma.managedSaleRequest.create({
       data: {
         submitted_by_user_id: session.user.id,
