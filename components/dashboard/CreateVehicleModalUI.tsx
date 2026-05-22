@@ -45,6 +45,7 @@ export type CreateVehiclePatch = {
   model: string;
   year: number;
   price: number;
+  dealer_fee: number;
   mileage: number;
   condition: string;
   description: string;
@@ -52,9 +53,9 @@ export type CreateVehiclePatch = {
   fuel_type: string;
   transmission: string;
   status: VehicleStatus;
-  images: string[]; // originals
-  primary_image: string | null; // original
-   imageFiles: File[];
+  images: string[];
+  primary_image: string | null;
+  imageFiles: File[];
 };
 
 type Props = {
@@ -95,6 +96,7 @@ export default function CreateVehicleModalUI({
     model: string;
     year: string;
     price: string;
+    dealer_fee: string;
     mileage: string;
     condition: string;
     description: string;
@@ -104,12 +106,13 @@ export default function CreateVehicleModalUI({
     status: VehicleStatus;
     images: ImageSet[];
     primary_image: ImageSet | null;
-     imageFiles: File[];
+    imageFiles: File[];
   }>({
     make: "",
     model: "",
     year: "",
     price: "",
+    dealer_fee: "",
     mileage: "",
     condition: "good",
     description: "",
@@ -162,6 +165,7 @@ export default function CreateVehicleModalUI({
         model: vehicleToEdit.model || "",
         year: String(vehicleToEdit.year ?? ""),
         price: String(vehicleToEdit.price ?? ""),
+        dealer_fee: String((vehicleToEdit as any).dealer_fee ?? ""),
         mileage: String(vehicleToEdit.mileage ?? ""),
         condition: vehicleToEdit.condition || "good",
         description: vehicleToEdit.description || "",
@@ -171,7 +175,7 @@ export default function CreateVehicleModalUI({
         status: (vehicleToEdit.status === "sold" ? "sold" : "available") as VehicleStatus,
         images,
         primary_image: primary || (images[0] ?? null),
-          imageFiles: [],
+        imageFiles: [],
       });
       setCurrentStep(1);
       return;
@@ -182,6 +186,7 @@ export default function CreateVehicleModalUI({
       model: "",
       year: "",
       price: "",
+      dealer_fee: "",
       mileage: "",
       condition: "good",
       description: "",
@@ -312,6 +317,7 @@ export default function CreateVehicleModalUI({
      
      const year = Number(formData.year || 0);
      const price = Number(formData.price || 0);
+     const dealer_fee = Number(formData.dealer_fee || 0);
      const mileage = Number(formData.mileage || 0);
  
      const title = `${year || ""} ${formData.make} ${formData.model}`.trim();
@@ -361,6 +367,7 @@ export default function CreateVehicleModalUI({
       model: formData.model,
       year,
       price,
+      dealer_fee,
       mileage,
       condition: formData.condition,
       description: formData.description,
@@ -422,6 +429,14 @@ export default function CreateVehicleModalUI({
                 <Label htmlFor="price">Price (JPY) *</Label>
                 <Input id="price" name="price" type="number" value={formData.price} onChange={handleChange} placeholder="e.g. 9500" />
               </div>
+
+              {isDirectListing && (
+                <div>
+                  <Label htmlFor="dealer_fee">Dealer Fee (JPY)</Label>
+                  <Input id="dealer_fee" name="dealer_fee" type="number" value={formData.dealer_fee} onChange={handleChange} placeholder="e.g. 500" />
+                  <p className="text-xs text-slate-400 mt-1">Registration &amp; misc fee charged by dealer</p>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="mileage">Mileage *</Label>

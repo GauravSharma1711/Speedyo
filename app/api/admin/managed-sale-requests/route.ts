@@ -6,6 +6,7 @@ import { getPagination } from "@/app/api/_utils/pagination";
 const VALID_STATUSES = [
   "pending_initial_review",
   "pending_review",
+  "pending_approval",
   "approved",
   "declined",
   "listed",

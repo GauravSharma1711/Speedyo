@@ -69,6 +69,8 @@ import type { AvailabilitySlot } from "./AdminAvailabilityManager";
 import { useInspectionChecklistStore } from "@/store/admin/inspectionChecklist";
 import type { CreateChecklistBody } from "@/services/admin/inspectionChecklistService";
 import DirectListingApprovalModal from "@/components/admin/DirectListingApprovalModal";
+import { calculateServiceFeeAmount } from "@/lib/managed-sales/pricing";
+
 
 type ManagedSaleStatus =
   | "pending_initial_review"
@@ -125,6 +127,9 @@ type ManagedSaleRequestRow = {
   access_arrangements?: AccessArrangements;
 
 
+  contact_email?: string | null;
+  dealer_fee?: number | string | null;
+
   final_sale_price_for_buyer?: number | string | null;
   owner_receives_amount?: number | string | null;
   service_fee_amount?: number | string | null;
@@ -137,14 +142,6 @@ type ChecklistRow = VehicleInspectionChecklistData & {
   created_date: string; // ISO
   updated_date?: string | null;
 };
-
-function calculateServiceFeeAmount(price: number) {
-  if (!price || price <= 0) return 0;
-  if (price < 500) return 300;
-  if (price <= 3000) return Math.round(300 + (price - 500) * 0.08);
-  if (price <= 8333) return 500;
-  return Math.round(price * 0.06);
-}
 
 function parseNum(v: unknown): number | null {
   if (v === null || v === undefined) return null;
@@ -539,6 +536,7 @@ export default function ManagedSalesAdminUI() {
     return {
       pending_initial: counts.pending_initial_review || 0,
       pending: counts.pending_review || 0,
+      pending_approval: counts.pending_approval || 0,
       approved_and_listed: (counts.approved || 0) + (counts.listed || 0),
       declined: counts.declined || 0,
       sold: counts.sold || 0,
@@ -621,6 +619,8 @@ export default function ManagedSalesAdminUI() {
         listing_type: cur.listing_type ?? 'managed_sales',
         submitted_by_user_id: String(cur.submitted_by_user_id ?? cur.submittedByUser?.id ?? ""),
         created_vehicle_id: cur.created_vehicle_id ?? cur.createdVehicle?.id ?? null,
+        contact_email: cur.contact_email ?? null,
+        dealer_fee: cur.dealer_fee ?? null,
         vehicle_details: {
           title: String(cur.vehicle_title ?? ""),
           make: String(cur.vehicle_make ?? ""),
@@ -959,6 +959,11 @@ const openAdminEdit = async (id: string) => {
                       <div className="text-xs text-slate-600">Pending Review</div>
                     </div>
 
+                    <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-200">
+                      <div className="text-2xl font-bold text-cyan-600">{stats.pending_approval}</div>
+                      <div className="text-xs text-slate-600">Pending Approval (Direct)</div>
+                    </div>
+
                     <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
                       <div className="text-2xl font-bold text-orange-600">{stats.edit_requested}</div>
                       <div className="text-xs text-slate-600">Edit Requested</div>
@@ -1165,12 +1170,14 @@ const openAdminEdit = async (id: string) => {
                                   ? `¥${prices.buyerPrice.toLocaleString()}`
                                   : "N/A"}
                               </div>
-                              <div className="text-xs text-slate-500">
-                                Service Fee:{" "}
-                                {prices.serviceFee !== null
-                                  ? `¥${prices.serviceFee.toLocaleString()}`
-                                  : "N/A"}
-                              </div>
+                              {request.listing_type !== "direct" && (
+                                <div className="text-xs text-slate-500">
+                                  Service Fee:{" "}
+                                  {prices.serviceFee !== null
+                                    ? `¥${prices.serviceFee.toLocaleString()}`
+                                    : "N/A"}
+                                </div>
+                              )}
                             </TableCell>
 
                             <TableCell>{getStatusBadge(request.status)}</TableCell>
@@ -1582,7 +1589,7 @@ const openAdminEdit = async (id: string) => {
       />
 
       <ManagedSaleDetailsModal
-        isOpen={detailsOpen}
+        isOpen={detailsOpen && !(selectedRequest?.listing_type === "direct" && selectedRequest?.status === "pending_approval")}
         request={selectedRequest ?? null}
         onClose={() => {
           setDetailsOpen(false);
@@ -1699,7 +1706,10 @@ const openAdminEdit = async (id: string) => {
           selectedRequest.status === "pending_approval"
         }
         request={selectedRequest ?? null}
-        onClose={() => setSelectedRequest(null)}
+        onClose={() => {
+          setDetailsOpen(false);
+          setSelectedRequest(null);
+        }}
         onApprove={async (id: string, notes: string) => {
           setIsProcessing(true);
           try {
@@ -1711,6 +1721,7 @@ const openAdminEdit = async (id: string) => {
             throw e;
           } finally {
             setIsProcessing(false);
+            setDetailsOpen(false);
             setSelectedRequest(null);
           }
         }}
@@ -1725,6 +1736,7 @@ const openAdminEdit = async (id: string) => {
             throw e;
           } finally {
             setIsProcessing(false);
+            setDetailsOpen(false);
             setSelectedRequest(null);
           }
         }}
@@ -1732,7 +1744,7 @@ const openAdminEdit = async (id: string) => {
           selectedRequest
             ? {
                 full_name: getUserName(selectedRequest.submitted_by_user_id),
-                email: undefined,
+                email: selectedRequest.contact_email || undefined,
                 profile_image: undefined,
               }
             : undefined

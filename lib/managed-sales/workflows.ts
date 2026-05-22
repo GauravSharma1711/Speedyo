@@ -48,6 +48,7 @@ function buildVehicleData(
     transmission: mapTransmission(msr.vehicle_transmission),
     location: msr.vehicle_location ?? undefined,
     price: buyerPrice,
+    dealer_fee: msr.listing_type === 'direct' ? (msr.dealer_fee != null ? Number(msr.dealer_fee) : null) : null,
     website_managed: true,
     status: opts.status ?? "available",
     verified: true,
@@ -381,6 +382,7 @@ await tx.message.create({
   const allowed = new Set([
     "pending_initial_review",
     "pending_review",
+    "pending_approval",
     "approved",
     "declined",
     "listed",
@@ -806,6 +808,8 @@ export async function workflowAdminPatchMsr(
     data[k] = v;
   }
 
+  const isDirect = msrBefore.listing_type === "direct";
+
   const asking =
     typeof data.seller_asking_price === "number"
       ? data.seller_asking_price
@@ -814,10 +818,16 @@ export async function workflowAdminPatchMsr(
         : undefined;
 
   if (asking !== undefined && !Number.isNaN(asking) && asking >= 0) {
-    const serviceFee = calculateServiceFeeAmount(asking);
-    data.owner_receives_amount = asking;
-    data.service_fee_amount = serviceFee;
-    data.final_sale_price_for_buyer = asking + serviceFee;
+    if (isDirect) {
+      data.service_fee_amount = 0;
+      data.owner_receives_amount = asking;
+      data.final_sale_price_for_buyer = asking + (data.dealer_fee ? Number(data.dealer_fee) : 0);
+    } else {
+      const serviceFee = calculateServiceFeeAmount(asking);
+      data.owner_receives_amount = asking;
+      data.service_fee_amount = serviceFee;
+      data.final_sale_price_for_buyer = asking + serviceFee;
+    }
   }
 
   const vi = body.vehicle_images;

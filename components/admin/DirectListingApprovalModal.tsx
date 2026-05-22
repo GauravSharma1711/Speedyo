@@ -27,6 +27,7 @@ type DirectListingRequest = {
   contact_email?: string | null;
   contact_full_name?: string | null;
   seller_asking_price?: number | string | null;
+  dealer_fee?: number | string | null;
   service_fee_amount?: number | string | null;
   owner_receives_amount?: number | string | null;
   final_sale_price_for_buyer?: number | string | null;
@@ -167,7 +168,7 @@ export default function DirectListingApprovalModal({
                 <p className="text-2xl font-bold text-emerald-700">
                   ¥{price.toLocaleString()}
                 </p>
-                <p className="text-xs text-emerald-600">Seller&apos;s asking price (Buyer price)</p>
+                <p className="text-xs text-emerald-600">Seller&apos;s asking price</p>
               </CardContent>
             </Card>
           </div>
@@ -180,8 +181,8 @@ export default function DirectListingApprovalModal({
                 <p className="font-semibold text-slate-800">¥{price.toLocaleString()}</p>
               </div>
               <div>
-                <p className="text-slate-500">Service Fee</p>
-                <p className="font-semibold text-slate-600">¥{(Number(request.service_fee_amount) || 0).toLocaleString()}</p>
+                <p className="text-slate-500">Registration Fee</p>
+                <p className="font-semibold text-slate-800">¥{(Number(request.dealer_fee) || 0).toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-slate-500">Seller Receives</p>

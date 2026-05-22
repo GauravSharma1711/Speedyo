@@ -18,6 +18,9 @@ interface Vehicle {
   mileage?: number;
   location?: string | null;
   price?: number;
+  dealer_fee?: number;
+  buyer_total?: number;
+  isDirectListing?: boolean;
   status?: string;
   featured?: boolean;
   verified?: boolean;
@@ -106,9 +109,25 @@ export default function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
             <div className="flex-1 min-w-0">
-              <p className="text-2xl font-bold text-blue-600">
-                ¥{vehicle.price?.toLocaleString?.() ?? "—"}
-              </p>
+              {vehicle.isDirectListing && vehicle.dealer_fee ? (
+                <div>
+                  <p className="text-2xl font-bold text-blue-600">
+                    ¥{vehicle.price?.toLocaleString?.() ?? "—"}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    (¥{(vehicle.price! - vehicle.dealer_fee).toLocaleString()} + ¥{vehicle.dealer_fee.toLocaleString()} fee)
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-2xl font-bold text-blue-600">
+                    ¥{((vehicle.buyer_total ?? vehicle.price) as number)?.toLocaleString?.() ?? "—"}
+                  </p>
+                  {vehicle.buyer_total && vehicle.price && vehicle.buyer_total !== vehicle.price ? (
+                    <p className="text-xs text-slate-400">(Includes registration & service fees)</p>
+                  ) : null}
+                </div>
+              )}
 
               <div className="flex items-center gap-2 mt-1">
                 {isLoadingSeller ? (
