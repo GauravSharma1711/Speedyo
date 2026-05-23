@@ -98,21 +98,21 @@ const dealershipTiers: DealershipTier[] = [
     popular: true,
     type: "dealership",
   },
-  // {
-  //   name: "Enterprise",
-  //   price: "¥150000",
-  //   features: [
-  //     "Unlimited vehicle sales per year",
-  //     "Unlimited active listings",
-  //     "Top-tier marketplace visibility",
-  //     "Full analytics suite",
-  //     "Dedicated account manager",
-  //     "API access (coming soon)",
-  //   ],
-  //   cta: "Choose Enterprise",
-  //   tierId: "tier3",
-  //   type: "dealership",
-  // },
+  {
+    name: "Enterprise",
+    price: "¥150000",
+    features: [
+      "Unlimited vehicle sales per year",
+      "Unlimited active listings",
+      "Top-tier marketplace visibility",
+      "Full analytics suite",
+      "Dedicated account manager",
+      "API access (coming soon)",
+    ],
+    cta: "Choose Enterprise",
+    tierId: "tier3",
+    type: "dealership",
+  },
 ];
 
 const privateSellerPlan: Plan = {
@@ -202,9 +202,15 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
             className="w-full text-lg py-6"
             variant={tier.popular ? "default" : "outline"}
             onClick={() => onSelect(tier)}
-            disabled={isCurrentPlan}
+            // disabled={isCurrentPlan}
+             disabled={isCurrentPlan || tier.tierId === "tier3"}
           >
-            {isCurrentPlan ? "Current Plan" : tier.cta}
+            {/* {isCurrentPlan ? "Current Plan" : tier.cta}  */}
+            {isCurrentPlan
+    ? "Current Plan"
+    : tier.tierId === "tier3"
+    ? "Coming Soon"      
+    : tier.cta}
           </Button>
         </div>
       </CardContent>
