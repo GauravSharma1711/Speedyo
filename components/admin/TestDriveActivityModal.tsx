@@ -194,7 +194,7 @@ useEffect(() => {
               <CardContent className="space-y-1 text-sm">
                 <p className="text-slate-700 font-medium">{vehicle?.title || "Unknown vehicle"}</p>
                 <p className="text-slate-600">
-                  {typeof vehicle?.price === "number" ? `$${vehicle.price.toLocaleString()}` : "—"}
+                  {typeof vehicle?.price === "number" ? `¥${vehicle.price.toLocaleString()}` : "—"}
                 </p>
               </CardContent>
             </Card>

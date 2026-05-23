@@ -116,9 +116,9 @@ export async function workflowApproveAndList(
      const messageContent = 
       `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\n` +
       `Your vehicle is now live on Speedyo with the following details:\n` +
-      `• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
-      `• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
-      `• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• Listed Price (Buyer Pays): ¥${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• You Will Receive: ¥${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• Service Fee: ¥${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
       `• Status: Available for test drives\n` +
       `• Managed by: Speedyo Team\n\n` +
       `We've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\n` +
@@ -178,7 +178,7 @@ export async function workflowApproveAndList(
     //   data: {
     //     senderId: adminId,
     //     recipientId: submitter,
-    //     content: `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\nYour vehicle is now live on Speedyo with the following details:\n• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
+    //     content: `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\nYour vehicle is now live on Speedyo with the following details:\n• Listed Price (Buyer Pays): ¥${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: ¥${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: ¥${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
     //     message_type: "system",
     //     managedSaleRequestId: requestId,
     //     vehicleId: vehicle.id,
@@ -192,7 +192,7 @@ export async function workflowApproveAndList(
         recipientId: submitter,
         senderId: adminId,
         type: "managed_sale_status",
-        content: `Great news! Your managed sale request for "${vehicle.title}" has been approved and is now live on the marketplace at $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}. You'll receive $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} when it sells.`,
+        content: `Great news! Your managed sale request for "${vehicle.title}" has been approved and is now live on the marketplace at ¥${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}. You'll receive ¥${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} when it sells.`,
         related_entity_type: "Vehicle",
         related_entity_id: vehicle.id,
         url: `/vehicle?id=${vehicle.id}`,

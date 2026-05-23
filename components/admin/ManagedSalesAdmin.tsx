@@ -1371,7 +1371,7 @@ const openAdminEdit = async (id: string) => {
                               <span className="text-slate-600">Seller Receives:</span>
                               <span className="font-medium text-slate-700">
                                 {prices.sellerReceives !== null
-                                  ? `$${prices.sellerReceives.toLocaleString()}`
+                                  ? `¥${prices.sellerReceives.toLocaleString()}`
                                   : "N/A"}
                               </span>
                             </div>
@@ -1379,7 +1379,7 @@ const openAdminEdit = async (id: string) => {
                               <span className="text-slate-600">Buyer Pays:</span>
                               <span className="font-semibold text-blue-700">
                                 {prices.buyerPrice !== null
-                                  ? `$${prices.buyerPrice.toLocaleString()}`
+                                  ? `¥${prices.buyerPrice.toLocaleString()}`
                                   : "N/A"}
                               </span>
                             </div>

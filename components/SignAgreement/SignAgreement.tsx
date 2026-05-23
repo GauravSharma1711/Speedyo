@@ -357,7 +357,7 @@ export default function SignAgreementPage() {
                 <div>
                   <strong>Service Fee:</strong>{" "}
                   {agreement.service_fee_amount
-                    ? `$${agreement.service_fee_amount.toLocaleString()} per vehicle listing`
+                    ? `¥${agreement.service_fee_amount.toLocaleString()} per vehicle listing`
                     : "Varies per vehicle listing"}
                 </div>
               </div>

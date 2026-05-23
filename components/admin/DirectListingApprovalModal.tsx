@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/TextArea";
-import { X, CheckCircle, Car, DollarSign, User, Calendar, MapPin } from "lucide-react";
+import { X, CheckCircle, Car, DollarSign, JapaneseYen,User, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
 
@@ -162,7 +162,7 @@ export default function DirectListingApprovalModal({
             <Card className="bg-emerald-50 border-emerald-100">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  <JapaneseYen className="w-4 h-4 text-emerald-600" />
                   <span className="font-medium text-emerald-800">Asking Price</span>
                 </div>
                 <p className="text-2xl font-bold text-emerald-700">

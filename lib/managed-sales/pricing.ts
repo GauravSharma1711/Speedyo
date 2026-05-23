@@ -5,10 +5,16 @@ export function calculateServiceFeeAmount(price: unknown): number {
 
   const p = Math.floor(numericPrice);
 
-  if (p < 30000) return 300;
-  if (p <= 50000) return Math.round(300 + (p - 30000) * 0.08);
-  if (p <= 100000) return 500;
-  return Math.round(p * 0.06);
+  // if (p < 30000) return 300;
+  // if (p <= 50000) return Math.round(300 + (p - 30000) * 0.08);
+  // if (p <= 100000) return 500;
+  // return Math.round(p * 0.06);
+
+  
+  if (p < 50000) return 30000;
+if (p <= 300000) return Math.round(30000 + (p - 50000) * 0.08);
+if (p <= 833300) return 50000;
+return Math.round(p * 0.06);
 }
 
 export type ResolvedMsrPricing = {

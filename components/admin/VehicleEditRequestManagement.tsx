@@ -297,7 +297,7 @@ export default function VehicleEditRequestManagementUI() {
 
                         const showMoney = field === "price" && typeof newValue === "number";
                         const formatMoney = (v: unknown) =>
-                          typeof v === "number" ? `$${v.toLocaleString()}` : renderValue(v);
+                          typeof v === "number" ? `¥${v.toLocaleString()}` : renderValue(v);
                         
                         const showImage = field === "primary_image" && typeof newValue === "string";
 

@@ -218,7 +218,7 @@ export default function ManagedSaleDetailsModal({
 
   const renderChangeValue = (value: any, field: string) => {
     if (field === "seller_asking_price" || field === "price") {
-      return `$${Number(value)?.toLocaleString()}`;
+      return `¥${Number(value)?.toLocaleString()}`;
     }
     if (typeof value === "object" && value !== null) {
       return (

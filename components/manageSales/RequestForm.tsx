@@ -319,13 +319,23 @@ function defaultForm(): FormData {
   };
 }
 
+// function calculateServiceFeeAmount(price: number) {
+//   if (!price || price <= 0) return 0;
+//   if (price < 500) return 300;
+//   if (price <= 3000) return Math.round(300 + (price - 500) * 0.08);
+//   if (price <= 8333) return 500;
+//   return Math.round(price * 0.06);
+// }
+
 function calculateServiceFeeAmount(price: number) {
   if (!price || price <= 0) return 0;
-  if (price < 500) return 300;
-  if (price <= 3000) return Math.round(300 + (price - 500) * 0.08);
-  if (price <= 8333) return 500;
+  if (price < 50000) return 30000;
+  if (price <= 300000) return Math.round(30000 + (price - 50000) * 0.08);
+  if (price <= 833300) return 50000;
   return Math.round(price * 0.06);
 }
+
+
 
 export default function RequestFormUI(props: Props) {
   const { toast } = useToast();
