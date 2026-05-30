@@ -90,7 +90,7 @@ const handleGetStarted = () => {
   if (isLoggedIn) {
     router.push("/Feed");
   } else {
-    window.location.href = "https://speedyo.app/login";
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/signIn`||"https://speedyo.app/login";
   }
 };
 
