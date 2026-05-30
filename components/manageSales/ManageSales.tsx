@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { profileService } from "@/services/profile/profileServices";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input"; 
+import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import {
   Handshake,
@@ -17,8 +17,8 @@ import {
   Camera,
   Users,
   MapPin,
-  User as UserIcon, 
-  ArrowLeft, 
+  User as UserIcon,
+  ArrowLeft,
   Info,
   JapaneseYenIcon
 } from "lucide-react";
@@ -342,7 +342,7 @@ export default function ManagedSalesPage() {
                     <h3 className="text-xl sm:text-2xl font-bold text-slate-800 mb-1 sm:mb-2">Calculate Your Service Fee</h3>
                     <p className="text-slate-600 text-sm sm:text-base">Enter your vehicle's listing price to see the breakdown</p>
                   </div>
-                  
+
                   <div className="max-w-2xl mx-auto">
                     <div className="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 shadow-md border border-slate-200">
                       <div className="space-y-4 sm:space-y-6">
@@ -359,18 +359,26 @@ export default function ManagedSalesPage() {
                               className="pl-8 sm:pl-10 pr-3 sm:pr-4 text-lg sm:text-xl h-12 sm:h-14 border-2 border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 rounded-lg"
                               onChange={(e) => {
                                 const askingPrice = parseInt(e.target.value) || 0;
+                                // const calculateFee = (p: number): number => {
+                                //   if (p < 500) return 300;
+                                //   if (p <= 3000) return Math.round(300 + (p - 500) * 0.08);
+                                //   if (p <= 8333) return 500;
+                                //   return Math.round(p * 0.06);
+                                // };
+
+                                // CORRECT - yen-based logic
                                 const calculateFee = (p: number): number => {
-                                  if (p < 500) return 300;
-                                  if (p <= 3000) return Math.round(300 + (p - 500) * 0.08);
-                                  if (p <= 8333) return 500;
+                                  if (p < 50000) return 30000;
+                                  if (p <= 300000) return Math.round(30000 + (p - 50000) * 0.08);
+                                  if (p <= 833300) return 50000;
                                   return Math.round(p * 0.06);
                                 };
-                                
+
                                 if (askingPrice > 0) {
                                   const fee = calculateFee(askingPrice);
                                   const listingPrice = askingPrice + fee;
                                   const feePercentage = ((fee / listingPrice) * 100).toFixed(2);
-                                  
+
                                   const display = document.getElementById('calculator-results');
                                   if (display) {
                                     display.innerHTML = `
@@ -382,24 +390,23 @@ export default function ManagedSalesPage() {
                                         <div class="flex flex-col sm:flex-row justify-between sm:items-center py-2 sm:py-3 gap-2 sm:gap-0">
                                           <div>
                                             <span class="text-slate-600 font-medium block text-sm sm:text-base">Service Fee</span>
-                                            <span class="text-xs text-slate-500">${
-                                              askingPrice < 500 ? '¥300 minimum' :
-                                              askingPrice <= 3000 ? 'Scales ¥300-¥500' :
-                                              askingPrice <= 8333 ? '¥500 flat' : '6% of asking price'
-                                            }</span>
+                                            <span class="text-xs text-slate-500">${askingPrice < 500 ? '¥300 minimum' :
+                                        askingPrice <= 3000 ? 'Scales ¥300-¥500' :
+                                          askingPrice <= 8333 ? '¥500 flat' : '6% of asking price'
+                                      }</span>
                                           </div>
                                           <div class="text-left sm:text-right">
-                                            <span class="text-xl sm:text-2xl font-bold text-blue-600">+$${fee.toLocaleString()}</span>
+                                            <span class="text-xl sm:text-2xl font-bold text-blue-600">+¥${fee.toLocaleString()}</span>
                                             <span class="text-xs text-blue-500 block">(${feePercentage}%)</span>
                                           </div>
                                         </div>
                                         <div class="flex flex-col sm:flex-row justify-between sm:items-center py-3 sm:py-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg sm:rounded-xl px-4 sm:px-6 border-2 border-emerald-300 shadow-sm gap-1 sm:gap-0">
                                           <span class="text-base sm:text-lg font-bold text-emerald-800">Vehicle Listed At:</span>
-                                          <span class="text-2xl sm:text-3xl font-extrabold text-emerald-800">$${listingPrice.toLocaleString()}</span>
+                                          <span class="text-2xl sm:text-3xl font-extrabold text-emerald-800">¥${listingPrice.toLocaleString()}</span>
                                         </div>
                                         <div class="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-3 sm:p-4 mt-3 sm:mt-4">
                                           <p class="text-xs sm:text-sm text-blue-800 leading-relaxed">
-                                            <strong>How it works:</strong> Your vehicle will be listed at $${listingPrice.toLocaleString()}. When it sells, you receive your full asking price of $${askingPrice.toLocaleString()}. The service fee is included in the buyer's price.
+                                            <strong>How it works:</strong> Your vehicle will be listed at ¥${listingPrice.toLocaleString()}. When it sells, you receive your full asking price of ¥${askingPrice.toLocaleString()}. The service fee is included in the buyer's price.
                                           </p>
                                         </div>
                                       </div>
@@ -416,11 +423,11 @@ export default function ManagedSalesPage() {
                             />
                           </div>
                         </div>
-                        
+
                         <div id="calculator-results" className="hidden">
                           {/* Results will be dynamically inserted here */}
                         </div>
-                        
+
                         <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-4">
                           <div className="flex items-start gap-3">
                             <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />

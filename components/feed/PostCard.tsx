@@ -115,7 +115,7 @@ type ApiVehicle = {
 function safeMoney(v: any): string {
   const n = typeof v === "number" ? v : v ? Number(v) : NaN;
   if (!Number.isFinite(n)) return "—";
-  return `$${n.toLocaleString()}`;
+  return `¥${n.toLocaleString()}`;
 }
 
 export default function PostCard({

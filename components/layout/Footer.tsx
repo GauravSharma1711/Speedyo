@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { MessageSquare } from "lucide-react";
 import FeedbackModal from "../feedback/FeedbackModal";
+import Image from "next/image";
 
 export default function Footer() {
   const [showFeedbackModal, setShowFeedbackModal] = React.useState(false);
@@ -17,10 +18,14 @@ export default function Footer() {
             {/* Logo + Description */}
             <div>
               <Link href="/">
-                <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png"
+
+
+                <Image
+                  src="/speedyoFooter.png"
                   alt="Speedyo Logo"
-                  className="w-32 mb-4 brightness-0 invert"
+                  width={128}
+                  height={40}
+                  className="mb-4 brightness-0 invert"
                 />
               </Link>
 

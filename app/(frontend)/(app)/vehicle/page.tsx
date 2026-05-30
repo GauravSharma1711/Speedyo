@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -166,7 +166,9 @@ function toNumber(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export default function VehiclePage() {
+function VehiclePageContent(){
+
+  
   const sp = useSearchParams();
   const vehicleId = (sp.get("id") ?? "").trim();
   const router = useRouter();
@@ -959,5 +961,18 @@ export default function VehiclePage() {
       </div>
     </div>
   );
+
+}
+
+export default function VehiclePage() {
+
+
+     return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <VehiclePageContent />
+      </Suspense>
+    )
+
+
 }
 

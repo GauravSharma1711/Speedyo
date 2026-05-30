@@ -48,6 +48,7 @@ function buildVehicleData(
     transmission: mapTransmission(msr.vehicle_transmission),
     location: msr.vehicle_location ?? undefined,
     price: buyerPrice,
+    dealer_fee: msr.listing_type === 'direct' ? (msr.dealer_fee != null ? Number(msr.dealer_fee) : null) : null,
     website_managed: true,
     status: opts.status ?? "available",
     verified: true,
@@ -115,9 +116,9 @@ export async function workflowApproveAndList(
      const messageContent = 
       `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\n` +
       `Your vehicle is now live on Speedyo with the following details:\n` +
-      `• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
-      `• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
-      `• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• Listed Price (Buyer Pays): ¥${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• You Will Receive: ¥${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
+      `• Service Fee: ¥${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n` +
       `• Status: Available for test drives\n` +
       `• Managed by: Speedyo Team\n\n` +
       `We've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\n` +
@@ -177,7 +178,7 @@ export async function workflowApproveAndList(
     //   data: {
     //     senderId: adminId,
     //     recipientId: submitter,
-    //     content: `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\nYour vehicle is now live on Speedyo with the following details:\n• Listed Price (Buyer Pays): $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: $${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
+    //     content: `🎉 Great news! Your managed sale request for "${vehicle.title}" has been approved by our team.\n\nYour vehicle is now live on Speedyo with the following details:\n• Listed Price (Buyer Pays): ¥${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• You Will Receive: ¥${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Service Fee: ¥${pricing.serviceFee.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements. Potential buyers can now schedule test drives, and we'll coordinate everything for you.\n\nYou can view your live listing anytime from your dashboard. We'll keep you updated on any test drive requests and buyer interest.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
     //     message_type: "system",
     //     managedSaleRequestId: requestId,
     //     vehicleId: vehicle.id,
@@ -191,7 +192,7 @@ export async function workflowApproveAndList(
         recipientId: submitter,
         senderId: adminId,
         type: "managed_sale_status",
-        content: `Great news! Your managed sale request for "${vehicle.title}" has been approved and is now live on the marketplace at $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}. You'll receive $${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} when it sells.`,
+        content: `Great news! Your managed sale request for "${vehicle.title}" has been approved and is now live on the marketplace at ¥${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}. You'll receive ¥${pricing.ownerReceives.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} when it sells.`,
         related_entity_type: "Vehicle",
         related_entity_id: vehicle.id,
         url: `/vehicle?id=${vehicle.id}`,
@@ -270,18 +271,46 @@ export async function workflowPatchStatus(
       });
 
       let vTitle = updated.vehicle_title ?? "your vehicle";
-      await tx.message.create({
-        data: {
-          senderId: adminId,
-          recipientId: submitter,
-          content: `🎉 Great news! Your managed sale request for "${vTitle}" has been approved by our team.\n\nYour vehicle is now live on Speedyo with the following details:\n• Listed Price: $${pricing.buyerPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n• Status: Available for test drives\n• Managed by: Speedyo Team\n\nWe've set up test drive availability based on your access arrangements.\n\nThank you for choosing Speedyo's managed sales service! 🚗`,
-          message_type: "system",
-          managedSaleRequestId: requestId,
-          vehicleId: vehicleId!,
-          conversation_id: `managed_sale_${requestId}`,
-          read: false,
-        },
-      });
+    const [user1Id, user2Id] = [adminId, submitter].sort();
+
+const conversation = await tx.conversation.upsert({
+  where: {
+    user1Id_user2Id_vehicleId: {
+      user1Id,
+      user2Id,
+      vehicleId: vehicleId!,
+    },
+  },
+  create: {
+    user1Id,
+    user2Id,
+    vehicleId: vehicleId!,
+    last_message: `Your managed sale for "${vTitle}" has been approved`,
+    last_message_at: new Date(),
+    last_message_type: "system",
+    user1_unread: user1Id === submitter ? 1 : 0,
+    user2_unread: user2Id === submitter ? 1 : 0,
+  },
+  update: {
+    last_message: `Your managed sale for "${vTitle}" has been approved`,
+    last_message_at: new Date(),
+    user1_unread: user1Id === submitter ? { increment: 1 } : undefined,
+    user2_unread: user2Id === submitter ? { increment: 1 } : undefined,
+  },
+});
+
+await tx.message.create({
+  data: {
+    senderId: adminId,
+    recipientId: submitter,
+    content: `🎉 Great news! Your managed sale request for "${vTitle}" has been approved...`,
+    message_type: "system",
+    managedSaleRequestId: requestId,
+    vehicleId: vehicleId!,
+    conversationId: conversation.id,  
+    read: false,
+  },
+});
 
       await tx.notification.create({
         data: {
@@ -323,7 +352,7 @@ export async function workflowPatchStatus(
           content: `Regarding your managed sale request for "${vTitle}", it has been declined. Reason: ${notes} Please check your dashboard for more details.`,
           message_type: "system",
           managedSaleRequestId: requestId,
-          conversation_id: `managed_sale_${requestId}`,
+           conversationId: null, 
           read: false,
         },
       });
@@ -353,6 +382,7 @@ export async function workflowPatchStatus(
   const allowed = new Set([
     "pending_initial_review",
     "pending_review",
+    "pending_approval",
     "approved",
     "declined",
     "listed",
@@ -778,6 +808,8 @@ export async function workflowAdminPatchMsr(
     data[k] = v;
   }
 
+  const isDirect = msrBefore.listing_type === "direct";
+
   const asking =
     typeof data.seller_asking_price === "number"
       ? data.seller_asking_price
@@ -786,10 +818,16 @@ export async function workflowAdminPatchMsr(
         : undefined;
 
   if (asking !== undefined && !Number.isNaN(asking) && asking >= 0) {
-    const serviceFee = calculateServiceFeeAmount(asking);
-    data.owner_receives_amount = asking;
-    data.service_fee_amount = serviceFee;
-    data.final_sale_price_for_buyer = asking + serviceFee;
+    if (isDirect) {
+      data.service_fee_amount = 0;
+      data.owner_receives_amount = asking;
+      data.final_sale_price_for_buyer = asking + (data.dealer_fee ? Number(data.dealer_fee) : 0);
+    } else {
+      const serviceFee = calculateServiceFeeAmount(asking);
+      data.owner_receives_amount = asking;
+      data.service_fee_amount = serviceFee;
+      data.final_sale_price_for_buyer = asking + serviceFee;
+    }
   }
 
   const vi = body.vehicle_images;

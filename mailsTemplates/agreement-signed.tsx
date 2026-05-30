@@ -87,7 +87,7 @@ export default function AgreementSignedEmail({
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
                 <tr>
                   <td align="center">
-                    <a href="${appUrl}/agreements/${agreement_id}" style="display:inline-block; background:linear-gradient(135deg, #2563eb 0%, #10b981 100%); color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:8px; font-weight:700; font-size:15px;">
+                    <a href="${appUrl}/ViewDealershipAgreement/${agreement_id}" style="display:inline-block; background:linear-gradient(135deg, #2563eb 0%, #10b981 100%); color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:8px; font-weight:700; font-size:15px;">
                       View Agreement
                     </a>
                   </td>

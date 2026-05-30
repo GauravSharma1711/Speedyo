@@ -257,6 +257,7 @@ model Vehicle {
   model                   String
   year                    Int
   price                   Decimal                     @db.Decimal(12, 2)
+  dealer_fee              Decimal?                    @db.Decimal(12, 2)
   mileage                 Int?
   condition               VehicleCondition?
   description             String?
@@ -550,6 +551,7 @@ model ManagedSaleRequest {
   immobilizer_alarm          Boolean?
   seat_belt_sensors          Boolean?
   access_arrangements        Json                         @default("{}")
+  dealer_fee                 Decimal?                     @db.Decimal(12, 2)
   service_fee_amount         Decimal?                     @db.Decimal(12, 2)
   owner_receives_amount      Decimal?                     @db.Decimal(12, 2)
   final_sale_price_for_buyer Decimal?                     @db.Decimal(12, 2)

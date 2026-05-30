@@ -55,18 +55,18 @@ const tierOptions = [
     ],
     popular: true,
   },
-  // {
-  //   id: "tier3" as const,
-  //   name: "Enterprise",
-  //   price: "¥89,999",
-  //   features: [
-  //     "Unlimited active listings",
-  //     "Top-tier marketplace visibility",
-  //     "Full analytics suite",
-  //     "Dedicated account manager",
-  //     "API access (coming soon)",
-  //   ],
-  // },
+  {
+    id: "tier3" as const,
+    name: "Enterprise",
+    price: "¥89,999",
+    features: [
+      "Unlimited active listings",
+      "Top-tier marketplace visibility",
+      "Full analytics suite",
+      "Dedicated account manager",
+      "API access (coming soon)",
+    ],
+  },
 ];
 
 type FormDataState = {
@@ -388,12 +388,17 @@ if (user?.business_name || user?.dealership_selected_tier) {
                 {tierOptions.map((tier) => (
                   <Card
                     key={tier.id}
-                    className={`cursor-pointer transition-all duration-300 ${
+                    className={`cursor-pointer transition-all duration-300
+                       ${
+    tier.id === "tier3" ? "opacity-60 cursor-not-allowed" : ""  
+  }
+                      ${
                       formData.dealership_selected_tier === tier.id
                         ? "ring-2 ring-blue-500 shadow-lg"
                         : "hover:shadow-md"
                     } ${tier.popular ? "border-2 border-blue-500" : ""}`}
-                    onClick={() => handleInputChange("dealership_selected_tier", tier.id)}
+                    // onClick={() => handleInputChange("dealership_selected_tier", tier.id)}
+                      onClick={() => tier.id !== "tier3" && handleInputChange("dealership_selected_tier", tier.id)} 
                   >
                     <CardHeader className="text-center relative">
                       {tier.popular && (

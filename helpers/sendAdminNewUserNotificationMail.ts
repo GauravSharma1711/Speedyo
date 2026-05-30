@@ -2,8 +2,10 @@ import { resend } from '../lib/resend'
 import AdminNewUserNotificationEmail from '@/mailsTemplates/AdminNewUserNotificationEmail'
 
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
-const adminPanelUrl = process.env.ADMIN_PANEL_URL || 'http://localhost:3000/AdminPanel'
 
+const adminPanelUrl =
+  `${process.env.NEXTAUTH_URL}/adminpanel` ||
+  "http://localhost:3000/AdminPanel";
 export async function sendAdminNewUserNotificationMail(
   adminEmails: string[],
   full_name: string,

@@ -28,7 +28,7 @@ import TransferProgressTracker from "./TransferProgressTracker";
 import { useToast } from "@/components/ui/UseToast";
 import { useGuestDashboardStore } from "@/store/dashboard";
 import { useSellerDashboardStore } from "@/store/dashboard";
-import { managedSaleService, messageService, publicUserService, vehicleService } from "@/services/dashboard";
+import { managedSaleService, messageService, publicUserService, vehicleService, directListingService } from "@/services/dashboard";
 import axios from "@/lib/axios";
 import CreateVehicleModalUI from "./CreateVehicleModalUI";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/DropdownMenu";
@@ -43,6 +43,8 @@ export default function GuestDashboard({ user }: { user: any }) {
   const {
   listings,  loadSellerDashboard
 } = useSellerDashboardStore();
+
+console.log("manage sales",managedSales);
 
   const messagesWithContext = conversations?.flatMap((c: any) =>
     (c.messages || []).map((m: any) => {
@@ -571,7 +573,13 @@ const [isSubmitting, setIsSubmitting] = useState(false);
 const handleCreateVehicle = async (vehicleData: any) => {
   setIsSubmitting(true);
   try {
-    const payload = {
+    const dealerFee = Number(vehicleData.dealer_fee) || 0;
+    const vehiclePrice = Number(vehicleData.price) || 0;
+
+    const validUrls = (arr: string[]) =>
+      Array.isArray(arr) ? arr.filter((u: string) => u && !u.startsWith("blob:")) : [];
+
+    await directListingService.create({
       contact_full_name: user?.full_name || "",
       contact_email: user?.email || "",
       contact_phone: user?.phone || "",
@@ -585,20 +593,18 @@ const handleCreateVehicle = async (vehicleData: any) => {
       vehicle_fuel_type: vehicleData.fuel_type || "gasoline",
       vehicle_transmission: vehicleData.transmission || "automatic",
       vehicle_location: vehicleData.location,
-      seller_asking_price: vehicleData.price,
-      listing_type: "direct",
-      status: "pending_approval",
-      service_fee_amount: 0,
-      owner_receives_amount: vehicleData.price,
-      final_sale_price_for_buyer: vehicleData.price,
+      seller_asking_price: vehiclePrice,
+      dealer_fee: dealerFee,
       terms_agreed: true,
-    };
-
-    await managedSaleService.create(payload);
+      vehicle_images: validUrls(vehicleData.images),
+      vehicle_images_thumbnails: validUrls(vehicleData.images),
+      vehicle_images_small: validUrls(vehicleData.images),
+      vehicle_images_medium: validUrls(vehicleData.images),
+    });
 
     setShowCreateModal(false);
     setEditingVehicle(null);
-    loadSellerDashboard(); 
+    loadSellerDashboard();
     toast({
       title: "Direct Listing Submitted",
       description: "Your vehicle will be listed after admin approval.",
@@ -1286,6 +1292,8 @@ const handleMarkAsAvailable = useCallback(async (vehicleId: string) => {
                   </CardContent>
                 </Card>
               )}
+
+
 
               {managedSales.length > 0 && (
                 <Card className="bg-white/80 backdrop-blur-sm shadow-lg">

@@ -104,6 +104,8 @@ export default function SignAgreementPage() {
           return;
         }
 
+        console.log("data",data);
+
         const dbAgreement = data.agreement;
         setAgreement({
           id: dbAgreement.id,
@@ -237,7 +239,7 @@ export default function SignAgreementPage() {
                   </div>
                   <div>
                     <span className="text-slate-600">Signed By:</span>
-                    <span className="ml-2 font-medium">{agreement.signed_by_name ?? "—"}</span>
+                    <span className="ml-2 font-medium">{agreement.dealership_name ?? "—"}</span>
                   </div>
                   <div>
                     <span className="text-slate-600">Signed On:</span>
@@ -355,7 +357,7 @@ export default function SignAgreementPage() {
                 <div>
                   <strong>Service Fee:</strong>{" "}
                   {agreement.service_fee_amount
-                    ? `$${agreement.service_fee_amount.toLocaleString()} per vehicle listing`
+                    ? `¥${agreement.service_fee_amount.toLocaleString()} per vehicle listing`
                     : "Varies per vehicle listing"}
                 </div>
               </div>

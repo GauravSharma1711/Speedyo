@@ -106,6 +106,7 @@ export async function GET(req: NextRequest) {
           model: true,
           year: true,
           price: true,
+          dealer_fee: true,
           mileage: true,
           condition: true,
           description: true,

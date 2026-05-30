@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
         doc.text(`${index + 1}. ${vehicle.year} ${vehicle.make} ${vehicle.model}`, 20, y);
         nextLine();
-        doc.text(`   Price: $${Number(vehicle.price).toLocaleString()}`, 20, y);
+        doc.text(`   Price: ¥${Number(vehicle.price).toLocaleString()}`, 20, y);
         nextLine();
 
         if (vehicle.mileage) {
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     if (agreement.service_fee_amount) {
       doc.text(
-        `Service Fee: $${Number(agreement.service_fee_amount).toLocaleString()} per vehicle listing`,
+        `Service Fee: ¥${Number(agreement.service_fee_amount).toLocaleString()} per vehicle listing`,
         20,
         y
       );

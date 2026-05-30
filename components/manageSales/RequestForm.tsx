@@ -319,13 +319,23 @@ function defaultForm(): FormData {
   };
 }
 
+// function calculateServiceFeeAmount(price: number) {
+//   if (!price || price <= 0) return 0;
+//   if (price < 500) return 300;
+//   if (price <= 3000) return Math.round(300 + (price - 500) * 0.08);
+//   if (price <= 8333) return 500;
+//   return Math.round(price * 0.06);
+// }
+
 function calculateServiceFeeAmount(price: number) {
   if (!price || price <= 0) return 0;
-  if (price < 500) return 300;
-  if (price <= 3000) return Math.round(300 + (price - 500) * 0.08);
-  if (price <= 8333) return 500;
+  if (price < 50000) return 30000;
+  if (price <= 300000) return Math.round(30000 + (price - 50000) * 0.08);
+  if (price <= 833300) return 50000;
   return Math.round(price * 0.06);
 }
+
+
 
 export default function RequestFormUI(props: Props) {
   const { toast } = useToast();
@@ -406,34 +416,58 @@ export default function RequestFormUI(props: Props) {
     [],
   );
 
-  const uploadFiles = useCallback(
-    async (files: FileList | File[]) => {
-      const list = Array.from(files || []);
-      if (list.length === 0) return;
-      if (isUploading) return;
+ const uploadFiles = useCallback(
+  async (files: FileList | File[]) => {
+    const list = Array.from(files || []);
+    if (list.length === 0 || isUploading) return;
 
-      setIsUploading(true);
-      setUploadCount(list.length);
-      try {
-        const urls = list.map((f) => URL.createObjectURL(f));
-        setFormData((prev) => ({
-          ...prev,
-          vehicle_details: {
-            ...prev.vehicle_details,
-            images: [...prev.vehicle_details.images, ...urls],
-            images_thumbnails: [...prev.vehicle_details.images_thumbnails, ...urls],
-            images_small: [...prev.vehicle_details.images_small, ...urls],
-            images_medium: [...prev.vehicle_details.images_medium, ...urls],
-          },
-        }));
-        toast({ title: "Photos added", description: "Local preview only." });
-      } finally {
-        setIsUploading(false);
-        setUploadCount(0);
-      }
-    },
-    [isUploading, toast],
-  );
+    setIsUploading(true);
+    setUploadCount(list.length);
+
+    try {
+      const formData = new FormData();
+      list.forEach((file) => formData.append("files", file));
+
+      const res = await fetch("/api/uploadMsrPhotos", {
+        method: "POST",
+        body: formData,
+        // no Content-Type header — browser sets it with boundary automatically
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      const uploadedUrls: string[] = data.urls;
+
+      setFormData((prev) => ({
+        ...prev,
+        vehicle_details: {
+          ...prev.vehicle_details,
+          images: [...prev.vehicle_details.images, ...uploadedUrls],
+          images_thumbnails: [...prev.vehicle_details.images_thumbnails, ...uploadedUrls],
+          images_small: [...prev.vehicle_details.images_small, ...uploadedUrls],
+          images_medium: [...prev.vehicle_details.images_medium, ...uploadedUrls],
+        },
+      }));
+
+      toast({
+        title: "Photos uploaded",
+        description: `${uploadedUrls.length} photo(s) saved successfully.`,
+      });
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast({
+        title: "Upload Failed",
+        description: "Could not upload images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadCount(0);
+    }
+  },
+  [isUploading, toast],
+);
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -603,13 +637,16 @@ export default function RequestFormUI(props: Props) {
         },
         access_arrangements: formData.access_arrangements,
         terms_agreed: Boolean(formData.terms_agreed),
-        submitted_by_user_id: props.requestToEdit.submitted_by_user_id,
-        status: props.requestToEdit.status === "pending_initial_review" ? "pending_review" : (props.requestToEdit.status || "pending_review"),
+  submitted_by_user_id: props.requestToEdit?.submitted_by_user_id,  
+  status: props.requestToEdit?.status === "pending_initial_review"
+    ? "pending_review"
+    : (props.requestToEdit?.status || "pending_review"),  
         final_sale_price_for_buyer: buyerPrice,
         service_fee_amount: fee,
         owner_receives_amount: asking,
       };
-
+      
+     console.log("payload",payload);
       setIsSubmitting(true);
       try {
         await props.onSave(payload);
@@ -824,7 +861,7 @@ export default function RequestFormUI(props: Props) {
                 <SelectTrigger>
                   <SelectValue placeholder="Select option" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="Yes">Yes</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
@@ -845,7 +882,7 @@ export default function RequestFormUI(props: Props) {
                 <SelectTrigger>
                   <SelectValue placeholder="Select option" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="Yes">Yes</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
@@ -974,7 +1011,7 @@ export default function RequestFormUI(props: Props) {
                 <SelectTrigger id="current_plate_type">
                   <SelectValue placeholder="Select plate type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="kanji">Kanji (Japanese Plates)</SelectItem>
                   <SelectItem value="y_plate">Y-Plate (SOFA)</SelectItem>
                   <SelectItem value="a_plate">A-Plate (Civilian)</SelectItem>
@@ -1004,7 +1041,7 @@ export default function RequestFormUI(props: Props) {
                 <SelectTrigger id="road_tax_paid">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="yes">Yes</SelectItem>
                   <SelectItem value="no">No</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
@@ -1032,7 +1069,7 @@ export default function RequestFormUI(props: Props) {
                 <SelectTrigger id="title_type">
                   <SelectValue placeholder="Select title type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="Active">Active</SelectItem>
                   <SelectItem value="Deregistered">Deregistered</SelectItem>
                   <SelectItem value="Pending Initial Registration">Pending Initial Registration</SelectItem>
@@ -1053,7 +1090,7 @@ export default function RequestFormUI(props: Props) {
                 <SelectTrigger id="registration_location">
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="okinawa">Okinawa</SelectItem>
                   <SelectItem value="mainland_japan">Mainland Japan</SelectItem>
                   <SelectItem value="us_import">US Import</SelectItem>
@@ -1091,7 +1128,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="transmission">
                 <SelectValue placeholder="Select transmission" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="automatic">Automatic</SelectItem>
                 <SelectItem value="cvt">CVT</SelectItem>
                 <SelectItem value="manual">Manual</SelectItem>
@@ -1105,7 +1142,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="drive_type">
                 <SelectValue placeholder="Select drive type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="2wd">2WD (Front or Rear Wheel Drive)</SelectItem>
                 <SelectItem value="4wd">4WD (Four Wheel Drive)</SelectItem>
                 <SelectItem value="awd">AWD (All Wheel Drive)</SelectItem>
@@ -1119,7 +1156,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="fuel_type">
                 <SelectValue placeholder="Select fuel type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="gasoline">Gasoline</SelectItem>
                 <SelectItem value="hybrid">Hybrid</SelectItem>
                 <SelectItem value="electric">Electric</SelectItem>
@@ -1155,7 +1192,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="body_type">
                 <SelectValue placeholder="Select body type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="compact_van">Compact Van</SelectItem>
                 <SelectItem value="hatchback">Hatchback</SelectItem>
                 <SelectItem value="wagon">Wagon</SelectItem>
@@ -1201,7 +1238,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="doors">
                 <SelectValue placeholder="Select doors" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="2">2 Doors</SelectItem>
                 <SelectItem value="3">3 Doors</SelectItem>
                 <SelectItem value="4">4 Doors</SelectItem>
@@ -1216,7 +1253,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="seating_capacity">
                 <SelectValue placeholder="Select capacity" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="2">2 Passengers</SelectItem>
                 <SelectItem value="4">4 Passengers</SelectItem>
                 <SelectItem value="5">5 Passengers</SelectItem>
@@ -1233,7 +1270,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="steering_wheel">
                 <SelectValue placeholder="Select steering position" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="right_hand_drive">Right-Hand Drive</SelectItem>
                 <SelectItem value="left_hand_drive">Left-Hand Drive</SelectItem>
               </SelectContent>
@@ -1246,7 +1283,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="condition">
                 <SelectValue placeholder="Select condition" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="excellent">Excellent</SelectItem>
                 <SelectItem value="good">Good</SelectItem>
                 <SelectItem value="fair">Fair</SelectItem>
@@ -1319,7 +1356,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="drivetrain">
                 <SelectValue placeholder="Select drivetrain" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]" >
                 <SelectItem value="fwd">FWD (Front-Wheel Drive)</SelectItem>
                 <SelectItem value="rwd">RWD (Rear-Wheel Drive)</SelectItem>
                 <SelectItem value="awd">AWD (All-Wheel Drive)</SelectItem>
@@ -1354,7 +1391,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="tire_condition">
                 <SelectValue placeholder="Select tire condition" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="excellent">Excellent</SelectItem>
                 <SelectItem value="good">Good</SelectItem>
                 <SelectItem value="worn">Worn</SelectItem>
@@ -1368,7 +1405,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="battery_condition">
                 <SelectValue placeholder="Select battery condition" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="new">New</SelectItem>
                 <SelectItem value="recently_replaced">Recently Replaced</SelectItem>
                 <SelectItem value="original">Original</SelectItem>
@@ -1385,7 +1422,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="hybrid_system_status">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="ok">OK</SelectItem>
                 <SelectItem value="service_needed">Service Needed</SelectItem>
                 <SelectItem value="not_applicable">Not Applicable</SelectItem>
@@ -1403,7 +1440,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="maintenance_history">
                 <SelectValue placeholder="Select history" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="full">Full (Complete Records Available)</SelectItem>
                 <SelectItem value="partial">Partial (Some Records Available)</SelectItem>
                 <SelectItem value="unknown">Unknown (No Records Available)</SelectItem>
@@ -1445,7 +1482,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="power_sliding_doors">
                 <SelectValue placeholder="Select option" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="left">Left</SelectItem>
                 <SelectItem value="right">Right</SelectItem>
                 <SelectItem value="both">Both</SelectItem>
@@ -1460,7 +1497,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="headlights">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="led">LED</SelectItem>
                 <SelectItem value="halogen">Halogen</SelectItem>
                 <SelectItem value="projector">Projector</SelectItem>
@@ -1474,7 +1511,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="fog_lights">
                 <SelectValue placeholder="Select option" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="front">Front</SelectItem>
                 <SelectItem value="rear">Rear</SelectItem>
                 <SelectItem value="none">None</SelectItem>
@@ -1488,7 +1525,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="roof_type">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="solid">Solid</SelectItem>
                 <SelectItem value="sunroof">Sunroof</SelectItem>
                 <SelectItem value="panoramic">Panoramic</SelectItem>
@@ -1502,7 +1539,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="side_mirrors">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="power_fold">Power Fold</SelectItem>
                 <SelectItem value="heated">Heated</SelectItem>
                 <SelectItem value="manual">Manual</SelectItem>
@@ -1516,7 +1553,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="body_condition">
                 <SelectValue placeholder="Select condition" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="no_damage">No Damage</SelectItem>
                 <SelectItem value="minor_scratches">Minor Scratches</SelectItem>
                 <SelectItem value="repaired_damage">Repaired Damage</SelectItem>
@@ -1591,7 +1628,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="air_conditioning">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="manual">Manual</SelectItem>
                 <SelectItem value="auto_dual_zone">Auto Dual-Zone</SelectItem>
               </SelectContent>
@@ -1604,7 +1641,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="upholstery">
                 <SelectValue placeholder="Select material" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="fabric">Fabric</SelectItem>
                 <SelectItem value="leather">Leather</SelectItem>
                 <SelectItem value="synthetic">Synthetic</SelectItem>
@@ -1618,7 +1655,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="seat_type">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="standard">Standard</SelectItem>
                 <SelectItem value="captain">Captain</SelectItem>
                 <SelectItem value="fold_flat">Fold-Flat</SelectItem>
@@ -1632,7 +1669,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="seat_adjustments">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="manual">Manual</SelectItem>
                 <SelectItem value="electric">Electric</SelectItem>
               </SelectContent>
@@ -1645,7 +1682,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="parking_sensors">
                 <SelectValue placeholder="Select option" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="front">Front</SelectItem>
                 <SelectItem value="rear">Rear</SelectItem>
                 <SelectItem value="both">Both</SelectItem>
@@ -1660,7 +1697,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="power_windows">
                 <SelectValue placeholder="Select option" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="front">Front</SelectItem>
                 <SelectItem value="rear">Rear</SelectItem>
                 <SelectItem value="all">All</SelectItem>
@@ -1675,7 +1712,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="interior_lighting">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="led">LED</SelectItem>
                 <SelectItem value="standard">Standard</SelectItem>
               </SelectContent>
@@ -1731,7 +1768,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="cruise_control">
                 <SelectValue placeholder="Select option" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="standard">Standard</SelectItem>
                 <SelectItem value="adaptive">Adaptive</SelectItem>
                 <SelectItem value="none">None</SelectItem>
@@ -1886,7 +1923,7 @@ export default function RequestFormUI(props: Props) {
               <SelectTrigger id="navigation_system">
                 <SelectValue placeholder="Select option" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="built_in">Built-in</SelectItem>
                 <SelectItem value="optional">Optional</SelectItem>
                 <SelectItem value="none">None</SelectItem>
@@ -2066,7 +2103,7 @@ export default function RequestFormUI(props: Props) {
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select key access method" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="direct_handover">Direct handover to Speedyo Staff</SelectItem>
                   <SelectItem value="lockbox">Lockbox at vehicle location</SelectItem>
                   <SelectItem value="key_dropoff">Key drop-off at specified location</SelectItem>

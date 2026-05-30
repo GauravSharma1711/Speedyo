@@ -155,10 +155,10 @@ function setSubmitting(id: string, action: string | null) {
       setIsSubmitting(false);
     }
   }
-
+ 
   // ── Copy link ──────────────────────────────────────────────────────────────
   async function copyAgreementLink(a: liaisonAgreement) {
-    const fullUrl = `${window.location.origin}/LiaisonAgreement?id=${a.id}`;
+    const fullUrl = `${window.location.origin}/ViewLiaisonAgreement/${a.id}`;
     await navigator.clipboard.writeText(fullUrl);
     toast({ title: "Copied", description: "Agreement link copied." });
     alert("Agreement link copied to clipboard!");
@@ -181,82 +181,24 @@ function setSubmitting(id: string, action: string | null) {
 
   // ── Download PDF ───────────────────────────────────────────────────────────
   async function handleDownloadPDF(a: liaisonAgreement) {
-   setSubmitting(a.id, "download");
-    try {
-      const application = a.application;
-
-      const termStart = a.agreement_start_date
-        ? new Date(a.agreement_start_date).toLocaleDateString()
-        : "N/A";
-      const termEnd = a.agreement_end_date
-        ? new Date(a.agreement_end_date).toLocaleDateString()
-        : "indefinite";
-
-      const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8" />
-        <title>Liaison_Agreement_${a.id}</title>
-        <style>
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body {
-            font-family: Arial, sans-serif;
-            color: #1a1a1a;
-            padding: 60px 57px;
-            max-width: 850px;
-            margin: 0 auto;
-          }
-          h1 { font-size: 22px; font-weight: bold; margin-bottom: 32px; }
-          h2 { font-size: 15px; font-weight: bold; margin-top: 28px; margin-bottom: 10px; }
-          p { font-size: 13px; line-height: 1.8; padding-left: 14px; color: #1a1a1a; }
-        </style>
-      </head>
-      <body>
-        <h1>${a.agreement_title || "Speedyo Dealership Partnership Liaison Agreement"}</h1>
-
-        <h2>Position Title</h2>
-        <p>${a.position_title || "Bilingual Dealership Liaison — Speedyo Dealership Outreach Program"}</p>
-
-        <h2>Compensation</h2>
-        <p>Fixed Fee: ${a.fixed_fee_percentage ?? "10"}% of service fee per assisted sale</p>
-        <p>Residual Pay: ${a.residual_pay_percentage ?? "3"}% for subsequent sales from referred dealerships</p>
-        <p>Payment upon successful vehicle sale</p>
-
-        <h2>Term</h2>
-        <p>Effective from ${termStart} to ${termEnd}</p>
-        <p>${a.termination_notice_days ?? 30} days notice required for termination</p>
-
-        ${application ? `
-        <h2>Application Information</h2>
-        <p>Name: ${application.full_name}</p>
-        <p>Email: ${application.email}</p>
-        <p>Phone: ${application.phone}</p>
-        <p>Language Proficiency: ${application.language_proficiency}</p>
-        ${application.address ? `<p>Address: ${application.address}</p>` : ""}
-        ${application.previous_experience ? `<p>Previous Experience: ${application.previous_experience}</p>` : ""}
-        ${application.automotive_knowledge ? `<p>Automotive Knowledge: ${application.automotive_knowledge}</p>` : ""}
-        ${application.availability ? `<p>Availability: ${application.availability}</p>` : ""}
-        ` : ""}
-      </body>
-      </html>
-    `;
-
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `Liaison_Agreement_${a.id}.html`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-
-      toast({ title: "Downloaded", description: `Liaison_Agreement_${a.id}.html saved.` });
-    } finally {
-     setSubmitting(a.id, null);
-    }
+  setSubmitting(a.id, "download");
+  try {
+    const blob = await lisisonAgreementService.downloadPdf(a.id);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `Liaison_Agreement_${a.id}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+    toast({ title: "Downloaded", description: `Liaison_Agreement_${a.id}.pdf saved.` });
+  } catch {
+    toast({ title: "Error", description: "Failed to download PDF.", variant: "destructive" });
+  } finally {
+    setSubmitting(a.id, null);
   }
+}
 
   // ── Delete ─────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
@@ -383,6 +325,13 @@ function setSubmitting(id: string, action: string | null) {
   const isDownloading = submittingIds[a.id] === "download";
   const isDeleting    = submittingIds[a.id] === "delete";
 
+          const viewHref =
+              // a.status === "signed"
+                // ? 
+                `/ViewLiaisonAgreement/${a.id}`
+                // : `/SignAgreement/${a.id}`;
+
+                
 
 
 return (
@@ -439,7 +388,8 @@ return (
                       </Button>
 
                       <Link
-                        href={`/LiaisonAgreement?id=${a.id}`}
+                       href={viewHref}
+                       
                         target="_blank"
                         rel="noopener noreferrer"
                       >

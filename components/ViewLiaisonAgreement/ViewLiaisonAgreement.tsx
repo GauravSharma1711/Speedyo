@@ -1,5 +1,5 @@
 "use client";
-import { useSearchParams } from "next/navigation";
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -84,7 +84,7 @@ const MOCK_AGREEMENTS: LiaisonAgreementRow[] = [
 
 export default function ViewLiaisonAgreementUI() {
   const router = useRouter();
-  const params = useParams<{ id: string }>();
+
   const { toast } = useToast();
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const {
@@ -100,21 +100,27 @@ export default function ViewLiaisonAgreementUI() {
   } = useLiaisonAgreementStore();
 
   const [hasFetched, setHasFetched] = useState(false);
+  const [localLoading, setLocalLoading] = useState(true);
 
   useEffect(() => {
   useLiaisonAgreementStore.setState({ agreement: null });
 }, []);
 
       
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id"); 
+const params = useParams<{ id: string }>();
+const id = params.id;  
+
+console.log("id is this",id)
   
 useEffect(() => {
   if (!id) return;
-  Promise.all([getAll(), getAgreementById(id)])
-    .finally(() => setHasFetched(true));  
-}, [id]);
-
+  setLocalLoading(true);
+  getAgreementById(id)          
+    .finally(() => {
+      setHasFetched(true);
+      setLocalLoading(false);
+    });
+}, [id]);  
 
 console.log("current agreement",agreement);
 
@@ -137,7 +143,7 @@ console.log("current agreement",agreement);
   });
 
   // UI-only "loading" while params resolve
-if (!id || isLoading || !hasFetched) {
+if (!id || localLoading  || !hasFetched) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 flex items-center justify-center">
       <div className="text-center">

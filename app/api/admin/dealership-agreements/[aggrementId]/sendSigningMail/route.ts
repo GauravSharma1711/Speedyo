@@ -6,7 +6,7 @@ import { sendDealershipSendAgreementMail } from "@/helpers/sendDealershipSigning
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ agreementId: string }> },
+  context: { params: Promise<{ aggrementId: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,10 +14,10 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { agreementId } = await context.params;
+    const { aggrementId } = await context.params;
 
     const agreement = await prisma.dealershipVehicleAgreement.findUnique({
-      where: { id: agreementId },
+      where: { id: aggrementId },
     });
 
     if (!agreement) {
@@ -32,6 +32,8 @@ export async function POST(
       return NextResponse.json({ error: "No agreement URL found" }, { status: 400 });
     }
 
+    console.log("aggrement url", agreement.agreement_url)
+
     await sendDealershipSendAgreementMail(
       agreement.email,
       agreement.dealership_name,
@@ -42,7 +44,7 @@ export async function POST(
     );
 
     await prisma.dealershipVehicleAgreement.update({
-      where: { id: agreementId },
+      where: { id: aggrementId },
       data: { status: "pending_signature" },
     });
 

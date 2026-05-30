@@ -67,59 +67,57 @@ export async function PATCH(
   context: { params: Promise<{ aggrementId: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || session.user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { aggrementId } = await context.params;
-
     const { status, signed_at, signed_by_name } = await request.json();
 
-    const existingAgreement = await prisma.dealershipVehicleAgreement.findFirst({
-      where: {
-        id: aggrementId,
-        created_by_admin_id: session.user.id,
-      },
+    if (!aggrementId || !signed_by_name || status !== "signed") {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+
+    const existingAgreement = await prisma.dealershipVehicleAgreement.findUnique({
+      where: { id: aggrementId },
     });
 
     if (!existingAgreement) {
-      return NextResponse.json({ error: "Not found or unauthorized" }, { status: 404 });
+      return NextResponse.json({ error: "Agreement not found" }, { status: 404 });
+    }
+
+    if (existingAgreement.status === "signed") {
+      return NextResponse.json({ error: "Agreement already signed" }, { status: 400 });
+    }
+
+    if (existingAgreement.status === "cancelled") {
+      return NextResponse.json({ error: "Agreement has been cancelled" }, { status: 400 });
     }
 
     const updatedAgreement = await prisma.dealershipVehicleAgreement.update({
-      where: {
-        id: aggrementId,
-      },
+      where: { id: aggrementId },
       data: {
-        status,
-        signed_at,
+        status: "signed",
+        signed_at: new Date(signed_at),
         signed_by_name,
         agreement_accepted: true,
       },
     });
 
-    // send signed  mail
+    // Send confirmation email
     await sendAgreementSignedMail(
       existingAgreement.email,
-      existingAgreement.signed_by_name ?? existingAgreement.representative_name,
+      signed_by_name,
       existingAgreement.dealership_name,
       existingAgreement.representative_name,
       Number(existingAgreement.service_fee_amount),
       existingAgreement.id,
     );
 
-    return NextResponse.json({
-      success: true,
-      updatedAgreement,
-    });
+    return NextResponse.json({ success: true, updatedAgreement });
   } catch (error) {
     console.error("Failed to update dealership agreement", error);
-
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+
 
 
 

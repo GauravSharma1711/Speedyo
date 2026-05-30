@@ -202,9 +202,15 @@ const DealershipCard: React.FC<DealershipCardProps> = ({
             className="w-full text-lg py-6"
             variant={tier.popular ? "default" : "outline"}
             onClick={() => onSelect(tier)}
-            disabled={isCurrentPlan}
+            // disabled={isCurrentPlan}
+             disabled={isCurrentPlan || tier.tierId === "tier3"}
           >
-            {isCurrentPlan ? "Current Plan" : tier.cta}
+            {/* {isCurrentPlan ? "Current Plan" : tier.cta}  */}
+            {isCurrentPlan
+    ? "Current Plan"
+    : tier.tierId === "tier3"
+    ? "Coming Soon"      
+    : tier.cta}
           </Button>
         </div>
       </CardContent>

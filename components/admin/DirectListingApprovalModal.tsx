@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/TextArea";
-import { X, CheckCircle, Car, DollarSign, User, Calendar, MapPin } from "lucide-react";
+import { X, CheckCircle, Car, DollarSign, JapaneseYen,User, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
 
@@ -27,6 +27,7 @@ type DirectListingRequest = {
   contact_email?: string | null;
   contact_full_name?: string | null;
   seller_asking_price?: number | string | null;
+  dealer_fee?: number | string | null;
   service_fee_amount?: number | string | null;
   owner_receives_amount?: number | string | null;
   final_sale_price_for_buyer?: number | string | null;
@@ -161,13 +162,13 @@ export default function DirectListingApprovalModal({
             <Card className="bg-emerald-50 border-emerald-100">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  <JapaneseYen className="w-4 h-4 text-emerald-600" />
                   <span className="font-medium text-emerald-800">Asking Price</span>
                 </div>
                 <p className="text-2xl font-bold text-emerald-700">
                   ¥{price.toLocaleString()}
                 </p>
-                <p className="text-xs text-emerald-600">Seller&apos;s asking price (Buyer price)</p>
+                <p className="text-xs text-emerald-600">Seller&apos;s asking price</p>
               </CardContent>
             </Card>
           </div>
@@ -180,8 +181,8 @@ export default function DirectListingApprovalModal({
                 <p className="font-semibold text-slate-800">¥{price.toLocaleString()}</p>
               </div>
               <div>
-                <p className="text-slate-500">Service Fee</p>
-                <p className="font-semibold text-slate-600">¥{(Number(request.service_fee_amount) || 0).toLocaleString()}</p>
+                <p className="text-slate-500">Registration Fee</p>
+                <p className="font-semibold text-slate-800">¥{(Number(request.dealer_fee) || 0).toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-slate-500">Seller Receives</p>

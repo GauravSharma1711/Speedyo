@@ -86,6 +86,7 @@ import {
   publicUserService,
   userService,
   vehicleTransferService,
+  directListingService,
 } from "@/services/dashboard";
 import type { DashboardUser } from "@/services/dashboard";
 import {
@@ -753,6 +754,12 @@ export default function SellerDashboard() {
   const handleCreateVehicle = async (vehicleData: any) => {
     setIsSubmitting(true);
     try {
+      const dealerFee = Number(vehicleData.dealer_fee) || 0;
+      const vehiclePrice = Number(vehicleData.price) || 0;
+
+      const validUrls = (arr: string[]) =>
+        Array.isArray(arr) ? arr.filter((u: string) => u && !u.startsWith("blob:")) : [];
+
       const payload = {
         contact_full_name: user?.full_name || "",
         contact_email: user?.email || "",
@@ -767,16 +774,16 @@ export default function SellerDashboard() {
         vehicle_fuel_type: vehicleData.fuel_type || "gasoline",
         vehicle_transmission: vehicleData.transmission || "automatic",
         vehicle_location: vehicleData.location,
-        seller_asking_price: vehicleData.price,
-        listing_type: "direct",
-        status: "pending_approval",
-        service_fee_amount: 0,
-        owner_receives_amount: vehicleData.price,
-        final_sale_price_for_buyer: vehicleData.price,
+        seller_asking_price: vehiclePrice,
+        dealer_fee: dealerFee,
         terms_agreed: true,
+        vehicle_images: validUrls(vehicleData.images),
+        vehicle_images_thumbnails: validUrls(vehicleData.images),
+        vehicle_images_small: validUrls(vehicleData.images),
+        vehicle_images_medium: validUrls(vehicleData.images),
       };
 
-      await managedSaleService.create(payload);
+      await directListingService.create(payload);
 
       setShowCreateModal(false);
       setEditingVehicle(null);
@@ -3158,6 +3165,7 @@ export default function SellerDashboard() {
       {showCreateModal && (
         <CreateVehicleModalUI
           isOpen={showCreateModal}
+          isDirectListing={true}
           vehicleToEdit={editingVehicle}
           onSave={editingVehicle ? handleUpdateVehicle : handleCreateVehicle}
           onClose={() => {

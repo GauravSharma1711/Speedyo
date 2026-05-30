@@ -21,3 +21,5 @@ export type { VehicleTransfer } from "./vehicleTransferService";
 
 export { recentlyViewedService } from "./recentlyViewedService";
 export type { RecentlyViewedVehicle } from "./recentlyViewedService";
+
+export { directListingService } from "./directListingService";

@@ -27,6 +27,7 @@ export type VehicleListItemApi = {
   model: string | null;
   year: number | null;
   price: string | number | null;
+  dealer_fee: number | null;
   mileage: number | null;
   condition: string | null;
   description: string | null;
