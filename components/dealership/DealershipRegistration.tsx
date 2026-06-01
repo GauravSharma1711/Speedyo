@@ -705,7 +705,7 @@ if (user?.business_name || user?.dealership_selected_tier) {
                     Submit New Application
                   </Button>
                   <Button asChild variant="outline">
-                    <Link href="/contact">Contact Support</Link>
+                    <Link href="/Contact">Contact Support</Link>
                   </Button>
                 </div>
               )}

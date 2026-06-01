@@ -693,7 +693,7 @@ export default function WarrantyPage() {
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Button asChild size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
-                <Link href="/contact">Contact Support</Link>
+                <Link href="/Contact">Contact Support</Link>
               </Button>
               <Button
                 asChild

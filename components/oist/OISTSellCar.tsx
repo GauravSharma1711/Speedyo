@@ -162,7 +162,7 @@ export default function OISTSellCar({ onBack }: OISTSellCarProps) {
             Have questions about selling your vehicle?
           </p>
           <Button asChild variant="outline">
-            <Link href="/contact">Contact Speedyo Support</Link>
+            <Link href="/Contact">Contact Speedyo Support</Link>
           </Button>
         </CardContent>
       </Card>

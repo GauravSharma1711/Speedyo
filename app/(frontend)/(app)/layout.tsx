@@ -122,7 +122,7 @@ function createPageUrl(pageName: string, params?: Record<string, string>): strin
     Checkout: "/Checkout",
     TermsOfService: "/Terms",
     PrivacyPolicy: "/Privacy",
-    Contact: "/contact",
+    Contact: "/Contact",
     PrivateSellerPromo: "/Private-Seller",
     GuestCheckout: "/Guest-Checkout",
     GuestOrderConfirmation: "/Guest-Order-Confirmation",
