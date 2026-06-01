@@ -61,7 +61,7 @@ import { Toaster } from "@/components/ui/Toaster";
 import FeedbackModal from "@/components/feedback/FeedbackModal";
 import SetupAccountDialog from "@/components/setup/SetupAccountDialog";
 import { useNotificationsStore } from "@/store/notifications";
-
+import Image from "next/image";
 // ─── Replace these with your actual API/entity imports ───────────────────────
 // import { UserEntity } from "@/entities/User";
 // import { PublicUser } from "@/entities/PublicUser";
@@ -122,7 +122,7 @@ function createPageUrl(pageName: string, params?: Record<string, string>): strin
     Checkout: "/Checkout",
     TermsOfService: "/Terms",
     PrivacyPolicy: "/Privacy",
-    Contact: "/Contact",
+    Contact: "/contact",
     PrivateSellerPromo: "/Private-Seller",
     GuestCheckout: "/Guest-Checkout",
     GuestOrderConfirmation: "/Guest-Order-Confirmation",
@@ -513,10 +513,12 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
             <Sidebar className="border-r border-slate-200/60 backdrop-blur-sm">
               <SidebarHeader className="border-b border-slate-200/60 pb-0 flex pl-10 pt-6">
                 <Link href={createPageUrl("Landing")}>
-                  <img
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png"
+                  <Image
+                    src="/SpeedyoLogo.png"
                     alt="Speedyo Logo"
-                    className="w-24"
+                    className="w-24 h-auto"
+                    width={96}
+                    height={28}
                   />
                 </Link>
               </SidebarHeader>
@@ -661,8 +663,10 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
                   <header className="md:hidden bg-white/70 backdrop-blur-md border-b border-slate-200/60 px-4 sticky top-0 z-50 h-[60px] flex items-center">
                     <div className="flex items-center justify-between w-full">
                       <Link href={createPageUrl("Feed")}>
-                        <img
-                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png"
+                        <Image
+                          src="/SpeedyoLogo.png"
+                          width={24}
+                          height={24}
                           alt="Speedyo Logo"
                           className="h-6 object-contain"
                         />

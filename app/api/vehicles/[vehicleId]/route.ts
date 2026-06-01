@@ -22,6 +22,8 @@ const vehicleDetailSelect = {
   featured: true,
   verified: true,
   website_managed: true,
+  isDirectListing: true,
+  dealer_fee: true,
   views: true,
   shares: true,
   primary_image: true,

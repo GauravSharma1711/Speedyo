@@ -27,6 +27,13 @@ interface Vehicle {
   views?: number;
 }
 
+
+function toManEn(amount: number): string {
+  const man = amount / 10000;
+  const formatted = Number.isInteger(man) ? man.toString() : man.toFixed(1);
+  return `${formatted}万円`;
+}
+
 export default function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   const { byUserId, loadingByUserId, ensure } = usePublicUserStore();
 
@@ -112,16 +119,20 @@ export default function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
               {vehicle.isDirectListing && vehicle.dealer_fee ? (
                 <div>
                   <p className="text-2xl font-bold text-blue-600">
-                    ¥{vehicle.price?.toLocaleString?.() ?? "—"}
+                    {vehicle.price != null ? toManEn(vehicle.price) : "—"}
                   </p>
                   <p className="text-xs text-slate-400">
-                    (¥{(vehicle.price! - vehicle.dealer_fee).toLocaleString()} + ¥{vehicle.dealer_fee.toLocaleString()} fee)
+                    ({vehicle.price != null && vehicle.dealer_fee != null
+                      ? `${toManEn(vehicle.price - vehicle.dealer_fee)} + ${toManEn(vehicle.dealer_fee)} fee`
+                      : "—"})
                   </p>
                 </div>
               ) : (
                 <div>
                   <p className="text-2xl font-bold text-blue-600">
-                    ¥{((vehicle.buyer_total ?? vehicle.price) as number)?.toLocaleString?.() ?? "—"}
+                    {(vehicle.buyer_total ?? vehicle.price) != null
+                      ? toManEn((vehicle.buyer_total ?? vehicle.price) as number)
+                      : "—"}
                   </p>
                   {vehicle.buyer_total && vehicle.price && vehicle.buyer_total !== vehicle.price ? (
                     <p className="text-xs text-slate-400">(Includes registration & service fees)</p>

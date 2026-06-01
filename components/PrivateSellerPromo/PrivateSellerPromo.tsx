@@ -171,7 +171,7 @@ export default function PrivateSellerPromo() {
             >
               <Link href={createPageUrl("Landing")}>
                 <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/f1a874100_speedio_logo_official.png"
+                  src="/speedyoFooter.png"
                   alt="Speedyo Logo"
                   className="h-12 md:h-16 mx-auto brightness-0 invert opacity-90"
                   style={{ filter: 'brightness(0) invert(1)' }}

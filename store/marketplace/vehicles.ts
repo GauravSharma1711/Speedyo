@@ -73,12 +73,7 @@ function normalizeVehicle(v: VehicleListItemApi): MarketplaceVehicle {
   const price = toNumberOrUndefined(v.price);
   const dealerFee = toNumberOrUndefined(v.dealer_fee);
 
-  // Determine buyer-facing total safely:
-  // Priority:
-  // 1. server-provided `final_sale_price_for_buyer` (authoritative)
-  // 2. direct listings -> buyer pays listed price (no Speedyo fee)
-  // 3. if server returned seller_asking_price for this item, compute buyer total = asking + serviceFee + dealer_fee
-  // 4. otherwise assume `v.price` is already the buyer-facing total (created by server/workflow)
+
   let buyerTotal: number | undefined;
   const serverProvided = toNumberOrUndefined((v as any).final_sale_price_for_buyer);
   const sellerAsking = toNumberOrUndefined((v as any).seller_asking_price ?? (v as any).vehicle_details?.seller_asking_price);
@@ -93,10 +88,7 @@ function normalizeVehicle(v: VehicleListItemApi): MarketplaceVehicle {
     try {
       serviceFee = calculateServiceFeeAmount(sellerAsking) ?? 0;
     } catch (e) {
-      if (sellerAsking < 30000) serviceFee = 300;
-      else if (sellerAsking <= 50000) serviceFee = Math.round(300 + (sellerAsking - 30000) * 0.08);
-      else if (sellerAsking <= 100000) serviceFee = 500;
-      else serviceFee = Math.round(sellerAsking * 0.06);
+      serviceFee = 0;
     }
     buyerTotal = sellerAsking + (dealerFee ?? 0) + serviceFee;
   } else {

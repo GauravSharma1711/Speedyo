@@ -136,7 +136,7 @@ export default function Footer() {
           </div>
 
           {/* Bottom */}
-          <div className="border-t border-slate-800 mt-8 pt-8">
+          <div className="border-t mt-8 pt-8" style={{ borderTop: '1px solid #1b2437' }}>
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-slate-400 text-center md:text-left">
                 &copy; 2025 Speedyo. All rights reserved.

@@ -20,6 +20,12 @@ import { useFeedStore } from "@/store/feed";
 import { useUserStore } from "@/store/user/userStore";
 import { useFollowStore } from "@/store/user/followStore";
 
+function toManEn(amount: number): string {
+  const man = amount / 10000;
+  const formatted = Number.isInteger(man) ? man.toString() : man.toFixed(1);
+  return `${formatted}万円`;
+}
+
 export default function FeedPage() {
   const {
     posts,
@@ -460,7 +466,7 @@ export default function FeedPage() {
                     <CardContent className="p-4">
                       <h3 className="font-bold text-lg text-slate-800">{vehicle.title}</h3>
                       <p className="text-2xl font-bold text-blue-600 mt-2">
-                        ${Number(vehicle.price).toLocaleString()}
+                        {toManEn(Number(vehicle.price))}
                       </p>
                       <div className="flex items-center text-sm text-slate-500 mt-2">
                         <MapPin className="w-4 h-4 mr-1" />

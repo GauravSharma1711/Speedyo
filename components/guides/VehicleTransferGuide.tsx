@@ -139,6 +139,7 @@ export default function VehicleTransferGuide() {
                   </CardContent>
                 </Card>
 
+                {/* STEP 1 - Prepare Documents*/}
                 <motion.div
                   initial="hidden"
                   whileInView="visible"
@@ -258,7 +259,7 @@ export default function VehicleTransferGuide() {
                   </Card>
                 </motion.div>
 
-                {/* Step 2 - LTO Inspection */}
+                {/* STEP 2 - Buyer Purchases PDI */}
                 <motion.div
                   initial="hidden"
                   whileInView="visible"
@@ -269,6 +270,150 @@ export default function VehicleTransferGuide() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-3">
                         <Badge className="bg-emerald-600 text-white text-lg px-4 py-2">STEP 2</Badge>
+                        <span>Buyer Purchases PDI (Liability Insurance)</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-slate-600 mb-4">
+                        This is Step 0 before JSVRO. Buyer must buy PDI in their name at:
+                      </p>
+                      <ul className="space-y-2 mb-4">
+                        {["AIG (Camp Foster)", "USAA (online)", "ACE Insurance", "Or any Japanese provider"].map(
+                          (item) => (
+                            <li key={item} className="text-slate-700">
+                              • {item}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
+                        <div className="flex items-center gap-2">
+                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
+                          <span className="font-semibold text-blue-800">
+                            Cost: ¥9,000–¥13,000 for 1 year
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* STEP 3 - JSVRO Paperwork */}
+                <motion.div
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.2 }}
+                  variants={fadeUpVariants}
+                >
+                  <Card className="shadow-lg bg-white/80 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <Badge className="bg-emerald-600 text-white text-lg px-4 py-2">STEP 3</Badge>
+                        <span>JSVRO Paperwork (Buyer)</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-semibold text-slate-800">Camp Foster JSVRO</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h5 className="font-semibold text-slate-800 mb-3">The Buyer brings:</h5>
+                        <ul className="space-y-2">
+                          {[
+                            "New GOJ inspection (Speedyo)",
+                            "New Shaken (Speedyo)",
+                            "Bill of Sale (Speedyo)",
+                            "JCI (Speedyo)",
+                            "PDI Insurance (Buyer)",
+                            "Road Tax Receipt (Speedyo)",
+                            "Military ID & Orders (Buyer)",
+                          ].map((item) => (
+                            <li key={item} className="flex items-start gap-3">
+                              <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-slate-700">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="mt-4">
+                        <h5 className="font-semibold text-slate-800 mb-3">What JSVRO Does:</h5>
+                        <ul className="space-y-2">
+                          {[
+                            "Creates SOFA registration worksheets",
+                            "Verifies documents",
+                            "Confirms insurance coverage",
+                            "Sends the Buyer to ALPA for plate purchase",
+                          ].map((item) => (
+                            <li key={item} className="text-slate-700">
+                              • {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* STEP 4 - Purchase Y-Plates */}
+                <motion.div
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.2 }}
+                  variants={fadeUpVariants}
+                >
+                  <Card className="shadow-lg bg-white/80 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <Badge className="bg-emerald-600 text-white text-lg px-4 py-2">STEP 4</Badge>
+                        <span>Purchase Y-Plates (Buyer)</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 mb-4">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <span className="font-semibold text-slate-800">
+                              ALPA Window D (next to LTO)
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <ul className="space-y-2 mb-4">
+                        {["Buyer attaches plates", "Rear plate sealed at Lane #7"].map((item) => (
+                          <li key={item} className="text-slate-700">
+                            • {item}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
+                        <div className="flex items-center gap-2">
+                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
+                          <span className="font-semibold text-blue-800">Fee: ¥2,280</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* STEP 5 - LTO Inspection*/}
+                <motion.div
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.2 }}
+                  variants={fadeUpVariants}
+                >
+                  <Card className="shadow-lg bg-white/80 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <Badge className="bg-emerald-600 text-white text-lg px-4 py-2">STEP 5</Badge>
                         <span>LTO Inspection (Completed by Speedyo)</span>
                       </CardTitle>
                     </CardHeader>
@@ -367,151 +512,7 @@ export default function VehicleTransferGuide() {
                   </Card>
                 </motion.div>
 
-                {/* Step 3 - Purchase PDI */}
-                <motion.div
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.2 }}
-                  variants={fadeUpVariants}
-                >
-                  <Card className="shadow-lg bg-white/80 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <Badge className="bg-emerald-600 text-white text-lg px-4 py-2">STEP 3</Badge>
-                        <span>Buyer Purchases PDI (Liability Insurance)</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-slate-600 mb-4">
-                        This is Step 0 before JSVRO. Buyer must buy PDI in their name at:
-                      </p>
-                      <ul className="space-y-2 mb-4">
-                        {["AIG (Camp Foster)", "USAA (online)", "ACE Insurance", "Or any Japanese provider"].map(
-                          (item) => (
-                            <li key={item} className="text-slate-700">
-                              • {item}
-                            </li>
-                          )
-                        )}
-                      </ul>
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
-                        <div className="flex items-center gap-2">
-                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
-                          <span className="font-semibold text-blue-800">
-                            Cost: ¥9,000–¥13,000 for 1 year
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                {/* Step 4 - JSVRO Paperwork */}
-                <motion.div
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.2 }}
-                  variants={fadeUpVariants}
-                >
-                  <Card className="shadow-lg bg-white/80 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <Badge className="bg-emerald-600 text-white text-lg px-4 py-2">STEP 4</Badge>
-                        <span>JSVRO Paperwork (Buyer)</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="flex items-start gap-2">
-                          <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <span className="font-semibold text-slate-800">Camp Foster JSVRO</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h5 className="font-semibold text-slate-800 mb-3">The Buyer brings:</h5>
-                        <ul className="space-y-2">
-                          {[
-                            "New GOJ inspection (Speedyo)",
-                            "New Shaken (Speedyo)",
-                            "Bill of Sale (Speedyo)",
-                            "JCI (Speedyo)",
-                            "PDI Insurance (Buyer)",
-                            "Road Tax Receipt (Speedyo)",
-                            "Military ID & Orders (Buyer)",
-                          ].map((item) => (
-                            <li key={item} className="flex items-start gap-3">
-                              <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                              <span className="text-slate-700">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div className="mt-4">
-                        <h5 className="font-semibold text-slate-800 mb-3">What JSVRO Does:</h5>
-                        <ul className="space-y-2">
-                          {[
-                            "Creates SOFA registration worksheets",
-                            "Verifies documents",
-                            "Confirms insurance coverage",
-                            "Sends the Buyer to ALPA for plate purchase",
-                          ].map((item) => (
-                            <li key={item} className="text-slate-700">
-                              • {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                {/* Step 5 - Purchase Y-Plates */}
-                <motion.div
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.2 }}
-                  variants={fadeUpVariants}
-                >
-                  <Card className="shadow-lg bg-white/80 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <Badge className="bg-emerald-600 text-white text-lg px-4 py-2">STEP 5</Badge>
-                        <span>Purchase Y-Plates (Buyer)</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 mb-4">
-                        <div className="flex items-start gap-2">
-                          <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <span className="font-semibold text-slate-800">
-                              ALPA Window D (next to LTO)
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <ul className="space-y-2 mb-4">
-                        {["Buyer attaches plates", "Rear plate sealed at Lane #7"].map((item) => (
-                          <li key={item} className="text-slate-700">
-                            • {item}
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 inline-block">
-                        <div className="flex items-center gap-2">
-                          <JapaneseYenIcon className="w-5 h-5 text-blue-600" />
-                          <span className="font-semibold text-blue-800">Fee: ¥2,280</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                {/* Step 6 - Finalize */}
+                {/* STEP 6 - Finalize at JSVRO (unchanged) */}
                 <motion.div
                   initial="hidden"
                   whileInView="visible"
@@ -584,7 +585,6 @@ export default function VehicleTransferGuide() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {/* Section A: Documents the Client Must Provide */}
                       <div>
                         <h4 className="font-semibold text-slate-800 mb-3 text-lg">
                           A. Documents the Client Must Provide
@@ -630,7 +630,6 @@ export default function VehicleTransferGuide() {
                         </div>
                       </div>
 
-                      {/* Section B: Documents Provided by Speedyo */}
                       <div>
                         <h4 className="font-semibold text-slate-800 mb-3 text-lg">
                           B. Documents Provided by Speedyo
@@ -1046,4 +1045,3 @@ export default function VehicleTransferGuide() {
     </div>
   );
 }
-

@@ -19,6 +19,8 @@ export type VehicleDetailsApi = {
   featured: boolean;
   verified: boolean;
   website_managed: boolean;
+  isDirectListing: boolean;
+  dealer_fee: number | null;
   views: number;
   shares: number;
   primary_image: string | null;

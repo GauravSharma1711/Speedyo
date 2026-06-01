@@ -29,12 +29,12 @@ export default function SignInPage() {
           <div className="p-8 sm:p-10 md:pt-12 md:pb-10 md:px-10">
             <div className="flex flex-col items-center text-center space-y-6 sm:space-y-8">
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full blur-xl opacity-30 group-hover:opacity-40 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full blur-xl opacity-40 group-hover:opacity-40 transition-opacity duration-300" />
                 <span className="flex shrink-0 overflow-hidden rounded-full relative h-20 w-20 sm:h-24 sm:w-24 shadow-lg ring-4 ring-white/50 group-hover:shadow-xl transition-all duration-300">
                   <img
-                    className="aspect-square h-full w-full object-cover"
+                    className="aspect-square h-full w-full object-contain"
                     alt="Speedyo logo"
-                    src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/08c05f78f_ChatGPTImageAug24202508_06_31PM.png"
+                    src="/SpeedyoLogo.png"
                   />
                 </span>
               </div>

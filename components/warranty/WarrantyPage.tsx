@@ -44,7 +44,7 @@ export default function WarrantyPage() {
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-blue-600">¥45,000</span>
-                <span className="text-sm text-slate-500">/ ¥44,900</span>
+                {/* <span className="text-sm text-slate-500">/ ¥44,900</span> */}
               </div>
               <p className="text-sm text-blue-700 mt-1">
                 Limited Reimbursement Service Contract

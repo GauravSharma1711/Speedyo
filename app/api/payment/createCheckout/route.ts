@@ -12,9 +12,9 @@ import { CURRENCY, formatCurrency } from "@/lib/payment/square";
 type TierId = "tier1" | "tier2" | "tier3";
 
 const TIER_PRICES = {
-  tier1: { amount: 40000, name: "Standard Dealership Plan" },
-  tier2: { amount: 75000, name: "Professional Dealership Plan" },
-  tier3: { amount: 150000, name: "Enterprise Dealership Plan" },
+  tier1: { amount: 40000, name: "Standard Dealership Plan" }, 
+  tier2: { amount: 60000, name: "Professional Dealership Plan" }, 
+  tier3: { amount: 90000, name: "Enterprise Dealership Plan" }, 
 };
 
 

@@ -48,6 +48,8 @@ type VehicleUI = {
   views?: number;
   saves?: number;
   website_managed?: boolean;
+  isDirectListing?: boolean;
+  dealer_fee?: number;
 
   primary_image?: string;
   images?: string[];
@@ -166,6 +168,12 @@ function toNumber(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function toManEn(amount: number): string {
+  const man = amount / 10000;
+  const formatted = Number.isInteger(man) ? man.toString() : man.toFixed(1);
+  return `${formatted}万円`;
+}
+
 function VehiclePageContent(){
 
   
@@ -239,6 +247,8 @@ function VehiclePageContent(){
       views: vehicleApi.views,
       saves: (vehicleApi as any).saves_count ?? 0,
       website_managed: vehicleApi.website_managed,
+      isDirectListing: vehicleApi.isDirectListing,
+      dealer_fee: toNumber((vehicleApi as any).dealer_fee),
       primary_image: vehicleApi.primary_image ?? undefined,
       images: Array.isArray(vehicleApi.images) ? vehicleApi.images : [],
       fuel_type: vehicleApi.fuel_type ?? undefined,
@@ -480,24 +490,40 @@ function VehiclePageContent(){
           <div className="space-y-6">
             <Card className="sticky top-24 shadow-lg bg-white/80 backdrop-blur-sm">
               <CardContent className="p-6">
-                {basePrice != null && serviceFee != null ? (
+                {vehicle.website_managed && basePrice != null && serviceFee != null ? (
                   <div className="space-y-3 mb-4">
                     <div className="flex justify-between text-slate-600">
                       <span>Base Price:</span>
-                      <span className="font-semibold">¥{Number(basePrice).toLocaleString()}</span>
+                      <span className="font-semibold">{toManEn(Number(basePrice))}</span>
                     </div>
                     <div className="flex justify-between text-slate-600">
-                      <span>Other Fees:</span>
-                      <span className="font-semibold">¥{Number(serviceFee).toLocaleString()}</span>
+                      <span>Service Fee:</span>
+                      <span className="font-semibold">{toManEn(Number(serviceFee))}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-slate-800">Total Price:</span>
-                      <span className="text-3xl font-bold text-blue-600">¥{totalPrice.toLocaleString()}</span>
+                      <span className="text-3xl font-bold text-blue-600">{toManEn(totalPrice)}</span>
+                    </div>
+                  </div>
+                ) : vehicle.isDirectListing && vehicle.dealer_fee ? (
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Base Price:</span>
+                      <span className="font-semibold">{toManEn(vehicle.price - vehicle.dealer_fee)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Inspection & Maintenance Fee:</span>
+                      <span className="font-semibold">{toManEn(vehicle.dealer_fee)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold text-slate-800">Total Price:</span>
+                      <span className="text-3xl font-bold text-blue-600">{toManEn(vehicle.price)}</span>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-4xl font-bold text-blue-600 mb-4">¥{vehicle.price.toLocaleString()}</p>
+                  <p className="text-4xl font-bold text-blue-600 mb-4">{toManEn(vehicle.price)}</p>
                 )}
 
                 <div className="flex items-center justify-between text-sm text-slate-500 mb-6">

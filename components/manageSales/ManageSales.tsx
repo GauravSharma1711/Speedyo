@@ -287,10 +287,10 @@ export default function ManagedSalesPage() {
                     </div>
                     <div className="text-center mt-3 sm:mt-4">
                       <p className="text-xs sm:text-sm font-medium text-slate-500 mb-1 sm:mb-2">Vehicles</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥500 - ¥3,000</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥50,000 - ¥300,000</p>
                       <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-3 sm:mb-4"></div>
                       <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
-                        ¥300-¥500
+                        3万 - 5万
                       </p>
                       <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Scaled Fee</p>
                       <p className="text-xs text-slate-500">Increases gradually as price rises</p>
@@ -306,10 +306,10 @@ export default function ManagedSalesPage() {
                     </div>
                     <div className="text-center mt-3 sm:mt-4">
                       <p className="text-xs sm:text-sm font-medium text-slate-500 mb-1 sm:mb-2">Vehicles</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥3,001 - ¥8,333</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥300,001 - ¥833,300</p>
                       <div className="h-px bg-gradient-to-r from-transparent via-emerald-300 to-transparent mb-3 sm:mb-4"></div>
                       <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
-                        ¥500
+                        5万
                       </p>
                       <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Flat Fee</p>
                       <p className="text-xs text-slate-500">Simple and predictable pricing</p>
@@ -325,7 +325,7 @@ export default function ManagedSalesPage() {
                     </div>
                     <div className="text-center mt-3 sm:mt-4">
                       <p className="text-xs sm:text-sm font-medium text-slate-500 mb-1 sm:mb-2">Vehicles</p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥8,334+</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">¥833,301+</p>
                       <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mb-3 sm:mb-4"></div>
                       <p className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                         6%
@@ -390,9 +390,9 @@ export default function ManagedSalesPage() {
                                         <div class="flex flex-col sm:flex-row justify-between sm:items-center py-2 sm:py-3 gap-2 sm:gap-0">
                                           <div>
                                             <span class="text-slate-600 font-medium block text-sm sm:text-base">Service Fee</span>
-                                            <span class="text-xs text-slate-500">${askingPrice < 500 ? '¥300 minimum' :
-                                        askingPrice <= 3000 ? 'Scales ¥300-¥500' :
-                                          askingPrice <= 8333 ? '¥500 flat' : '6% of asking price'
+                                            <span class="text-xs text-slate-500">${askingPrice < 50000 ? '3万 minimum' :
+                                        askingPrice <= 300000 ? 'Scales 3万 - 5万' :
+                                          askingPrice <= 833300 ? '5万' : '6% of asking price'
                                       }</span>
                                           </div>
                                           <div class="text-left sm:text-right">

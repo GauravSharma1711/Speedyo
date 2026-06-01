@@ -70,7 +70,7 @@ interface Plan {
 const dealershipTiers: DealershipTier[] = [
   {
     name: "Standard",
-    price: "¥40000",
+    price: "4万円",
     features: [
       "Up to 10 vehicle sales per year",
       "Unlimited active listings",
@@ -84,7 +84,7 @@ const dealershipTiers: DealershipTier[] = [
   },
   {
     name: "Professional",
-    price: "¥75000",
+    price: "6万円",
     features: [
       "Up to 25 vehicle sales per year",
       "Unlimited active listings",
@@ -100,7 +100,7 @@ const dealershipTiers: DealershipTier[] = [
   },
   {
     name: "Enterprise",
-    price: "¥150000",
+    price: "9万円",
     features: [
       "Unlimited vehicle sales per year",
       "Unlimited active listings",
