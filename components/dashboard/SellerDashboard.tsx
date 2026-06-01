@@ -2770,7 +2770,7 @@ export default function SellerDashboard() {
                                         size="sm"
                                         onClick={() =>
                                           window.open(
-                                            `/contact?subject=Car Viewing Inquiry for ${vehicle.title} (Vehicle ID: ${vehicle.id})`,
+                                            `/Contact?subject=Car Viewing Inquiry for ${vehicle.title} (Vehicle ID: ${vehicle.id})`,
                                             "_blank",
                                           )
                                         }

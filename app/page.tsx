@@ -504,7 +504,7 @@ const handleGetStarted = () => {
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
-                <Link href="/contact">
+                <Link href="/Contact">
                   <Button variant="outline" size="lg" className="border border-white text-white bg-transparent hover:bg-white hover:text-blue-600 text-lg px-8 py-6 w-full sm:w-auto">
                     <MessageCircle className="w-6 h-6 mr-2" />
                     Get Free Consultation
@@ -781,7 +781,7 @@ const handleGetStarted = () => {
                       Compare All Plans
                     </Button>
                   </Link>
-                  <Link href={'/contact'} className="w-full">
+                  <Link href={'/Contact'} className="w-full">
                     <Button variant="outline" className="w-full border-blue-300 text-blue-600 hover:bg-blue-50">
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Talk to an Expert

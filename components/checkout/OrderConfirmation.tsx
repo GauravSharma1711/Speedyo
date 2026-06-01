@@ -139,7 +139,7 @@ const userEmail   = searchParams.get('user_email')    || MOCK_PARAMS.user_email;
               <Button variant="outline" onClick={() => router.push('/subscription')}>
                 Try Again
               </Button>
-              <Button onClick={() => router.push('/contact')}>
+              <Button onClick={() => router.push('/Contact')}>
                 Contact Support
               </Button>
             </div>

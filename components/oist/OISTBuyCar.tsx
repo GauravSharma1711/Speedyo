@@ -134,7 +134,7 @@ export default function OISTBuyCar({ onBack }: OISTBuyCarProps) {
             Need assistance with the buying process or have questions?
           </p>
           <Button asChild variant="outline">
-            <Link href="/contact">Contact Speedyo Support</Link>
+            <Link href="/Contact">Contact Speedyo Support</Link>
           </Button>
         </CardContent>
       </Card>
