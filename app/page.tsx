@@ -384,7 +384,14 @@ const handleGetStarted = () => {
               whileInView="visible"
               viewport={{ once: true, amount: 0.3 }}
               variants={slideInLeft}>
-              <Card className="bg-white/10 backdrop-blur-md shadow-xl border border-white/20 h-full">
+              {/* <Card className="bg-white/10 backdrop-blur-md shadow-xl border border-white/5 h-full"> */}
+              <Card 
+  className="bg-white/10 backdrop-blur-md shadow-xl h-full"
+  style={{ 
+    border: '1px solid rgba(255,255,255,0.15)',
+    boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.3)'
+  }}
+>
                 <CardContent className="p-8">
                   <div className="flex items-start gap-4 mb-6">
                     <div className="hidden md:flex flex-shrink-0 bg-red-500/20 backdrop-blur-sm p-4 rounded-xl border border-red-400/30">
@@ -430,7 +437,14 @@ const handleGetStarted = () => {
               whileInView="visible"
               viewport={{ once: true, amount: 0.3 }}
               variants={slideInRight}>
-              <Card className="bg-emerald-500/10 backdrop-blur-md shadow-xl border border-emerald-400/30 h-full">
+              {/* <Card className="bg-emerald-500/10 backdrop-blur-md shadow-xl border border-emerald-400/30 h-full"> */}
+              <Card 
+  className="bg-emerald-500/10 backdrop-blur-md shadow-xl h-full"
+  style={{ 
+    border: '1px solid rgba(52,211,153,0.4)',
+    boxShadow: '0 0 20px rgba(52,211,153,0.15), 0 0 0 1px rgba(52,211,153,0.2), 0 8px 32px rgba(0,0,0,0.3)'
+  }}
+>
                 <CardContent className="p-8">
                   <div className="flex items-start gap-4 mb-6">
                     <div className="hidden md:flex flex-shrink-0 bg-emerald-500/20 backdrop-blur-sm p-4 rounded-xl border border-emerald-400/30">
@@ -487,7 +501,14 @@ const handleGetStarted = () => {
             viewport={{ once: true, amount: 0.3 }}
             variants={fadeUpVariants}>
 
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 max-w-4xl mx-auto">
+            {/* <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-8 max-w-4xl mx-auto"> */}
+<div 
+  className="backdrop-blur-md rounded-2xl p-8 max-w-4xl mx-auto bg-white/10"
+  style={{ 
+    border: '1px solid rgba(255,255,255,0.15)',
+    boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.3)'
+  }}
+>
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
                 Ready to sell without the stress?
               </h3>
@@ -564,7 +585,7 @@ const handleGetStarted = () => {
               viewport={{ once: true, amount: 0.3 }}
               variants={slideInLeft}>
 
-              <Card className="h-full bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-300 hover:shadow-2xl group relative overflow-hidden flex flex-col">
+              <Card className="h-full bg-white border border-slate-200 hover:border-blue-400 transition-all duration-300 hover:shadow-2xl group relative overflow-hidden flex flex-col">
                 {/* Decorative gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
@@ -661,7 +682,7 @@ const handleGetStarted = () => {
               viewport={{ once: true, amount: 0.3 }}
               variants={slideInRight}>
 
-              <Card className="h-full bg-white border-2 border-emerald-300 hover:border-emerald-500 transition-all duration-300 hover:shadow-2xl shadow-lg group relative overflow-hidden flex flex-col">
+              <Card className="h-full bg-white border border-emerald-300 hover:border-emerald-500 transition-all duration-300 hover:shadow-2xl shadow-lg group relative overflow-hidden flex flex-col">
                 {/* Popular Badge */}
                 <div className="absolute top-4 right-4 z-10">
                   <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white px-3 py-1 font-semibold shadow-md">
@@ -889,7 +910,7 @@ const handleGetStarted = () => {
                 2
               </div>
 
-              <Card className="bg-white/90 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 h-full border-2 border-emerald-300 pt-8 flex flex-col">
+              <Card className="bg-white/90 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 h-full border border-emerald-300 pt-8 flex flex-col">
                 <CardContent className="p-8 flex flex-col flex-1">
                   {/* Top section that expands to fill space */}
                   <div className="flex-1 flex flex-col text-center">
@@ -1004,7 +1025,7 @@ const handleGetStarted = () => {
             viewport={{ once: true, amount: 0.3 }}
             variants={fadeUpVariants}>
 
-            <Card className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border-2 border-blue-200 max-w-3xl mx-auto shadow-lg">
+            <Card className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-200 max-w-3xl mx-auto shadow-lg">
               <CardContent className="p-8">
                 <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-4">Ready to Get Started?</h3>
                 <p className="text-slate-600 mb-6 text-lg">
