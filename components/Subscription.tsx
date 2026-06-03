@@ -455,7 +455,7 @@ useEffect(() => {
             <LogIn className="w-5 h-5 mr-2" />
             Sign in
           </Button>
-          <Button onClick={() => router.push("/signup")} size="lg" variant="outline">
+          <Button onClick={() => router.push("/SignUp")} size="lg" variant="outline">
             Create account
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>

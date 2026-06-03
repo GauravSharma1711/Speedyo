@@ -193,7 +193,7 @@ export default function SignInPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => router.push("/signup")}
+                        onClick={() => router.push("/SignUp")}
                         className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
                       >
                         Need an account?{" "}
