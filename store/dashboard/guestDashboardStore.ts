@@ -36,6 +36,7 @@ export type GuestDashboardVehicle = {
 interface GuestDashboardState {
   conversations: Conversation[];
   transfers: VehicleTransfer[];
+  transferSeller: VehicleTransfer[];
   managedSales: ManagedSaleRequest[];
   sellers: PublicUser[];
   recentlyViewed: RecentlyViewedVehicle[];
@@ -51,6 +52,7 @@ export const useGuestDashboardStore = create<GuestDashboardState>()(
     conversations: [],
     directListings:[],
     transfers: [],
+    transferSeller: [],
     managedSales: [],
     sellers: [],
     recentlyViewed: [],
@@ -60,15 +62,16 @@ export const useGuestDashboardStore = create<GuestDashboardState>()(
       async loadGuestDashboard(_userId: string) {
       set({ isLoading: true, error: null });
       try {
-        const [directListings, conversations, transfers, managedSales, sellers, recentlyViewed] = await Promise.all([
+        const [directListings, conversations, transfers,transferSeller, managedSales, sellers, recentlyViewed] = await Promise.all([
           vehicleService.getDirectListings(),   
           messageService.getConversations(),
           vehicleTransferService.listByBuyer(_userId),
+          vehicleTransferService.listBySeller(_userId),
           managedSaleService.listByUser(_userId),
           publicUserService.list(),
           recentlyViewedService.list(20),
         ]);
-        set({ directListings, conversations, transfers, managedSales, sellers, recentlyViewed, isLoading: false });
+        set({ directListings, conversations, transfers, transferSeller, managedSales, sellers, recentlyViewed, isLoading: false });
       } catch (error: any) {
         set({ isLoading: false, error: error?.message ?? "Failed to load guest dashboard" });
       }

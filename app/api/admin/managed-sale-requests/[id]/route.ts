@@ -162,7 +162,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       const contact = raw.requester_contact_info || {};
       const vehicle = raw.vehicle_details || {};
       const access = raw.access_arrangements || {};
-
+console.log("vehicle data", vehicle);
       // If the payload is nested (from RequestForm), flatten it
       if (raw.requester_contact_info || raw.vehicle_details || raw.access_arrangements) {
         body = {
@@ -182,6 +182,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
           vehicle_title: vehicle.title || undefined,
           vehicle_make: vehicle.make || undefined,
           vehicle_model: vehicle.model || undefined,
+          vehicle_vin: vehicle.vin || undefined,
           vehicle_year: vehicle.year || undefined,
           vehicle_mileage: vehicle.mileage !== "" ? vehicle.mileage : undefined,
           vehicle_condition: vehicle.condition || undefined,

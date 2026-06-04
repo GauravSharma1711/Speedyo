@@ -18,6 +18,7 @@ export type Vehicle = {
   year: number;
   price: string;
   mileage?: number | null;
+  vin?: string;
   condition?: string | null;
   description?: string | null;
   location?: string | null;
@@ -52,6 +53,7 @@ export type UpdateVehicleData = {
   fuel_type?: string;
   transmission?: string;
   status?: "available" | "sold";
+  vin?: string;
   images?: string[]; 
   primary_image?: string | null; 
 };

@@ -48,6 +48,7 @@ type VehicleDetails = {
   title: string;
   make: string;
   model: string;
+  vin :string;
   year: number;
   mileage: number | "";
   condition: string;
@@ -205,6 +206,7 @@ function defaultForm(): FormData {
       title: "",
       make: "",
       model: "",
+      vin:"",
       year: new Date().getFullYear(),
       mileage: "",
       condition: "good",
@@ -517,6 +519,7 @@ export default function RequestFormUI(props: Props) {
       if (!v.title?.trim()) errors.title = "Vehicle title is required";
       if (!v.make?.trim()) errors.make = "Make is required";
       if (!v.model?.trim()) errors.model = "Model is required";
+      if (!v.vin?.trim()) errors.vin = "VIN is required";
       if (!v.year || v.year < 1900 || v.year > new Date().getFullYear() + 1) errors.year = "Valid year is required";
       if (v.mileage === "" || Number(v.mileage) < 0) errors.mileage = "Valid mileage is required";
       if (!v.location?.trim()) errors.location = "Location is required";
@@ -947,7 +950,7 @@ export default function RequestFormUI(props: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="mileage">
                 Mileage (km) <span className="text-red-500">*</span>
@@ -962,6 +965,22 @@ export default function RequestFormUI(props: Props) {
                 }
               />
               {validationErrors.mileage ? <p className="text-sm text-red-500">{validationErrors.mileage}</p> : null}
+            </div>
+
+             <div className="space-y-2">
+              <Label htmlFor="mileage">
+                Vin Number <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="vin"
+                type="vin"
+                placeholder="1HGCM82633A123456"
+                value={String(formData.vehicle_details.vin)}
+                onChange={(e) =>
+                  handleInputChange("vehicle_details", "vin", e.target.value)
+                }
+              />
+              {validationErrors.vin ? <p className="text-sm text-red-500">{validationErrors.vin}</p> : null}
             </div>
 
             <div className="space-y-2">
@@ -2368,6 +2387,7 @@ export default function RequestFormUI(props: Props) {
             <div className="flex justify-between"><span className="text-slate-500">Make & Model:</span><span className="font-medium text-slate-800">{`${formData.vehicle_details.make || "-"} ${formData.vehicle_details.model || "-"}`}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Year:</span><span className="font-medium text-slate-800">{formData.vehicle_details.year || "-"}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Mileage:</span><span className="font-medium text-slate-800">{formatValue(formData.vehicle_details.mileage)} km</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">VIN Number:</span><span className="font-medium text-slate-800">{formData.vehicle_details.vin || "-"}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Location:</span><span className="font-medium text-slate-800">{formData.vehicle_details.location || "-"}</span></div>
           </CardContent>
         </Card>

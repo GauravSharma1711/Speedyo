@@ -48,10 +48,10 @@ type VehicleTransfer = {
 
 const SPEEDIO_MANAGED_STEPS = [
   { number: 1, title: "Documents Prepared" },
-  { number: 2, title: "LTO Inspection Completed" },
-  { number: 3, title: "PDI Insurance Purchased" },
-  { number: 4, title: "JSVRO Paperwork Submitted" },
-  { number: 5, title: "Y-Plates Purchased & Installed" },
+  { number: 2, title: "PDI Insurance Purchased" },
+  { number: 3, title: "JSVRO Paperwork Submitted" },
+  { number: 4, title: "Y-Plates Purchased & Installed" },
+  { number: 5, title: "LTO Inspection Completed" },
   { number: 6, title: "JSVRO Finalization Complete" },
 ] as const;
 
@@ -397,6 +397,8 @@ function CreateTransferModal(props: {
 const { vehicles, getAll: getVehicles } = useVehicleListingStore();
 const { users, getAll: getUsers } = useUserStore();
 
+
+
 useEffect(() => {
   getVehicles();
   getUsers();
@@ -418,16 +420,17 @@ useEffect(() => {
   }, [vehicles]);
 
   useEffect(() => {
+    console.log("users",users);
     if (users.length > 0 && !buyerId) {
       setBuyerId(users[0].id);
     }
   }, [users]);
 
-    useEffect(() => {
-    if (users.length > 0 && !buyerId) {
-      setSellerId(users[0].id);
-    }
-  }, [users]);
+  //   useEffect(() => {
+  //   if (users.length > 0 && !buyerId) {
+  //     setSellerId(users[0].id);
+  //   }
+  // }, [users]);
 
 
 
@@ -482,7 +485,7 @@ useEffect(() => {
               <SelectContent>
                 {vehicles.map((v) => (
                   <SelectItem key={v.id} value={v.id}>
-                    {v.title}
+                    {v.title} - ({v.vin || "-"})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -508,13 +511,15 @@ useEffect(() => {
               <SelectTrigger>
                 <SelectValue placeholder="Select buyer" />
               </SelectTrigger>
-              <SelectContent>
-                {users.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+           <SelectContent>
+  {users
+    .filter((u) => !sellerId || sellerId === "__none__" || u.id !== sellerId)
+    .map((u) => (
+      <SelectItem key={u.id} value={u.id}>
+        {u.full_name}
+      </SelectItem>
+    ))}
+</SelectContent>
             </Select>
           </div>
 
@@ -525,13 +530,15 @@ useEffect(() => {
                 <SelectValue placeholder="Select seller (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
-                {users.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+  <SelectItem value="__none__">None</SelectItem>
+  {users
+    .filter((u) => u.id !== buyerId)
+    .map((u) => (
+      <SelectItem key={u.id} value={u.id}>
+        {u.full_name}
+      </SelectItem>
+    ))}
+</SelectContent>
             </Select>
           </div>
 

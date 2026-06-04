@@ -120,6 +120,7 @@ export async function POST(req: NextRequest) {
         vehicle_title: vehicle.title || null,
         vehicle_make: vehicle.make || null,
         vehicle_model: vehicle.model || null,
+        vehicle_vin: vehicle.vin || null,
         vehicle_year: vehicle.year ? parseInt(String(vehicle.year)) : null,
         vehicle_mileage: vehicle.mileage !== "" && vehicle.mileage != null
           ? parseInt(String(vehicle.mileage))

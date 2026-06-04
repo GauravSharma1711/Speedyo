@@ -1769,6 +1769,7 @@ const openAdminEdit = async (id: string) => {
             fd.set("vehicle_title", payload.vehicle_details.title);
             fd.set("vehicle_make", payload.vehicle_details.make);
             fd.set("vehicle_model", payload.vehicle_details.model);
+            fd.set("vehicle_vin", payload.vehicle_details.vin);
             fd.set("vehicle_year", String(payload.vehicle_details.year));
             fd.set("vehicle_mileage", payload.vehicle_details.mileage === "" ? "" : String(payload.vehicle_details.mileage));
             fd.set("vehicle_condition", payload.vehicle_details.condition);
@@ -1804,6 +1805,7 @@ const openAdminEdit = async (id: string) => {
 
             setIsProcessing(true);
             try {
+             
               await adminPatch(adminEditTarget.id, fd);
               toast({ title: "Saved", description: "" });
               setAdminEditOpen(false);

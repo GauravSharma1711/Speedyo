@@ -44,6 +44,7 @@ export type CreateVehiclePatch = {
   make: string;
   model: string;
   year: number;
+  vin: string;
   price: number;
   dealer_fee: number;
   mileage: number;
@@ -60,7 +61,7 @@ export type CreateVehiclePatch = {
 
 type Props = {
   isOpen: boolean;
-     isDirectListing?: boolean; 
+  isDirectListing?: boolean;
   onClose: () => void;
   vehicleToEdit?: Vehicle | null;
   onSave: (patch: CreateVehiclePatch) => void | Promise<void>;
@@ -84,16 +85,17 @@ export default function CreateVehicleModalUI({
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
 
-    const [localSubmitting, setLocalSubmitting] = useState(false);
+  const [localSubmitting, setLocalSubmitting] = useState(false);
   const [uploadLabel, setUploadLabel] = useState<string>("");
- 
-  
+
+
   const isBusy = localSubmitting || Boolean(parentSubmitting);
- 
+
 
   const [formData, setFormData] = useState<{
     make: string;
     model: string;
+    vin: string;
     year: string;
     price: string;
     dealer_fee: string;
@@ -110,6 +112,7 @@ export default function CreateVehicleModalUI({
   }>({
     make: "",
     model: "",
+    vin: "",
     year: "",
     price: "",
     dealer_fee: "",
@@ -147,12 +150,12 @@ export default function CreateVehicleModalUI({
           : typeof (raw as any)[0] === "string"
             ? (raw as string[]).map((u) => toImageSet(u))
             : (raw as ImageSet[]).map((img) => ({
-                thumbnail: img.thumbnail || img.original,
-                small: img.small || img.original,
-                medium: img.medium || img.original,
-                large: img.large || img.original,
-                original: img.original || img.large || img.medium || img.small || img.thumbnail,
-              }));
+              thumbnail: img.thumbnail || img.original,
+              small: img.small || img.original,
+              medium: img.medium || img.original,
+              large: img.large || img.original,
+              original: img.original || img.large || img.medium || img.small || img.thumbnail,
+            }));
 
       const primary: ImageSet | null = vehicleToEdit.primary_image
         ? typeof vehicleToEdit.primary_image === "string"
@@ -166,6 +169,7 @@ export default function CreateVehicleModalUI({
         year: String(vehicleToEdit.year ?? ""),
         price: String(vehicleToEdit.price ?? ""),
         dealer_fee: String((vehicleToEdit as any).dealer_fee ?? ""),
+        vin: vehicleToEdit.vin || "",
         mileage: String(vehicleToEdit.mileage ?? ""),
         condition: vehicleToEdit.condition || "good",
         description: vehicleToEdit.description || "",
@@ -188,6 +192,7 @@ export default function CreateVehicleModalUI({
       price: "",
       dealer_fee: "",
       mileage: "",
+      vin: "",
       condition: "good",
       description: "",
       location: "",
@@ -211,39 +216,39 @@ export default function CreateVehicleModalUI({
   };
 
   const removeImage = (indexToRemove: number) => {
-  setFormData((prev) => {
-    const updatedImages = prev.images.filter((_, i) => i !== indexToRemove);
-    const updatedFiles = prev.imageFiles.filter((_, i) => i !== indexToRemove);
+    setFormData((prev) => {
+      const updatedImages = prev.images.filter((_, i) => i !== indexToRemove);
+      const updatedFiles = prev.imageFiles.filter((_, i) => i !== indexToRemove);
 
-    let newPrimaryImage = prev.primary_image;
-    if (
-      prev.primary_image &&
-      prev.images[indexToRemove] &&
-      prev.images[indexToRemove].original === prev.primary_image.original
-    ) {
-      newPrimaryImage = updatedImages.length > 0 ? updatedImages[0] : null;
-    }
+      let newPrimaryImage = prev.primary_image;
+      if (
+        prev.primary_image &&
+        prev.images[indexToRemove] &&
+        prev.images[indexToRemove].original === prev.primary_image.original
+      ) {
+        newPrimaryImage = updatedImages.length > 0 ? updatedImages[0] : null;
+      }
 
-    return {
-      ...prev,
-      images: updatedImages,
-      imageFiles: updatedFiles,
-      primary_image: newPrimaryImage,
-    };
-  });
-};
+      return {
+        ...prev,
+        images: updatedImages,
+        imageFiles: updatedFiles,
+        primary_image: newPrimaryImage,
+      };
+    });
+  };
 
   const validateStep = (step: number) => {
     switch (step) {
       case 1:
-        return Boolean(formData.make && formData.model && formData.year && formData.price && formData.mileage);
+        return Boolean(formData.make && formData.model && formData.year && formData.price && formData.mileage  && formData.vin);
       case 2:
         return Boolean(
           formData.condition &&
-            formData.fuel_type &&
-            formData.transmission &&
-            formData.location &&
-            formData.description,
+          formData.fuel_type &&
+          formData.transmission &&
+          formData.location &&
+          formData.description,
         );
       case 3:
         return true;
@@ -295,99 +300,100 @@ export default function CreateVehicleModalUI({
     setFormData((prev) => {
       const newImages = [...prev.images, ...imageSets];
       const newPrimary = prev.primary_image || newImages[0] || null;
-      return { 
-        ...prev, 
+      return {
+        ...prev,
         images: newImages,
-         primary_image: newPrimary,
-           imageFiles: [...prev.imageFiles, ...files],
+        primary_image: newPrimary,
+        imageFiles: [...prev.imageFiles, ...files],
 
-       };
+      };
     });
 
- 
+
 
     e.target.value = "";
   };
 
   const handleSubmit = async () => {
-       setLocalSubmitting(true);
+    setLocalSubmitting(true);
     setUploadLabel("");
 
-   try {
-     
-     const year = Number(formData.year || 0);
-     const price = Number(formData.price || 0);
-     const dealer_fee = Number(formData.dealer_fee || 0);
-     const mileage = Number(formData.mileage || 0);
- 
-     const title = `${year || ""} ${formData.make} ${formData.model}`.trim();
- 
-     // Upload new images (blob URLs) to server
-     let finalImages: string[] = [];
-     let finalPrimary: string | null = null;
- 
-     if (formData.imageFiles.length > 0) {
-       toast({ title: "Uploading images...", description: "Please wait" });
- 
-       const uploadPromises = formData.imageFiles.map(async (file) => {
-         const formDataUpload = new FormData();
-         formDataUpload.append("file", file);
- 
-         const res = await fetch("/api/upload/uploadImage", {
-           method: "POST",
-           body: formDataUpload,
-         });
- 
-         if (!res.ok) throw new Error("Image upload failed");
-         const data = await res.json();
-         return data.url; // large image URL
-  
+    try {
+
+      const year = Number(formData.year || 0);
+      const price = Number(formData.price || 0);
+      const dealer_fee = Number(formData.dealer_fee || 0);
+      const mileage = Number(formData.mileage || 0);
+
+      const title = `${year || ""} ${formData.make} ${formData.model}`.trim();
+
+      // Upload new images (blob URLs) to server
+      let finalImages: string[] = [];
+      let finalPrimary: string | null = null;
+
+      if (formData.imageFiles.length > 0) {
+        toast({ title: "Uploading images...", description: "Please wait" });
+
+        const uploadPromises = formData.imageFiles.map(async (file) => {
+          const formDataUpload = new FormData();
+          formDataUpload.append("file", file);
+
+          const res = await fetch("/api/upload/uploadImage", {
+            method: "POST",
+            body: formDataUpload,
+          });
+
+          if (!res.ok) throw new Error("Image upload failed");
+          const data = await res.json();
+          return data.url; // large image URL
+
+        });
+
+        try {
+          finalImages = await Promise.all(uploadPromises);
+        } catch {
+          toast({ title: "Error", description: "Failed to upload images", variant: "destructive" });
+          return;
+        }
+
+        // Find primary image
+        const primaryBlob = formData.primary_image?.original;
+        if (primaryBlob && finalImages.length > 0) {
+          const idx = formData.images.findIndex(img => img.original === primaryBlob);
+          finalPrimary = idx !== -1 ? finalImages[idx] : finalImages[0];
+        } else {
+          finalPrimary = finalImages[0];
+        }
+      }
+
+      const patch: CreateVehiclePatch = {
+        title,
+        make: formData.make,
+        model: formData.model,
+        year,
+        price,
+        dealer_fee,
+        mileage,
+        vin: formData.vin,
+        condition: formData.condition,
+        description: formData.description,
+        location: formData.location,
+        fuel_type: formData.fuel_type,
+        transmission: formData.transmission,
+        status: formData.status,
+        images: finalImages.length > 0 ? finalImages : formData.images.map((img) => img.original).filter(Boolean),
+        primary_image: finalPrimary || formData.primary_image?.original || null,
+        imageFiles: formData.imageFiles,
+      };
+
+      await onSave(patch);
+
+      toast({
+        title: vehicleToEdit ? "Vehicle listing updated" : "Vehicle listing created",
+        description: "Saved successfully.",
       });
-
-      try {
-        finalImages = await Promise.all(uploadPromises);
-      } catch {
-        toast({ title: "Error", description: "Failed to upload images", variant: "destructive" });
-        return;
-      }
-
-      // Find primary image
-      const primaryBlob = formData.primary_image?.original;
-      if (primaryBlob && finalImages.length > 0) {
-        const idx = formData.images.findIndex(img => img.original === primaryBlob);
-        finalPrimary = idx !== -1 ? finalImages[idx] : finalImages[0];
-      } else {
-        finalPrimary = finalImages[0];
-      }
-    }
-
-    const patch: CreateVehiclePatch = {
-      title,
-      make: formData.make,
-      model: formData.model,
-      year,
-      price,
-      dealer_fee,
-      mileage,
-      condition: formData.condition,
-      description: formData.description,
-      location: formData.location,
-      fuel_type: formData.fuel_type,
-      transmission: formData.transmission,
-      status: formData.status,
-      images: finalImages.length > 0 ? finalImages : formData.images.map((img) => img.original).filter(Boolean),
-      primary_image: finalPrimary || formData.primary_image?.original || null,
-      imageFiles: formData.imageFiles,
-    };
-
-    await onSave(patch);
-
-    toast({
-      title: vehicleToEdit ? "Vehicle listing updated" : "Vehicle listing created",
-      description: "Saved successfully.",
-    });
-    onClose();
-  }catch (err: any) {
+      onClose();
+    } catch (err: any) {
       toast({
         title: "Error",
         description: err?.message || "Something went wrong. Please try again.",
@@ -443,7 +449,14 @@ export default function CreateVehicleModalUI({
                 <Input id="mileage" name="mileage" type="number" value={formData.mileage} onChange={handleChange} placeholder="e.g. 45000" />
               </div>
 
+
               <div>
+                <Label htmlFor="vin">Vin Number*</Label>
+                <Input id="vin" name="vin" type="text" value={formData.vin} onChange={handleChange} placeholder="e.g. 1HGCM82633A123456" />
+              </div>
+
+
+              {/* <div>
                 <Label htmlFor="condition">Condition</Label>
                 <Select name="condition" value={formData.condition} onValueChange={(v) => handleSelectChange("condition", v)}>
                   <SelectTrigger id="condition">
@@ -456,291 +469,296 @@ export default function CreateVehicleModalUI({
                     <SelectItem value="needs_repair">needs_repair</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
             </div>
           </div>
         );
 
       case 2:
-        case 2:
-  return (
-    <div>
-      <h3 className="text-lg font-semibold text-slate-900 text-center">
-        Vehicle Details &amp; Condition
-      </h3>
-      <p className="text-sm text-slate-500 text-center mt-1">
-        Help buyers understand your vehicle better
-      </p>
+      case 2:
+        return (
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 text-center">
+              Vehicle Details &amp; Condition
+            </h3>
+            <p className="text-sm text-slate-500 text-center mt-1">
+              Help buyers understand your vehicle better
+            </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-        {/* Condition */}
-        <div>
-          <Label htmlFor="condition">Condition *</Label>
-          <Select
-            name="condition"
-            value={formData.condition}
-            onValueChange={(v) => handleSelectChange("condition", v)}
-          >
-            <SelectTrigger id="condition">
-              <SelectValue placeholder="Select condition" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="excellent">Excellent Condition</SelectItem>
-              <SelectItem value="good">Good Condition</SelectItem>
-              <SelectItem value="fair">Fair Condition</SelectItem>
-              <SelectItem value="needs_repair">Needs Repair</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+              {/* Condition */}
+              <div>
+                <Label htmlFor="condition">Condition *</Label>
+                <Select
+                  name="condition"
+                  value={formData.condition}
+                  onValueChange={(v) => handleSelectChange("condition", v)}
+                >
+                  <SelectTrigger id="condition">
+                    <SelectValue placeholder="Select condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="excellent">Excellent Condition</SelectItem>
+                    <SelectItem value="good">Good Condition</SelectItem>
+                    <SelectItem value="fair">Fair Condition</SelectItem>
+                    <SelectItem value="needs_repair">Needs Repair</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {/* Fuel Type */}
-        <div>
-          <Label htmlFor="fuel_type">Fuel Type *</Label>
-          <Select
-            name="fuel_type"
-            value={formData.fuel_type}
-            onValueChange={(v) => handleSelectChange("fuel_type", v)}
-          >
-            <SelectTrigger id="fuel_type">
-              <SelectValue placeholder="Select fuel type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="gasoline">Gasoline</SelectItem>
-              <SelectItem value="diesel">Diesel</SelectItem>
-              <SelectItem value="hybrid">Hybrid</SelectItem>
-              <SelectItem value="electric">Electric</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+              {/* Fuel Type */}
+              <div>
+                <Label htmlFor="fuel_type">Fuel Type *</Label>
+                <Select
+                  name="fuel_type"
+                  value={formData.fuel_type}
+                  onValueChange={(v) => handleSelectChange("fuel_type", v)}
+                >
+                  <SelectTrigger id="fuel_type">
+                    <SelectValue placeholder="Select fuel type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gasoline">Gasoline</SelectItem>
+                    <SelectItem value="diesel">Diesel</SelectItem>
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
+                    <SelectItem value="electric">Electric</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {/* Transmission */}
-        <div>
-          <Label htmlFor="transmission">Transmission *</Label>
-          <Select
-            name="transmission"
-            value={formData.transmission}
-            onValueChange={(v) => handleSelectChange("transmission", v)}
-          >
-            <SelectTrigger id="transmission">
-              <SelectValue placeholder="Select transmission" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="automatic">Automatic</SelectItem>
-              <SelectItem value="manual">Manual</SelectItem>
-              <SelectItem value="cvt">CVT</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+              {/* Transmission */}
+              <div>
+                <Label htmlFor="transmission">Transmission *</Label>
+                <Select
+                  name="transmission"
+                  value={formData.transmission}
+                  onValueChange={(v) => handleSelectChange("transmission", v)}
+                >
+                  <SelectTrigger id="transmission">
+                    <SelectValue placeholder="Select transmission" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="automatic">Automatic</SelectItem>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="cvt">CVT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {/* Listing Status (full width) */}
-        <div className="md:col-span-3">
-          <Label htmlFor="status">Listing Status *</Label>
-          <Select
-            name="status"
-            value={formData.status}
-            onValueChange={(v) => handleSelectChange("status", v as any)}
-          >
-            <SelectTrigger id="status">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="available">Available</SelectItem>
-              <SelectItem value="unavailable">Unavailable</SelectItem>
-              <SelectItem value="hidden">Hidden</SelectItem>
-              <SelectItem value="sold">Sold</SelectItem>
-            </SelectContent>
-          </Select>
+              {/* Listing Status (full width) */}
+              <div className="md:col-span-3">
+                <Label htmlFor="status">Listing Status *</Label>
+                <Select
+                  name="status"
+                  value={formData.status}
+                  onValueChange={(v) => handleSelectChange("status", v as any)}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="unavailable">Unavailable</SelectItem>
+                    <SelectItem value="hidden">Hidden</SelectItem>
+                    <SelectItem value="sold">Sold</SelectItem>
+                  </SelectContent>
+                </Select>
 
-          <p className="text-xs text-slate-500 mt-2">
-            Set to &quot;Unavailable&quot; to temporarily hide from marketplace, or
-            &quot;Hidden&quot; if seller downgraded to guest.
-          </p>
-        </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  Set to &quot;Unavailable&quot; to temporarily hide from marketplace, or
+                  &quot;Hidden&quot; if seller downgraded to guest.
+                </p>
+              </div>
 
-        {/* Location (full width) */}
-        <div className="md:col-span-3">
-          <Label htmlFor="location">Location *</Label>
-          <Input
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="e.g. Naha, Okinawa"
-          />
-        </div>
-    <div className="md:col-span-3">
-    <Label htmlFor="description">Description *</Label>
-    <Textarea
-      id="description"
-      name="description"
-      value={formData.description}
-      onChange={handleChange}
-      placeholder="Describe your vehicle's condition, features, and any important details..."
-      rows={5}
-    />
-    </div>
-  </div>
-  </div>
-  );
+              {/* Location (full width) */}
+              <div className="md:col-span-3">
+                <Label htmlFor="location">Location *</Label>
+                <Input
+                  id="location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="e.g. Naha, Okinawa"
+                />
+              </div>
+              <div className="md:col-span-3">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Describe your vehicle's condition, features, and any important details..."
+                  rows={5}
+                />
+              </div>
+            </div>
+          </div>
+        );
 
       case 3:
-        case 3:
-            return (
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 text-center">
-                  Photos &amp; Final Review
-                </h3>
-                <p className="text-sm text-slate-500 text-center mt-1">
-                  Add photos to make your listing stand out
+      case 3:
+        return (
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 text-center">
+              Photos &amp; Final Review
+            </h3>
+            <p className="text-sm text-slate-500 text-center mt-1">
+              Add photos to make your listing stand out
+            </p>
+
+            <div className="mt-6">
+              <Label className="text-sm font-medium text-slate-900">Vehicle Photos</Label>
+
+              {/* Dropzone */}
+              <div
+                className="mt-3 border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const files = e.dataTransfer.files;
+                  if (files && files.length > 0) {
+                    const list = Array.from(files);
+                    const oversized = list.filter((f) => f.size > 30 * 1024 * 1024);
+                    if (oversized.length > 0) {
+                      toast({
+                        title: "File too large",
+                        description: `Some files exceed the 30MB limit: ${oversized.map((f) => f.name).join(", ")}.`,
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    const imageSets = list.map((f) => {
+                      const url = URL.createObjectURL(f);
+                      return toImageSet(url);
+                    });
+
+                    setFormData((prev) => {
+                      const newImages = [...prev.images, ...imageSets];
+                      const newPrimary = prev.primary_image || newImages[0] || null;
+                      return {
+                        ...prev,
+                        images: newImages,
+                        primary_image: newPrimary,
+                        imageFiles: [...prev.imageFiles, ...list],
+                      };
+                    });
+
+
+                  }
+                }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/gif"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageSelect}
+                />
+
+                <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                <p className="text-sm font-medium text-slate-700">
+                  Click to upload or drag and drop
                 </p>
-          
-                <div className="mt-6">
-                  <Label className="text-sm font-medium text-slate-900">Vehicle Photos</Label>
-          
-                  {/* Dropzone */}
-                  <div
-                    className="mt-3 border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-  e.preventDefault();
-  const files = e.dataTransfer.files;
-  if (files && files.length > 0) {
-    const list = Array.from(files);
-    const oversized = list.filter((f) => f.size > 30 * 1024 * 1024);
-    if (oversized.length > 0) {
-      toast({
-        title: "File too large",
-        description: `Some files exceed the 30MB limit: ${oversized.map((f) => f.name).join(", ")}.`,
-        variant: "destructive",
-      });
-      return;
-    }
+                <p className="text-xs text-slate-500 mt-1">
+                  PNG, JPG, GIF up to 30MB each (optimized to WebP)
+                </p>
+              </div>
 
-    const imageSets = list.map((f) => {
-      const url = URL.createObjectURL(f);
-      return toImageSet(url);
-    });
+              {/* Thumbnails grid */}
+              {formData.images.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
+                  {formData.images.map((image, index) => {
+                    const isPrimary =
+                      formData.primary_image &&
+                      image.original === formData.primary_image.original;
 
-    setFormData((prev) => {
-      const newImages = [...prev.images, ...imageSets];
-      const newPrimary = prev.primary_image || newImages[0] || null;
-      return {
-        ...prev,
-        images: newImages,
-        primary_image: newPrimary,
-        imageFiles: [...prev.imageFiles, ...list], 
-      };
-    });
+                    return (
+                      <div
+                        key={index}
+                        className="relative group rounded-lg overflow-hidden border bg-white"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={image.thumbnail || image.original}
+                          alt={`Vehicle ${index + 1}`}
+                          className="w-full h-24 object-cover"
+                          onClick={() =>
+                            setFormData((prev) => ({ ...prev, primary_image: image }))
+                          }
+                        />
 
-    
-  }
-}}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png, image/jpeg, image/gif"
-                      multiple
-                      className="hidden"
-                      onChange={handleImageSelect}
-                    />
-          
-                    <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-slate-700">
-                      Click to upload or drag and drop
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      PNG, JPG, GIF up to 30MB each (optimized to WebP)
-                    </p>
-                  </div>
-          
-                  {/* Thumbnails grid */}
-                  {formData.images.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
-                      {formData.images.map((image, index) => {
-                        const isPrimary =
-                          formData.primary_image &&
-                          image.original === formData.primary_image.original;
-          
-                        return (
-                          <div
-                            key={index}
-                            className="relative group rounded-lg overflow-hidden border bg-white"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={image.thumbnail || image.original}
-                              alt={`Vehicle ${index + 1}`}
-                              className="w-full h-24 object-cover"
-                              onClick={() =>
-                                setFormData((prev) => ({ ...prev, primary_image: image }))
-                              }
-                            />
-          
-                            {/* Primary badge */}
-                            {isPrimary ? (
-                              <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                                Primary
-                              </div>
-                            ) : null}
-          
-                            {/* Delete */}
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => removeImage(index)}
-                              disabled={isBusy}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                        {/* Primary badge */}
+                        {isPrimary ? (
+                          <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                            Primary
                           </div>
-                        );
-                      })}
+                        ) : null}
+
+                        {/* Delete */}
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeImage(index)}
+                          disabled={isBusy}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {/* Review Summary (same as reference feel) */}
+              <div className="mt-8 rounded-lg border bg-slate-50 p-5">
+                <h4 className="font-semibold text-slate-900 mb-3">Review Summary</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-700">
+                  <div>
+                    <span className="font-medium text-slate-600">Vehicle:</span>{" "}
+                    {formData.year} {formData.make} {formData.model}
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-600">Price:</span> ¥
+                    {Number(formData.price || 0).toLocaleString()}
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-600">Mileage:</span>{" "}
+                    {Number(formData.mileage || 0).toLocaleString()} miles
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-600">VIN Number:</span>{" "}
+                    {formData.vin || "—"}
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-600">Condition:</span>{" "}
+                    {formData.condition}
+                  </div>
+                  <div>
+                    <span className="font-medium text-slate-600">Location:</span>{" "}
+                    {formData.location}
+                  </div>
+
+                  <div>
+                    <span className="font-medium text-slate-600">Photos:</span>{" "}
+                    {formData.images.length} uploaded
+                  </div>
+                  {vehicleToEdit ? (
+                    <div>
+                      <span className="font-medium text-slate-600">Status:</span>{" "}
+                      {formData.status}
                     </div>
                   ) : null}
-          
-                  {/* Review Summary (same as reference feel) */}
-                  <div className="mt-8 rounded-lg border bg-slate-50 p-5">
-                    <h4 className="font-semibold text-slate-900 mb-3">Review Summary</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-700">
-                      <div>
-                        <span className="font-medium text-slate-600">Vehicle:</span>{" "}
-                        {formData.year} {formData.make} {formData.model}
-                      </div>
-                      <div>
-                        <span className="font-medium text-slate-600">Price:</span> ¥
-                        {Number(formData.price || 0).toLocaleString()}
-                      </div>
-                      <div>
-                        <span className="font-medium text-slate-600">Mileage:</span>{" "}
-                        {Number(formData.mileage || 0).toLocaleString()} miles
-                      </div>
-                      <div>
-                        <span className="font-medium text-slate-600">Condition:</span>{" "}
-                        {formData.condition}
-                      </div>
-                      <div>
-                        <span className="font-medium text-slate-600">Location:</span>{" "}
-                        {formData.location}
-                      </div>
-                      <div>
-                        <span className="font-medium text-slate-600">Photos:</span>{" "}
-                        {formData.images.length} uploaded
-                      </div>
-                      {vehicleToEdit ? (
-                        <div>
-                          <span className="font-medium text-slate-600">Status:</span>{" "}
-                          {formData.status}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
                 </div>
               </div>
-            );
+            </div>
+          </div>
+        );
 
       default:
         return null;
@@ -753,7 +771,7 @@ export default function CreateVehicleModalUI({
         <DialogTitle className="sr-only">
           {vehicleToEdit ? "Edit Vehicle Listing" : "Create New Vehicle Listing"}
         </DialogTitle>
- 
+
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-emerald-500 text-white p-6 rounded-t-lg">
           <div className="flex items-center gap-3">
@@ -767,7 +785,7 @@ export default function CreateVehicleModalUI({
             </div>
           </div>
         </div>
- 
+
         {/* Step indicators */}
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center justify-between">
@@ -775,9 +793,8 @@ export default function CreateVehicleModalUI({
               <div key={step.number} className="flex items-center">
                 <div className="flex items-center">
                   <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
-                      currentStep >= step.number ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-500"
-                    }`}
+                    className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${currentStep >= step.number ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-500"
+                      }`}
                   >
                     {validateStep(step.number) && currentStep > step.number ? (
                       <CheckCircle className="w-5 h-5" />
@@ -787,9 +804,8 @@ export default function CreateVehicleModalUI({
                   </div>
                   <div className="ml-3 hidden sm:block">
                     <p
-                      className={`text-sm font-medium ${
-                        currentStep >= step.number ? "text-slate-900" : "text-slate-500"
-                      }`}
+                      className={`text-sm font-medium ${currentStep >= step.number ? "text-slate-900" : "text-slate-500"
+                        }`}
                     >
                       {step.title}
                     </p>
@@ -798,19 +814,18 @@ export default function CreateVehicleModalUI({
                 </div>
                 {index < steps.length - 1 ? (
                   <div
-                    className={`w-8 sm:w-16 h-0.5 mx-4 ${
-                      currentStep > step.number ? "bg-blue-600" : "bg-slate-200"
-                    }`}
+                    className={`w-8 sm:w-16 h-0.5 mx-4 ${currentStep > step.number ? "bg-blue-600" : "bg-slate-200"
+                      }`}
                   />
                 ) : null}
               </div>
             ))}
           </div>
         </div>
- 
+
         {/* Step content */}
         <div className="flex-1 overflow-y-auto p-6">{renderStepContent()}</div>
- 
+
         {/* Footer */}
         <div className="p-6 border-t bg-slate-50 flex justify-between items-center">
           <div>
@@ -821,12 +836,12 @@ export default function CreateVehicleModalUI({
               </Button>
             ) : null}
           </div>
- 
+
           <div className="flex items-center gap-3">
             <Button type="button" variant="outline" onClick={onClose} disabled={isBusy}>
               Cancel
             </Button>
- 
+
             {currentStep < totalSteps ? (
               <Button
                 type="button"

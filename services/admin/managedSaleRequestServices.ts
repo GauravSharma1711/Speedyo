@@ -94,6 +94,7 @@ const managedSaleRequestService = {
   },
 
   adminPatch: async (id: string, formData: FormData) => {
+    console.log("data to patch", Object.fromEntries(formData.entries()));
     const res = await api.patch<{ success: boolean; request: ManagedSaleRequestDetailApi }>(
       `/api/admin/managed-sale-requests/${id}`,
       formData,

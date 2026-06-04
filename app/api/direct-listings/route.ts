@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
         vehicle_model: body.vehicle_model || null,
         vehicle_year: body.vehicle_year ? parseInt(String(body.vehicle_year)) : null,
         vehicle_mileage: body.vehicle_mileage ? parseInt(String(body.vehicle_mileage)) : null,
+        vehicle_vin: body.vehicle_vin || null,
         vehicle_condition: body.vehicle_condition || null,
         vehicle_description: body.vehicle_description || null,
         vehicle_fuel_type: body.vehicle_fuel_type || null,

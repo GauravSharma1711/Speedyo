@@ -37,7 +37,7 @@ import TestDriveAvailabilityManager from "./TestDriveAvailabilityManager";
 export default function GuestDashboard({ user }: { user: any }) {
   const router = useRouter();
   const {
-    conversations, transfers, managedSales, sellers, recentlyViewed, isLoading,
+    conversations, transfers, transferSeller, managedSales, sellers, recentlyViewed, isLoading,
     loadGuestDashboard, directListings,
   } = useGuestDashboardStore() as any;
   const {
@@ -105,7 +105,8 @@ const [isSubmitting, setIsSubmitting] = useState(false);
   
 
   // Combine transfers
-  const vehicleTransfers = transfers || [];
+  const vehicleTransfers = [...transfers, ...transferSeller] as any[];
+
 
   const { toast } = useToast();
 
@@ -588,6 +589,7 @@ const handleCreateVehicle = async (vehicleData: any) => {
       vehicle_model: vehicleData.model,
       vehicle_year: vehicleData.year,
       vehicle_mileage: vehicleData.mileage || 0,
+      vehicle_vin: vehicleData.vin || "",
       vehicle_condition: vehicleData.condition || "good",
       vehicle_description: vehicleData.description || "",
       vehicle_fuel_type: vehicleData.fuel_type || "gasoline",

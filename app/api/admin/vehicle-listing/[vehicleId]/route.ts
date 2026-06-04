@@ -66,6 +66,7 @@ export async function PATCH(
     const year         = formData.get("year") as string | null;
     const price        = formData.get("price") as string | null;
     const mileage      = formData.get("mileage") as string | null;
+    const vin          = formData.get("vin") as string | null;
     const condition    = formData.get("condition") as string | null;
     const fuel_type    = formData.get("fuel_type") as string | null;
     const transmission = formData.get("transmission") as string | null;
@@ -119,6 +120,7 @@ export async function PATCH(
         ...(status       && { status: status as any }),
         ...(location     && { location }),
         ...(description  && { description }),
+        ...(vin            && { vin }),
         ...(primary_image && { primary_image }),
         ...(images       && { images }),
 

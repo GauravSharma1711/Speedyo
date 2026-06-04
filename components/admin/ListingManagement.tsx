@@ -50,6 +50,7 @@ type CreateVehiclePatch = {
   year: number;
   price: number;
   mileage: number;
+  vin: string;
   condition: string;
   description: string;
   location: string;
@@ -216,6 +217,7 @@ const [savingAssociation, setSavingAssociation] = useState(false);
   formData.append("year", String(patch.year));
   formData.append("price", String(patch.price));
   formData.append("mileage", String(patch.mileage));
+   formData.append("vin", String(patch.vin));
   formData.append("condition", patch.condition);
   formData.append("description", patch.description);
   formData.append("location", patch.location);

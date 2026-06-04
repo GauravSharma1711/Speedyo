@@ -42,6 +42,7 @@ function buildVehicleData(
     model: msr.vehicle_model!,
     year,
     mileage: msr.vehicle_mileage ?? 0,
+    vin: msr.vehicle_vin ?? undefined,
     condition: mapVehicleCondition(msr.vehicle_condition),
     description: msr.vehicle_description ?? undefined,
     fuel_type: mapFuelType(msr.vehicle_fuel_type),
@@ -550,6 +551,7 @@ function vehicleDetailsPatchToUpdates(vd: Record<string, unknown>) {
   if (vd.title !== undefined) u.vehicle_title = vd.title as string | null | undefined;
   if (vd.make !== undefined) u.vehicle_make = vd.make as string | null | undefined;
   if (vd.model !== undefined) u.vehicle_model = vd.model as string | null | undefined;
+  if (vd.vin !== undefined) u.vehicle_vin = vd.vin ? String(vd.vin) : null;
   if (vd.year !== undefined) u.vehicle_year = Number(vd.year);
   if (vd.mileage !== undefined) u.vehicle_mileage = Number(vd.mileage);
   if (vd.condition !== undefined) u.vehicle_condition = vd.condition ? String(vd.condition) : null;
@@ -582,6 +584,7 @@ function vehiclePatchForListing(vd: Record<string, unknown>, buyerPrice?: number
   if (vd.model !== undefined) vu.model = vd.model as string | undefined | null;
   if (vd.year !== undefined) vu.year = Number(vd.year);
   if (vd.mileage !== undefined) vu.mileage = Number(vd.mileage);
+  if (vd.vin !== undefined) vu.vin = vd.vin ? String(vd.vin) : null;
   if (vd.condition !== undefined) vu.condition = mapVehicleCondition(vd.condition);
   if (vd.description !== undefined) vu.description = vd.description ?? null;
   if (vd.fuel_type !== undefined) vu.fuel_type = mapFuelType(vd.fuel_type);
@@ -767,6 +770,7 @@ export async function workflowAdminPatchMsr(
   adminId: string,
   body: Record<string, unknown>
 ) {
+  console.log("Admin patch MSR", { requestId, adminId, body });
   const skipUserNotify =
     body.suppress_notification === true || body.suppressNotification === true;
 
@@ -854,6 +858,7 @@ export async function workflowAdminPatchMsr(
         title: data.vehicle_title,
         make: data.vehicle_make,
         model: data.vehicle_model,
+        vin: data.vehicle_vin,
         year: data.vehicle_year,
         mileage: data.vehicle_mileage,
         condition: mapVehicleCondition(data.vehicle_condition),

@@ -546,6 +546,7 @@ export default function SellerDashboard() {
 
   // Combine all transfers for display
   const vehicleTransfers = [...sellerTransfers, ...buyerTransfers];
+  console.log("transfers", vehicleTransfers);
 
   // Derive testDriveRequests from testDrives
   const testDriveRequests = testDrives;
@@ -769,6 +770,7 @@ export default function SellerDashboard() {
         vehicle_model: vehicleData.model,
         vehicle_year: vehicleData.year,
         vehicle_mileage: vehicleData.mileage || 0,
+        vehicle_vin: vehicleData.vin || "",
         vehicle_condition: vehicleData.condition || "good",
         vehicle_description: vehicleData.description || "",
         vehicle_fuel_type: vehicleData.fuel_type || "gasoline",
